@@ -36,7 +36,7 @@ function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <MapPin size={17} className="shrink-0 text-indigo-600" />
-                TP. Hồ Chí Minh, Việt Nam
+                TP. Đà Nẵng, Việt Nam
               </li>
             </ul>
           </div>
