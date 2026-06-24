@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import MainLayout from "../components/layout/MainLayout";
+import AdminLayout from "../components/admin/AdminLayout";
 
 import HomePage from "../pages/HomePage";
 
@@ -32,13 +33,11 @@ import StudentManagementPage from "../pages/admin/StudentManagementPage";
 import ProtectedRoute from "./ProtectedRoute";
 import StaticPlaceholderPage from "../pages/static/StaticPlaceholderPage";
 
-
 function AppRoutes() {
   return (
     <Routes>
-
+      {/* Public + Student */}
       <Route element={<MainLayout />}>
-
         <Route path="/" element={<HomePage />} />
 
         {/* Auth */}
@@ -46,15 +45,14 @@ function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-
         {/* Student */}
         <Route path="/ai-assistant" element={<AIAssistantPage />} />
         <Route path="/courses" element={<CourseListPage />} />
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
 
-        <Route 
-          path="/learning/:courseId/:lessonId" 
-          element={<LearningPage />} 
+        <Route
+          path="/learning/:courseId/:lessonId"
+          element={<LearningPage />}
         />
 
         <Route
@@ -64,22 +62,10 @@ function AppRoutes() {
 
         <Route path="/quiz/:lessonId" element={<QuizPage />} />
 
-
         <Route element={<ProtectedRoute />}>
           <Route path="/my-progress" element={<MyProgressPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-
-
-        {/* Admin */}
-        <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="/admin/courses" element={<CourseManagementPage />} />
-        <Route path="/admin/lessons" element={<LessonManagementPage />} />
-        <Route path="/admin/upload" element={<VideoUploadPage />} />
-        <Route path="/admin/videos" element={<VideoManagementPage />} />
-        <Route path="/admin/quiz" element={<QuizManagementPage />} />
-        <Route path="/admin/students" element={<StudentManagementPage />} />
-
 
         {/* Static */}
         <Route
@@ -106,9 +92,16 @@ function AppRoutes() {
           path="/contact"
           element={<StaticPlaceholderPage title="Liên hệ" />}
         />
-
       </Route>
 
+      {/* Admin routes: để riêng, KHÔNG nằm trong MainLayout */}
+      <Route path="/admin" element={<AdminDashboardPage />} />
+      <Route path="/admin/courses" element={<CourseManagementPage />} />
+      <Route path="/admin/lessons" element={<LessonManagementPage />} />
+      <Route path="/admin/upload" element={<VideoUploadPage />} />
+      <Route path="/admin/videos" element={<VideoManagementPage />} />
+      <Route path="/admin/quiz" element={<QuizManagementPage />} />
+      <Route path="/admin/students" element={<StudentManagementPage />} />
     </Routes>
   );
 }
