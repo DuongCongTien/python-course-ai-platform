@@ -1,4 +1,5 @@
 import { Bot, CheckCircle2, PlayCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { type RecentActivity } from "./profileTypes";
 
 interface RecentActivitiesCardProps {
@@ -41,12 +42,12 @@ function RecentActivitiesCard({ activities }: RecentActivitiesCardProps) {
         })}
       </div>
 
-      <button
-        type="button"
-        className="focus-ring mt-5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+      <Link
+        to="/profile/activities"
+        className="focus-ring mt-5 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
       >
         Xem toàn bộ hoạt động
-      </button>
+      </Link>
     </section>
   );
 }

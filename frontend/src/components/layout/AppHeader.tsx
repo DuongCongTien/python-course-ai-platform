@@ -5,8 +5,10 @@ import { useAuth } from "../../context/AuthContext";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
+  { label: "Về chúng tôi", to: "/about" },
   { label: "Khóa học", to: "/courses" },
   { label: "AI Assistant", to: "/ai-assistant" },
+  { label: "Liên hệ", to: "/contact" },
 ];
 
 const getInitials = (name: string) =>
