@@ -1,4 +1,5 @@
 import { ArrowRight, Mail, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function CTASection() {
   return (
@@ -26,21 +27,23 @@ function CTASection() {
             >
               <label className="relative block">
                 <span className="sr-only">Email của bạn</span>
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} aria-hidden="true" />
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   required
                   placeholder="Email của bạn"
                   className="focus-ring h-[52px] w-full rounded-xl border-0 bg-white py-3.5 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 sm:w-72"
                 />
               </label>
-              <button
-                type="submit"
+              <Link
+                to="/register"
                 className="focus-ring inline-flex h-[52px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-900"
               >
                 Đăng ký ngay
                 <ArrowRight size={18} />
-              </button>
+              </Link>
             </form>
           </div>
         </div>

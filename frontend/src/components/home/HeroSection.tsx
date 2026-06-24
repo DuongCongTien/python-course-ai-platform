@@ -7,6 +7,7 @@ import {
   FileText,
   Sparkles,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function HeroSection() {
   return (
@@ -26,20 +27,20 @@ function HeroSection() {
             thắc mắc theo từng bài học.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#courses"
+            <Link
+              to="/courses"
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
             >
               Bắt đầu học ngay
               <ArrowRight size={19} />
-            </a>
-            <a
-              href="#courses"
+            </Link>
+            <Link
+              to="/courses"
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-bold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
             >
               <CirclePlay size={19} />
               Xem khóa học
-            </a>
+            </Link>
           </div>
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-slate-600">
             {["Lộ trình rõ ràng", "AI hỗ trợ 24/7", "Học theo tiến độ riêng"].map((item) => (

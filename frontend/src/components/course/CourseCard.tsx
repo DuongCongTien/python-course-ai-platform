@@ -1,0 +1,110 @@
+import { ArrowRight, Bot, Clock3, GraduationCap, PlayCircle, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+
+export type CourseLevel = "Cơ bản" | "Trung cấp" | "Nâng cao";
+
+export interface Course {
+  id: string;
+  title: string;
+  level: CourseLevel;
+  lessons: number;
+  duration: string;
+  durationHours: number;
+  description: string;
+  hasAI?: boolean;
+  popular?: boolean;
+  isLearning?: boolean;
+  progress?: number;
+  lessonId?: string;
+  gradient: string;
+}
+
+interface CourseCardProps {
+  course: Course;
+}
+
+const levelClassName: Record<CourseLevel, string> = {
+  "Cơ bản": "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  "Trung cấp": "bg-blue-50 text-blue-700 ring-blue-100",
+  "Nâng cao": "bg-purple-50 text-purple-700 ring-purple-100",
+};
+
+function CourseCard({ course }: CourseCardProps) {
+  const actionLabel = course.isLearning ? "Tiếp tục học" : "Xem chi tiết";
+  const actionTo = course.isLearning
+    ? `/learning/${course.id}/${course.lessonId ?? "lesson-1"}`
+    : `/courses/${course.id}`;
+
+  return (
+    <article className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-soft">
+      <div className={`relative min-h-44 overflow-hidden bg-gradient-to-br ${course.gradient} p-5 text-white`}>
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+        <div className="absolute -bottom-12 left-8 h-36 w-36 rounded-full bg-slate-950/20 blur-3xl" />
+
+        <div className="relative z-10 flex flex-wrap gap-2">
+          {course.hasAI && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+              <Bot size={13} />
+              AI Support
+            </span>
+          )}
+          {course.popular && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
+              <Sparkles size={13} />
+              Phổ biến nhất
+            </span>
+          )}
+        </div>
+
+        <div className="relative z-10 mt-9">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+            <GraduationCap size={28} />
+          </div>
+          <p className="mt-4 max-w-xs text-lg font-extrabold leading-tight">{course.title}</p>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
+          <span className={`rounded-full px-3 py-1 ring-1 ${levelClassName[course.level]}`}>{course.level}</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+            <PlayCircle size={13} />
+            {course.lessons} bài học
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+            <Clock3 size={13} />
+            {course.duration}
+          </span>
+        </div>
+
+        <h2 className="text-xl font-extrabold tracking-tight text-slate-950">{course.title}</h2>
+        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{course.description}</p>
+
+        {course.isLearning && (
+          <div className="mt-5 rounded-2xl bg-indigo-50/80 p-4">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-slate-700">Tiến độ học tập</span>
+              <span className="font-extrabold text-indigo-600">{course.progress ?? 0}%</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-white">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-blue-500"
+                style={{ width: `${course.progress ?? 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <Link
+          to={actionTo}
+          className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700 group-hover:shadow-md"
+        >
+          {actionLabel}
+          <ArrowRight size={17} />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export default CourseCard;
