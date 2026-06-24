@@ -18,7 +18,9 @@ import LessonTranscriptPage from "../pages/student/LessonTranscriptPage";
 import LearningPage from "../pages/student/LearningPage";
 import MyProgressPage from "../pages/student/MyProgressPage";
 import ProfilePage from "../pages/student/ProfilePage";
+import ProfileActivitiesPage from "../pages/profile/ProfileActivitiesPage";
 import QuizPage from "../pages/student/QuizPage";
+import QuizResultPage from "../pages/student/QuizResultPage";
 
 // Admin
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
@@ -31,6 +33,11 @@ import StudentManagementPage from "../pages/admin/StudentManagementPage";
 
 // Other
 import ProtectedRoute from "./ProtectedRoute";
+import AboutPage from "../pages/static/AboutPage";
+import ContactPage from "../pages/static/ContactPage";
+import GuidePage from "../pages/static/GuidePage";
+import PrivacyPage from "../pages/static/PrivacyPage";
+import TermsPage from "../pages/static/TermsPage";
 import StaticPlaceholderPage from "../pages/static/StaticPlaceholderPage";
 
 function AppRoutes() {
@@ -61,37 +68,24 @@ function AppRoutes() {
         />
 
         <Route path="/quiz/:lessonId" element={<QuizPage />} />
+        <Route path="/quiz/:lessonId/result" element={<QuizResultPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/my-progress" element={<MyProgressPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/activities" element={<ProfileActivitiesPage />} />
         </Route>
 
         {/* Static */}
-        <Route
-          path="/about"
-          element={<StaticPlaceholderPage title="Về chúng tôi" />}
-        />
+        <Route path="/about" element={<AboutPage />} />
 
-        <Route
-          path="/guide"
-          element={<StaticPlaceholderPage title="Hướng dẫn" />}
-        />
+        <Route path="/guide" element={<GuidePage />} />
 
-        <Route
-          path="/terms"
-          element={<StaticPlaceholderPage title="Điều khoản dịch vụ" />}
-        />
+        <Route path="/terms" element={<TermsPage />} />
 
-        <Route
-          path="/privacy"
-          element={<StaticPlaceholderPage title="Chính sách bảo mật" />}
-        />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
-        <Route
-          path="/contact"
-          element={<StaticPlaceholderPage title="Liên hệ" />}
-        />
+        <Route path="/contact" element={<ContactPage />} />
       </Route>
 
       {/* Admin routes: để riêng, KHÔNG nằm trong MainLayout */}
