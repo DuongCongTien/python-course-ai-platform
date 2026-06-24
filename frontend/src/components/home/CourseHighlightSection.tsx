@@ -1,4 +1,5 @@
 import { ArrowRight, BarChart3, Clock3, Code2, Database, Globe2, type LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
 
@@ -60,10 +61,10 @@ function CourseHighlightSection() {
               Học từ kiến thức nền tảng đến các ứng dụng Python chuyên sâu trong AI và phát triển web.
             </p>
           </div>
-          <a href="#" className="focus-ring inline-flex shrink-0 items-center gap-2 rounded-lg font-bold text-indigo-600 hover:text-indigo-700">
+          <Link to="/courses" className="focus-ring inline-flex shrink-0 items-center gap-2 rounded-lg font-bold text-indigo-600 hover:text-indigo-700">
             Xem tất cả
             <ArrowRight size={18} />
-          </a>
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -104,10 +105,10 @@ function CourseCard({ course }: { course: Course }) {
             {course.duration}
           </span>
         </div>
-        <button className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 px-4 py-3 font-bold text-indigo-600 transition hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
+        <Link to="/courses/python-basic" className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 px-4 py-3 font-bold text-indigo-600 transition hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
           Xem chi tiết
           <ArrowRight size={17} />
-        </button>
+        </Link>
       </div>
     </article>
   );

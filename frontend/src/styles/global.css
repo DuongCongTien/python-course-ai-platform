@@ -33,4 +33,67 @@
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2;
   }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .floating-anim {
+    animation: floating 3s ease-in-out infinite;
+  }
+
+  .login-blob {
+    position: absolute;
+    border-radius: 9999px;
+    transition: transform 0.25s ease-out;
+  }
+
+  .login-blob-primary {
+    top: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: rgba(99, 102, 241, 0.35);
+    filter: blur(120px);
+  }
+
+  .login-blob-secondary {
+    right: -5%;
+    bottom: -5%;
+    width: 400px;
+    height: 400px;
+    background: rgba(59, 130, 246, 0.35);
+    filter: blur(100px);
+  }
+}
+
+@keyframes typing {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing 1s infinite;
+}
+
+@keyframes floating {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
 }
