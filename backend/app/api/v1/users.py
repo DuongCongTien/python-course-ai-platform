@@ -14,8 +14,17 @@ def get_current_user_profile(token: str = Query(..., description="Truyền Acces
         "user": user_profile
     }
     
+# chỉ trả về số lượng users
+@router.get("/total_users")
+def get_total_users(db = Depends(get_db)):
+    total_users = UserService.get_total_users(db = db)
+    return {
+        "status": "success",
+        "total_users" : len(total_users),
+    }
+    
 @router.get("/find/{name}")
-def get_user_by_name(name = str, db = Depends(get_db)):
+def get_user_by_name(name : str, db = Depends(get_db)):
     user_list = UserService.get_user_by_name(name = name, db = db)
     return {
         "status": "success",
@@ -24,7 +33,7 @@ def get_user_by_name(name = str, db = Depends(get_db)):
     }
     
 @router.get("/find/{id}")
-def get_user_by_id(id = int, db = Depends(get_db)):
+def get_user_by_id(id : int, db = Depends(get_db)):
     user = UserService.get_user_by_id(id = id, db = db)
     return {
         "status": "success",

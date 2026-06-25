@@ -70,8 +70,8 @@ class AuthService:
     def authenticate_user(db: Session, login_data) -> dict | None:
         """Xử lý logic xác thực đăng nhập và trả về token cùng thông tin cơ bản"""
         user = db.query(User).filter(
-            (User.email == login_data.username_or_email) | 
-            (User.username == login_data.username_or_email)
+            (User.email == login_data.email) | 
+            (User.username == login_data.username)
         ).first()
         
         if not user:

@@ -5,7 +5,10 @@ from sqlalchemy import or_
 
 class UserService:
     
-    # tìm kiếm (nhiều người) bằng name
+    @staticmethod
+    def get_total_users(db: Session) : 
+        return db.query(User).Count()
+    
     @staticmethod
     def get_user_by_name(name: str, db: Session) : 
         # ng dùng k nhập gì:
@@ -20,17 +23,12 @@ class UserService:
         ).all()
         return users
     
-    # tìm kiếm (1 người) bằng id
     @staticmethod
     def get_user_by_id(id: int, db: Session) : 
-        # ng dùng k nhập gì:
-        if not name: 
-            return []
-        search_keyword = f"%{name}%"    
-        users = db.query(User).filter(
-            or_(
-                User.username.like(search_keyword),
-                User.full_name.like(search_keyword)
+        user = db.query(User).filter(User.id == id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy người dùng có id: {id}"
             )
-        ).all()
-        return users
+        return user
