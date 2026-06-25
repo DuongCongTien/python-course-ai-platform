@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 interface SidebarProps {
     aiSystemStatus?: "online" | "offline";
@@ -16,6 +16,16 @@ const navItems = [
 
 function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        // 1. Phải xóa sạch Token / Session đã lưu khi đăng nhập thành công
+        localStorage.removeItem("token");
+        localStorage.removeItem("user"); // Xóa tùy theo cách bạn lưu dữ liệu auth
+
+        // 2. Chuyển hướng và XÓA LỊCH SỬ trang admin vừa đứng
+        navigate("/", { replace: true });
+    };
 
     return (
         <aside className="hidden lg:flex w-64 flex-col bg-surface-container-low border-r border-outline-variant/30 h-screen sticky top-0 shrink-0">
@@ -26,8 +36,8 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                         person
                     </span>
                 </div>
-                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào! 
-                    <br/>Quản Trị Viên</span>
+                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào!
+                    <br />Quản Trị Viên</span>
             </div>
 
             {/* Nav */}
@@ -87,7 +97,11 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                         <p className="text-sm font-semibold truncate text-on-surface">Admin User</p>
                         <p className="text-xs text-on-surface-variant truncate">Quản trị viên</p>
                     </div>
-                    <button className="text-on-surface-variant hover:text-error transition-colors">
+                    <button
+                        onClick={handleLogout}
+                        className="text-on-surface-variant hover:text-error transition-colors"
+                        title="Đăng xuất"
+                    >
                         <span className="material-symbols-outlined text-[18px]">logout</span>
                     </button>
                 </div>

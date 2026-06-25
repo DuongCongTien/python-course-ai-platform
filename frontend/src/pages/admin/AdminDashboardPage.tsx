@@ -116,10 +116,6 @@ function AdminDashboardPage() {
               Chào mừng quay trở lại — đây là tóm tắt hoạt động hôm nay.
             </p>
           </div>
-          <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 transition-all text-sm">
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Tạo khóa học mới
-          </button>
         </div>
 
         {/* Stat cards */}
@@ -165,11 +161,10 @@ function AdminDashboardPage() {
                     <div
                       key={i}
                       style={{ height: h }}
-                      className={`flex-1 rounded-t transition-colors ${
-                        i === barHeights.length - 1
+                      className={`flex-1 rounded-t transition-colors ${i === barHeights.length - 1
                           ? "bg-primary"
                           : "bg-primary/20 hover:bg-primary/40"
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
@@ -208,10 +203,10 @@ function AdminDashboardPage() {
             </div>
 
             {/* Recent activity table */}
-            <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-2xl overflow-hidden">
-              <div className="p-5 border-b border-outline-variant/10 flex justify-between items-center">
-                <h4 className="font-semibold text-on-surface">Hoạt động gần đây</h4>
-                <button className="text-primary text-xs font-semibold hover:underline">Xem tất cả</button>
+            <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-xl overflow-hidden">
+              <div className="p-3.5 border-b border-outline-variant/10 flex justify-between items-center">
+                <h4 className="font-semibold text-sm text-on-surface">Hoạt động gần đây</h4>
+                <button className="text-primary text-[11px] font-semibold hover:underline">Xem tất cả</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -220,7 +215,8 @@ function AdminDashboardPage() {
                       {["Thời gian", "Học viên / Đối tượng", "Hành động", "Trạng thái"].map((h) => (
                         <th
                           key={h}
-                          className="px-6 py-3 text-[11px] font-bold text-outline uppercase tracking-wider"
+                          // Thêm whitespace-nowrap vào Header để chống rớt dòng
+                          className="px-4 py-2 text-[10px] font-bold text-outline uppercase tracking-wider whitespace-nowrap"
                         >
                           {h}
                         </th>
@@ -230,31 +226,35 @@ function AdminDashboardPage() {
                   <tbody className="divide-y divide-outline-variant/10">
                     {recentActivity.map((row, i) => (
                       <tr key={i} className="hover:bg-surface-container/30 transition-colors">
-                        <td className="px-6 py-4 text-sm text-on-surface-variant whitespace-nowrap">
+                        {/* Thêm whitespace-nowrap vào Cột Thời gian */}
+                        <td className="px-4 py-2.5 text-xs text-on-surface-variant whitespace-nowrap">
                           {row.time}
                         </td>
-                        <td className="px-6 py-4">
+                        {/* Thêm whitespace-nowrap vào Cột Đối tượng */}
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {row.subjectType === "user" ? (
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                                 {row.initial}
                               </div>
                             ) : (
-                              <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                                <span className="material-symbols-outlined text-sm">
+                              <div className="w-6 h-6 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+                                <span className="material-symbols-outlined text-[14px]">
                                   video_library
                                 </span>
                               </div>
                             )}
-                            <span className="text-sm font-medium text-on-surface">
+                            <span className="text-xs font-medium text-on-surface">
                               {row.subject}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-on-surface">{row.action}</td>
-                        <td className="px-6 py-4">
+                        {/* Thêm whitespace-nowrap vào Cột Hành động */}
+                        <td className="px-4 py-2.5 text-xs text-on-surface whitespace-nowrap">{row.action}</td>
+                        {/* Thêm whitespace-nowrap vào Cột Trạng thái */}
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${row.statusColor}`}
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${row.statusColor}`}
                           >
                             {row.status}
                           </span>
@@ -288,9 +288,8 @@ function AdminDashboardPage() {
                   <div key={item.label} className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <span
-                        className={`w-2 h-2 rounded-full ${item.color} ${
-                          item.pulse ? "animate-pulse" : ""
-                        }`}
+                        className={`w-2 h-2 rounded-full ${item.color} ${item.pulse ? "animate-pulse" : ""
+                          }`}
                       />
                       <span className="text-sm text-on-surface-variant">{item.label}</span>
                     </div>
@@ -313,9 +312,8 @@ function AdminDashboardPage() {
                     <div
                       key={i}
                       style={{ height: h }}
-                      className={`flex-1 rounded-t ${
-                        i < 2 ? "bg-surface-container" : i < 5 ? "bg-primary/40" : "bg-primary"
-                      }`}
+                      className={`flex-1 rounded-t ${i < 2 ? "bg-surface-container" : i < 5 ? "bg-primary/40" : "bg-primary"
+                        }`}
                     />
                   ))}
                 </div>

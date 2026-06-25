@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import AdminHeader from "../../components/admin/AdminHeader";
 
@@ -82,11 +82,7 @@ interface DetailPanelProps {
 }
 
 function VideoDetailPanel({ video }: DetailPanelProps) {
-  if (!video) return (
-    <div className="flex items-center justify-center h-full text-on-surface-variant text-sm">
-      Chọn một video để xem chi tiết
-    </div>
-  );
+  if (!video) return null;
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-7">
@@ -195,9 +191,16 @@ function Toast({ message, visible }: { message: string; visible: boolean }) {
 }
 
 function VideoManagementPage() {
-  const [selectedVideo, setSelectedVideo] = useState<VideoItem>(mockVideos[1]);
+  // 1. Chỉnh sửa mặc định thành null để ẩn Panel lúc ban đầu
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // 2. Khởi tạo State cho bộ lọc
+  const [searchTerm, setSearchTerm] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [chapterFilter, setChapterFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -205,13 +208,31 @@ function VideoManagementPage() {
     setTimeout(() => setToastVisible(false), 3000);
   };
 
+  // 3. Trích xuất danh sách options tự động từ mock data (Dùng useMemo để tối ưu)
+  const uniqueCourses = useMemo(() => Array.from(new Set(mockVideos.map((v) => v.course))), []);
+  const uniqueChapters = useMemo(() => Array.from(new Set(mockVideos.map((v) => v.chapter))), []);
+
+  // 4. Logic Lọc Video
+  const filteredVideos = mockVideos.filter((video) => {
+    // Tìm trong tiêu đề hoặc tên file
+    const matchSearch =
+      video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      video.filename.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchCourse = courseFilter === "" || video.course === courseFilter;
+    const matchChapter = chapterFilter === "" || video.chapter === chapterFilter;
+    const matchStatus = statusFilter === "" || video.aiStatus === statusFilter;
+
+    return matchSearch && matchCourse && matchChapter && matchStatus;
+  });
+
   return (
     <AdminLayout>
       <AdminHeader title="Quản lý video & AI" actionLabel="Tải lên Video mới" actionIcon="cloud_upload" />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row relative">
         {/* Main table area */}
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
           {/* Filters */}
           <div className="p-5 pb-0">
             <div className="bg-white rounded-2xl border border-outline-variant/30 p-4 flex flex-wrap gap-3 items-center shadow-sm">
@@ -219,159 +240,204 @@ function VideoManagementPage() {
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
                   search
                 </span>
+                {/* Ràng buộc State cho Ô tìm kiếm */}
                 <input
                   type="text"
-                  placeholder="Tìm kiếm video..."
+                  placeholder="Tìm kiếm video hoặc file..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/30 outline-none transition-all text-sm"
                 />
               </div>
               <div className="flex gap-3 flex-wrap">
-                {["Tất cả Khóa học", "Tất cả Bài học", "Trạng thái AI"].map((placeholder) => (
-                  <select key={placeholder} className="bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/30 outline-none cursor-pointer">
-                    <option>{placeholder}</option>
-                  </select>
-                ))}
+                {/* Dropdown 1: Khóa học */}
+                <select
+                  value={courseFilter}
+                  onChange={(e) => setCourseFilter(e.target.value)}
+                  className="bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/30 outline-none cursor-pointer"
+                >
+                  <option value="">Tất cả Khóa học</option>
+                  {uniqueCourses.map((course) => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </select>
+
+                {/* Dropdown 2: Bài học / Chương */}
+                <select
+                  value={chapterFilter}
+                  onChange={(e) => setChapterFilter(e.target.value)}
+                  className="bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/30 outline-none cursor-pointer"
+                >
+                  <option value="">Tất cả Bài học</option>
+                  {uniqueChapters.map((chapter) => (
+                    <option key={chapter} value={chapter}>{chapter}</option>
+                  ))}
+                </select>
+
+                {/* Dropdown 3: Trạng thái AI */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/30 outline-none cursor-pointer"
+                >
+                  <option value="">Tất cả Trạng thái AI</option>
+                  {Object.entries(aiStatusConfig).map(([key, config]) => (
+                    <option key={key} value={key}>{config.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="flex-1 overflow-auto p-5">
+          <div className="p-5">
             <div className="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-surface-container-low/50 sticky top-0 z-10">
-                  <tr>
-                    {["Tên video", "Khóa học / Bài học", "Thời lượng", "Trạng thái AI", "Transcript", "Vector DB", "Hành động"].map((h) => (
-                      <th key={h} className={`px-5 py-4 font-semibold text-xs text-on-surface-variant uppercase tracking-wider ${h === "Transcript" || h === "Vector DB" ? "text-center" : h === "Hành động" ? "text-right" : ""}`}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  {mockVideos.map((video) => {
-                    const st = aiStatusConfig[video.aiStatus];
-                    const isSelected = selectedVideo?.id === video.id;
-                    return (
-                      <tr
-                        key={video.id}
-                        onClick={() => setSelectedVideo(video)}
-                        className={`group cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : "hover:bg-surface-container-low/30"}`}
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-8 rounded-lg bg-slate-900 border border-outline-variant/30 flex items-center justify-center shrink-0">
-                              <span className="material-symbols-outlined text-white text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                                play_arrow
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-surface-container-low/50">
+                    <tr>
+                      {["Tên video", "Khóa học / Bài học", "Thời lượng", "Trạng thái AI", "Transcript", "Vector DB", "Hành động"].map((h) => (
+                        <th
+                          key={h}
+                          className={`px-5 py-4 font-semibold text-xs text-on-surface-variant uppercase tracking-wider whitespace-nowrap ${h === "Transcript" || h === "Vector DB" ? "text-center" : h === "Hành động" ? "text-right" : ""
+                            }`}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/20">
+                    {/* Render mảng đã được filter */}
+                    {filteredVideos.length > 0 ? (
+                      filteredVideos.map((video) => {
+                        const st = aiStatusConfig[video.aiStatus];
+                        const isSelected = selectedVideo?.id === video.id;
+                        return (
+                          <tr
+                            key={video.id}
+                            onClick={() => setSelectedVideo(video)}
+                            className={`group cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : "hover:bg-surface-container-low/30"}`}
+                          >
+                            <td className="px-5 py-4 min-w-[220px]">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-8 shrink-0 rounded-lg bg-slate-900 border border-outline-variant/30 flex items-center justify-center">
+                                  <span className="material-symbols-outlined text-white text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                    play_arrow
+                                  </span>
+                                </div>
+                                <div className="whitespace-nowrap">
+                                  <p className="font-semibold text-on-surface text-sm">{video.title}</p>
+                                  <p className="text-xs text-on-surface-variant">{video.filename}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 whitespace-nowrap">
+                              <p className="text-sm font-medium text-on-surface">{video.course}</p>
+                              <p className="text-xs text-on-surface-variant">{video.chapter}</p>
+                            </td>
+                            <td className="px-5 py-4 text-sm font-medium text-on-surface whitespace-nowrap">{video.duration}</td>
+                            <td className="px-5 py-4 whitespace-nowrap">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${st.badge}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${st.dot} ${st.dotPulse ? "animate-pulse" : ""}`} />
+                                {st.label}
                               </span>
-                            </div>
-                            <div>
-                              <p className="font-semibold text-on-surface text-sm line-clamp-1">{video.title}</p>
-                              <p className="text-xs text-on-surface-variant">{video.filename}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <p className="text-sm font-medium text-on-surface">{video.course}</p>
-                          <p className="text-xs text-on-surface-variant">{video.chapter}</p>
-                        </td>
-                        <td className="px-5 py-4 text-sm font-medium text-on-surface">{video.duration}</td>
-                        <td className="px-5 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${st.badge}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${st.dot} ${st.dotPulse ? "animate-pulse" : ""}`} />
-                            {st.label}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          {video.hasTranscript ? (
-                            <span className="material-symbols-outlined text-green-600">check_circle</span>
-                          ) : video.aiStatus === "processing" ? (
-                            <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
-                          ) : (
-                            <span className="material-symbols-outlined text-error">cancel</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          {video.hasVectorDB ? (
-                            <span className="material-symbols-outlined text-green-600">database</span>
-                          ) : video.aiStatus === "embedding" ? (
-                            <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto" />
-                          ) : (
-                            <span className="material-symbols-outlined text-outline-variant">
-                              {video.aiStatus === "error" ? "error" : "hourglass_empty"}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="p-2 text-on-surface-variant hover:text-primary transition-colors" title="Xem transcript">
-                              <span className="material-symbols-outlined text-[18px]">description</span>
-                            </button>
-                            <button
-                              className="p-2 text-on-surface-variant hover:text-primary transition-colors"
-                              title="Xử lý lại"
-                              onClick={(e) => { e.stopPropagation(); showToast(`Bắt đầu xử lý lại: "${video.title}"`); }}
-                            >
-                              <span className="material-symbols-outlined text-[18px]">refresh</span>
-                            </button>
-                            <button className="p-2 text-on-surface-variant hover:text-error transition-colors" title="Xóa">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
-                          </div>
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              {video.hasTranscript ? (
+                                <span className="material-symbols-outlined text-green-600">check_circle</span>
+                              ) : video.aiStatus === "processing" ? (
+                                <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+                              ) : (
+                                <span className="material-symbols-outlined text-error">cancel</span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              {video.hasVectorDB ? (
+                                <span className="material-symbols-outlined text-green-600">database</span>
+                              ) : video.aiStatus === "embedding" ? (
+                                <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto" />
+                              ) : (
+                                <span className="material-symbols-outlined text-outline-variant">
+                                  {video.aiStatus === "error" ? "error" : "hourglass_empty"}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="p-2 text-on-surface-variant hover:text-primary transition-colors" title="Xem transcript">
+                                  <span className="material-symbols-outlined text-[18px]">description</span>
+                                </button>
+                                <button
+                                  className="p-2 text-on-surface-variant hover:text-primary transition-colors"
+                                  title="Xử lý lại"
+                                  onClick={(e) => { e.stopPropagation(); showToast(`Bắt đầu xử lý lại: "${video.title}"`); }}
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                                </button>
+                                <button className="p-2 text-on-surface-variant hover:text-error transition-colors" title="Xóa">
+                                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="px-5 py-10 text-center text-sm text-on-surface-variant italic">
+                          Không tìm thấy video nào phù hợp với bộ lọc hiện tại.
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
           {/* Pagination */}
           <div className="px-5 py-4 border-t border-outline-variant/30 bg-surface-container-low/30 flex items-center justify-between">
             <p className="text-sm text-on-surface-variant">
-              Hiển thị 1–4 trong tổng số <span className="font-bold">128</span> video
+              Hiển thị tổng cộng <span className="font-bold">{filteredVideos.length}</span> video
             </p>
             <div className="flex gap-2">
-              {[
-                { icon: "chevron_left", disabled: true },
-              ].map((btn, i) => (
-                <button key={i} disabled={btn.disabled} className="w-9 h-9 flex items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-all shadow-sm disabled:opacity-40">
-                  <span className="material-symbols-outlined">{btn.icon}</span>
-                </button>
-              ))}
-              {[1, 2, 3].map((p) => (
-                <button key={p} className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-semibold transition-all ${p === 1 ? "bg-primary text-white shadow-md shadow-primary/20" : "border border-outline-variant/30 text-on-surface-variant hover:bg-white shadow-sm"}`}>
-                  {p}
-                </button>
-              ))}
-              <button className="w-9 h-9 flex items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-all shadow-sm">
+              <button disabled className="w-9 h-9 flex items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-all shadow-sm disabled:opacity-40">
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button disabled className="w-9 h-9 flex items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-all shadow-sm disabled:opacity-40">
                 <span className="material-symbols-outlined">chevron_right</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Right detail panel */}
-        <aside className="hidden lg:flex w-96 border-l border-outline-variant/30 bg-white flex-col h-screen sticky top-0">
-          <div className="p-5 border-b border-outline-variant/20 flex items-center justify-between">
-            <h3 className="font-semibold text-on-surface truncate pr-4 text-sm">
-              {selectedVideo?.title ?? "Chi tiết video"}
-            </h3>
-            <button className="text-on-surface-variant hover:text-on-surface">
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
+        {/* 5. ẨN/HIỆN PANEL CHI TIẾT: Chỉ hiển thị thẻ <aside> khi selectedVideo có dữ liệu */}
+        {selectedVideo && (
+          <aside className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-outline-variant/30 bg-white flex flex-col lg:sticky lg:top-0 lg:h-screen shrink-0 shadow-2xl lg:shadow-none z-10">
+            <div className="p-5 border-b border-outline-variant/20 flex items-center justify-between">
+              <h3 className="font-semibold text-on-surface truncate pr-4 text-sm">
+                {selectedVideo.title}
+              </h3>
+              {/* Đóng panel bằng cách gán null cho selectedVideo */}
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-md hover:bg-error-container/50"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
 
-          <VideoDetailPanel video={selectedVideo} />
+            <VideoDetailPanel video={selectedVideo} />
 
-          <div className="p-5 border-t border-outline-variant/20 bg-surface-container-lowest">
-            <button className="w-full py-3.5 bg-error text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-error/20 hover:bg-error/90 active:scale-[0.98] transition-all text-sm">
-              <span className="material-symbols-outlined">delete_forever</span>
-              Xóa Video & Dữ liệu AI
-            </button>
-          </div>
-        </aside>
+            <div className="p-5 border-t border-outline-variant/20 bg-surface-container-lowest mt-auto">
+              <button className="w-full py-3.5 bg-error text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-error/20 hover:bg-error/90 active:scale-[0.98] transition-all text-sm">
+                <span className="material-symbols-outlined">delete_forever</span>
+                Xóa Video & Dữ liệu AI
+              </button>
+            </div>
+          </aside>
+        )}
       </div>
 
       <Toast message={toastMessage} visible={toastVisible} />
