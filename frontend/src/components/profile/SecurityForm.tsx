@@ -78,7 +78,7 @@ function PasswordInput({ label, placeholder, value, error, onChange }: PasswordI
 
   return (
     <label className="group block">
-      <span htmlFor={fieldName} className="mb-2 block text-sm font-bold text-slate-700 transition group-focus-within:text-indigo-600">
+      <span className="mb-2 block text-sm font-bold text-slate-700 transition group-focus-within:text-indigo-600">
         {label}
       </span>
       <input

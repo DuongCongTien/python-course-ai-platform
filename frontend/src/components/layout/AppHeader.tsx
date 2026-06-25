@@ -5,8 +5,10 @@ import { useAuth } from "../../context/AuthContext";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
+  { label: "Về chúng tôi", to: "/about" },
   { label: "Khóa học", to: "/courses" },
   { label: "AI Assistant", to: "/ai-assistant" },
+  { label: "Liên hệ", to: "/contact" },
 ];
 
 const getInitials = (name: string) =>
@@ -31,7 +33,7 @@ function AppHeader() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -72,15 +74,24 @@ function AppHeader() {
             </>
           ) : (
             <>
-              <Link
-                to="/profile"
-                className="focus-ring inline-flex items-center gap-3 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-xs font-extrabold text-white">
-                  {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full rounded-full object-cover" /> : getInitials(user?.fullName ?? "")}
-                </span>
-                <span>{user?.fullName}</span>
-              </Link>
+              {user?.role === "admin" ? (
+                <Link
+                  to="/admin"
+                  className="focus-ring inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                >
+                  Trang quản trị
+                </Link>
+              ) : (
+                <Link
+                  to="/profile"
+                  className="focus-ring inline-flex items-center gap-3 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-xs font-extrabold text-white">
+                    {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full rounded-full object-cover" /> : getInitials(user?.fullName ?? "")}
+                  </span>
+                  <span>{user?.fullName}</span>
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -96,6 +107,7 @@ function AppHeader() {
           type="button"
           className="focus-ring rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
           aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
+          aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((current) => !current)}
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -131,8 +143,12 @@ function AppHeader() {
               </>
             ) : (
               <>
-                <Link to="/profile" className="rounded-xl bg-slate-100 px-2 py-2.5 text-center text-xs font-semibold text-slate-700">
-                  Hồ sơ
+                <Link
+                  to={user?.role === "admin" ? "/admin" : "/profile"}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="rounded-xl bg-slate-100 px-2 py-2.5 text-center text-xs font-semibold text-slate-700"
+                >
+                  {user?.role === "admin" ? "Trang quản trị" : "Hồ sơ"}
                 </Link>
                 <button
                   type="button"

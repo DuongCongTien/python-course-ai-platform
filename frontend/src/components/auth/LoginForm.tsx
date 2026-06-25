@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 interface LoginFormErrors {
@@ -37,6 +37,10 @@ function LoginForm() {
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
+      ?.from;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,8 +57,24 @@ function LoginForm() {
 
     if (Object.keys(nextErrors).length === 0) {
       try {
-        await login(email.trim(), password);
-        navigate("/courses");
+        const authenticatedUser = await login(email.trim(), password);
+
+        if (authenticatedUser.role === "admin") {
+          navigate("/admin", { replace: true });
+          return;
+        }
+
+        const studentRedirect =
+          redirectTo?.pathname?.startsWith("/admin")
+            ? "/courses"
+            : redirectTo
+              ? `${redirectTo.pathname ?? "/courses"}${redirectTo.search ?? ""}${redirectTo.hash ?? ""}`
+              : "/courses";
+
+        navigate(
+          studentRedirect,
+          { replace: true },
+        );
       } catch (error) {
         setErrors({ submit: "Email hoặc mật khẩu không đúng." });
       }
@@ -189,8 +209,8 @@ function LoginForm() {
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <p className="font-semibold text-slate-900">Tài khoản test:</p>
-        <p>Email: <span className="font-medium text-slate-800">student@test.com</span></p>
-        <p>Mật khẩu: <span className="font-medium text-slate-800">123456</span></p>
+        <p>Học viên: <span className="font-medium text-slate-800">student@test.com / 123456</span></p>
+        <p>Admin: <span className="font-medium text-slate-800">admin@test.com / 123456</span></p>
       </div>
 
       <div className="my-7 flex items-center gap-3" aria-label="hoặc đăng nhập bằng">

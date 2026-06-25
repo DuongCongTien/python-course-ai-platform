@@ -1,5 +1,14 @@
-import { ArrowRight, Bot, Clock3, GraduationCap, PlayCircle, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Clock3,
+  GraduationCap,
+  LogIn,
+  PlayCircle,
+  Sparkles,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export type CourseLevel = "Cơ bản" | "Trung cấp" | "Nâng cao";
 
@@ -30,57 +39,70 @@ const levelClassName: Record<CourseLevel, string> = {
 };
 
 function CourseCard({ course }: CourseCardProps) {
-  const actionLabel = course.isLearning ? "Tiếp tục học" : "Xem chi tiết";
-  const actionTo = course.isLearning
-    ? `/learning/${course.id}/${course.lessonId ?? "lesson-1"}`
-    : `/courses/${course.id}`;
+  const { isAuthenticated } = useAuth();
+  const statusLabel = course.isLearning
+    ? "Đang học"
+    : course.progress === 100
+      ? "Đã hoàn thành"
+      : "Chưa đăng ký";
 
   return (
     <article className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-soft">
-      <div className={`relative min-h-44 overflow-hidden bg-gradient-to-br ${course.gradient} p-5 text-white`}>
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
-        <div className="absolute -bottom-12 left-8 h-36 w-36 rounded-full bg-slate-950/20 blur-3xl" />
+      <Link
+        to={`/courses/${course.id}`}
+        className="focus-ring block rounded-t-[28px]"
+        aria-label={`Xem chi tiết khóa học ${course.title}`}
+      >
+        <div className={`relative min-h-44 overflow-hidden bg-gradient-to-br ${course.gradient} p-5 text-white`}>
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+          <div className="absolute -bottom-12 left-8 h-36 w-36 rounded-full bg-slate-950/20 blur-3xl" />
 
-        <div className="relative z-10 flex flex-wrap gap-2">
-          {course.hasAI && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
-              <Bot size={13} />
-              AI Support
+          <div className="relative z-10 flex flex-wrap gap-2">
+            {course.hasAI && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+                <Bot size={13} aria-hidden={true} />
+                AI Support
+              </span>
+            )}
+            {course.popular && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
+                <Sparkles size={13} aria-hidden={true} />
+                Phổ biến nhất
+              </span>
+            )}
+            <span className="inline-flex rounded-full bg-slate-950/25 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+              {statusLabel}
             </span>
-          )}
-          {course.popular && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
-              <Sparkles size={13} />
-              Phổ biến nhất
-            </span>
-          )}
-        </div>
-
-        <div className="relative z-10 mt-9">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-            <GraduationCap size={28} />
           </div>
-          <p className="mt-4 max-w-xs text-lg font-extrabold leading-tight">{course.title}</p>
-        </div>
-      </div>
 
-      <div className="p-5 sm:p-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
-          <span className={`rounded-full px-3 py-1 ring-1 ${levelClassName[course.level]}`}>{course.level}</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-            <PlayCircle size={13} />
-            {course.lessons} bài học
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-            <Clock3 size={13} />
-            {course.duration}
-          </span>
+          <div className="relative z-10 mt-9">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+              <GraduationCap size={28} aria-hidden={true} />
+            </div>
+            <p className="mt-4 max-w-xs text-lg font-extrabold leading-tight">{course.title}</p>
+          </div>
         </div>
 
-        <h2 className="text-xl font-extrabold tracking-tight text-slate-950">{course.title}</h2>
-        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{course.description}</p>
+        <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <span className={`rounded-full px-3 py-1 ring-1 ${levelClassName[course.level]}`}>{course.level}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+              <PlayCircle size={13} aria-hidden={true} />
+              {course.lessons} bài học
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+              <Clock3 size={13} aria-hidden={true} />
+              {course.duration}
+            </span>
+          </div>
 
-        {course.isLearning && (
+          <h2 className="text-xl font-extrabold tracking-tight text-slate-950">{course.title}</h2>
+          <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{course.description}</p>
+        </div>
+      </Link>
+
+      <div className="p-5 pt-0 sm:p-6 sm:pt-0">
+        {isAuthenticated && course.isLearning && (
           <div className="mt-5 rounded-2xl bg-indigo-50/80 p-4">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="font-semibold text-slate-700">Tiến độ học tập</span>
@@ -95,13 +117,30 @@ function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
 
+        {!isAuthenticated && (
+          <div className="mt-5 flex items-start gap-2 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+            <LogIn size={17} className="mt-0.5 shrink-0 text-indigo-600" aria-hidden={true} />
+            Đăng nhập để theo dõi tiến độ học tập.
+          </div>
+        )}
+
         <Link
-          to={actionTo}
+          to={`/courses/${course.id}`}
           className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700 group-hover:shadow-md"
         >
-          {actionLabel}
-          <ArrowRight size={17} />
+          Xem chi tiết
+          <ArrowRight size={17} aria-hidden={true} />
         </Link>
+
+        {isAuthenticated && course.isLearning && (
+          <Link
+            to={`/learning/${course.id}/${course.lessonId ?? "lesson-1"}`}
+            className="focus-ring mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+          >
+            Tiếp tục học
+            <PlayCircle size={17} aria-hidden={true} />
+          </Link>
+        )}
       </div>
     </article>
   );

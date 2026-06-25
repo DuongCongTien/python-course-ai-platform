@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 interface SidebarProps {
     aiSystemStatus?: "online" | "offline";
@@ -17,14 +18,11 @@ const navItems = [
 function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
     const handleLogout = () => {
-        // 1. Phải xóa sạch Token / Session đã lưu khi đăng nhập thành công
-        localStorage.removeItem("token");
-        localStorage.removeItem("user"); // Xóa tùy theo cách bạn lưu dữ liệu auth
-
-        // 2. Chuyển hướng và XÓA LỊCH SỬ trang admin vừa đứng
-        navigate("/", { replace: true });
+        logout();
+        navigate("/login", { replace: true });
     };
 
     return (
@@ -32,8 +30,8 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
             {/* Logo */}
             <div className="px-6 py-8 flex items-center gap-3">
                 <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
-                    <span className="material-symbols-outlined text-white text-[20px]">
-                        person
+                    <span className="material-symbols-outlined text-white text-[20px]" aria-hidden={true}>
+                        admin_panel_settings
                     </span>
                 </div>
                 <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào!
@@ -57,8 +55,9 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                                 : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
                                 }`}
                         >
-                            <span
-                                className="material-symbols-outlined text-[22px]"
+                        <span
+                            className="material-symbols-outlined text-[22px]"
+                            aria-hidden={true}
                                 style={
                                     isActive
                                         ? { fontVariationSettings: "'FILL' 1" }
@@ -89,22 +88,34 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                 </div>
 
                 {/* Admin avatar */}
-                <div className="flex items-center gap-3 px-2 py-1">
-                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                        AD
+                <div className="mb-4 flex items-center gap-3 rounded-xl px-2 py-2">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden={true}>
+                            admin_panel_settings
+                        </span>
                     </div>
-                    <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-semibold truncate text-on-surface">Admin User</p>
-                        <p className="text-xs text-on-surface-variant truncate">Quản trị viên</p>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-on-surface">
+                            {user?.fullName ?? "Quản trị viên"}
+                        </p>
+                        <p className="text-xs text-on-surface-variant truncate">
+                            {user?.email ?? "admin@test.com"}
+                        </p>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-on-surface-variant hover:text-error transition-colors"
-                        title="Đăng xuất"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">logout</span>
-                    </button>
+                    <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase text-primary">
+                        Admin
+                    </span>
                 </div>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-error transition-colors hover:bg-error-container"
+                >
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden={true}>
+                        logout
+                    </span>
+                    Đăng xuất
+                </button>
             </div>
         </aside>
     );

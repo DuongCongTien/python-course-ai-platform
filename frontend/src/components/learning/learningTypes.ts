@@ -3,6 +3,11 @@ export interface Lesson {
   title: string;
   duration: string;
   status: "completed" | "current" | "locked";
+  slideFile?: {
+    fileName: string;
+    fileUrl: string;
+    fileSize: string;
+  };
 }
 
 export interface ChatMessage {
