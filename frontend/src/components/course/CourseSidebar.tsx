@@ -31,7 +31,7 @@ function CourseSidebar({ course, isAuthenticated }: CourseSidebarProps) {
             Bạn đã hoàn thành 6 trên tổng số 24 bài học.
           </p>
           <Link
-            to={`/learning/${course.id}/${course.firstLessonId}`}
+            to={`/learning/${course.id}/${course.currentLessonId ?? course.firstLessonId}`}
             className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
           >
             Tiếp tục bài học

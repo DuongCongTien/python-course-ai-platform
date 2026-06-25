@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 const courseDetail: CourseDetail = {
   id: "python-cho-nguoi-moi-bat-dau",
   firstLessonId: "lesson-1-1",
+  currentLessonId: "lesson-1-2",
   title: "Python cơ bản cho người mới bắt đầu",
   description:
     "Khóa học giúp học viên nắm vững cú pháp Python, biến, kiểu dữ liệu, điều kiện, vòng lặp, hàm và các ví dụ thực hành thông qua hệ thống học tập AI tiên tiến nhất.",
@@ -103,6 +104,13 @@ function CourseDetailPage() {
   const { courseId } = useParams();
   const { isAuthenticated } = useAuth();
   const course = { ...courseDetail, id: courseId ?? courseDetail.id };
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(
+    course.currentLessonId ?? null,
+  );
+
+  const handleSelectLesson = (lessonId: string) => {
+    setActiveLessonId(lessonId);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -115,6 +123,8 @@ function CourseDetailPage() {
               chapters={course.chapters}
               courseId={course.id}
               isAuthenticated={isAuthenticated}
+              activeLessonId={activeLessonId}
+              onSelectLesson={handleSelectLesson}
             />
             <CourseObjectives objectives={course.objectives} />
             <CourseAIFeatures features={course.aiFeatures} />

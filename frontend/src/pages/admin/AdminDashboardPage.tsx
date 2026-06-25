@@ -105,7 +105,12 @@ const aiQueryBars = [
 function AdminDashboardPage() {
   return (
     <AdminLayout>
-      <AdminHeader title="Dashboard" actionLabel="Tạo khóa học mới" actionIcon="add" />
+      <AdminHeader
+        title="Dashboard"
+        actionLabel="Tạo khóa học mới"
+        actionIcon="add"
+        onAction={() => console.log("Mock create course action")}
+      />
 
       <div className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
         {/* Page heading */}

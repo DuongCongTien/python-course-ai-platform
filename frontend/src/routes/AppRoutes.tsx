@@ -18,6 +18,7 @@ import LearningPage from "../pages/student/LearningPage";
 import MyProgressPage from "../pages/student/MyProgressPage";
 import ProfilePage from "../pages/student/ProfilePage";
 import ProfileActivitiesPage from "../pages/profile/ProfileActivitiesPage";
+import ProfileSettingsPage from "../pages/profile/ProfileSettingsPage";
 import QuizPage from "../pages/student/QuizPage";
 import QuizResultPage from "../pages/student/QuizResultPage";
 
@@ -67,7 +68,7 @@ function AppRoutes() {
           <Route path="/quiz/:lessonId/result" element={<QuizResultPage />} />
           <Route path="/my-progress" element={<MyProgressPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/settings" element={<ProfilePage />} />
+          <Route path="/profile/settings" element={<ProfileSettingsPage />} />
           <Route path="/profile/activities" element={<ProfileActivitiesPage />} />
         </Route>
 

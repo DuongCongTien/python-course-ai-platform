@@ -24,7 +24,7 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
       <div className="space-y-2 p-3">
         {lessons.map((lesson) => {
           const isLocked = lesson.status === "locked";
-          const isCurrent = lesson.id === selectedLessonId || lesson.status === "current";
+          const isCurrent = lesson.id === selectedLessonId;
           const isCompleted = lesson.status === "completed";
 
           return (
@@ -44,14 +44,14 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
               <div className="flex gap-3">
                 <span
                   className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                    isCompleted
-                      ? "bg-emerald-100 text-emerald-600"
-                      : isCurrent
-                        ? "bg-indigo-600 text-white"
+                    isCurrent
+                      ? "bg-indigo-600 text-white"
+                      : isCompleted
+                        ? "bg-emerald-100 text-emerald-600"
                         : "bg-slate-200 text-slate-500"
                   }`}
                 >
-                  {isCompleted ? <CheckCircle2 size={18} /> : isLocked ? <Lock size={17} /> : <PlayCircle size={18} />}
+                  {isLocked ? <Lock size={17} /> : isCompleted && !isCurrent ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-extrabold leading-5">{lesson.title}</span>
