@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 interface AdminHeaderProps {
   title: string;
@@ -9,44 +10,58 @@ interface AdminHeaderProps {
 
 function AdminHeader({ title, actionLabel, onAction, actionIcon = "add" }: AdminHeaderProps) {
   const [hasNotification] = useState(true);
+  const { user } = useAuth();
 
   return (
-    <header className="h-16 px-6 flex items-center justify-between bg-surface/80 backdrop-blur-xl border-b border-outline-variant/20 sticky top-0 z-20">
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-outline-variant/30 bg-surface/90 px-6 backdrop-blur-xl sm:px-8">
       {/* Search */}
-      <div className="hidden sm:flex items-center gap-3">
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
+      <div className="hidden w-full max-w-md items-center gap-3 sm:flex">
+        <div className="relative w-full">
+          <span
+            className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]"
+            aria-hidden={true}
+          >
             search
           </span>
           <input
-            type="text"
+            type="search"
+            name="adminSearch"
             placeholder="Tìm kiếm..."
-            className="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-sm w-56 focus:ring-2 focus:ring-primary/30 outline-none transition-all focus:w-72"
+            className="h-12 w-full rounded-full border border-outline-variant/30 bg-surface-container-low pl-12 pr-4 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
       </div>
       <h1 className="font-semibold text-on-surface text-base sm:hidden">{title}</h1>
       {/* Right controls */}
-      <div className="flex items-center gap-3 ml-auto">
+      <div className="ml-auto flex items-center gap-4 sm:gap-5">
         {/* Notification */}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
-          <span className="material-symbols-outlined text-on-surface-variant text-[22px]">notifications</span>
+        <button
+          type="button"
+          className="relative flex h-11 w-11 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+          aria-label="Xem thông báo"
+        >
+          <span className="material-symbols-outlined text-on-surface-variant text-[22px]" aria-hidden={true}>notifications</span>
           {hasNotification && (
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface" />
           )}
         </button>
-        <div className="w-px h-6 bg-outline-variant/30" />
+        <div className="h-8 w-px bg-outline-variant/30" />
         {/* Admin info */}
-        <div className="flex items-center gap-2.5 cursor-pointer group">
+        <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-on-surface leading-tight">Admin</p>
-            <p className="text-[10px] uppercase tracking-wider text-outline font-bold">Quản trị viên</p>
+            <p className="text-sm font-semibold text-on-surface leading-tight">
+              {user?.fullName ?? "Quản trị viên"}
+            </p>
+            <p className="mt-1 text-xs text-on-surface-variant">
+              {user?.email ?? "admin@test.com"}
+            </p>
           </div>
-          <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm border-2 border-primary/10 group-hover:border-primary transition-all">
-            AD
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/20 text-primary">
+            <span className="material-symbols-outlined text-[22px]" aria-hidden={true}>
+              admin_panel_settings
+            </span>
           </div>
         </div>
-        
       </div>
     </header>
   );
