@@ -1,4 +1,11 @@
-import { useState, useRef } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  useRef,
+  useState,
+} from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import AdminHeader from "../../components/admin/AdminHeader";
 
@@ -39,7 +46,49 @@ const recentUploads = [
 function VideoUploadPage() {
   const [uploadProgress] = useState(65);
   const [isDragging, setIsDragging] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [slideFile, setSlideFile] = useState<File | null>(null);
+  const [slideError, setSlideError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const slideInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSlideChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+
+    if (file && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setSlideFile(null);
+      setSlideError("Vui lòng chọn file PDF.");
+      event.target.value = "";
+      return;
+    }
+
+    setSlideFile(file);
+    setSlideError("");
+  };
+
+  const handleRemoveSlide = () => {
+    setSlideFile(null);
+    setSlideError("");
+    if (slideInputRef.current) slideInputRef.current.value = "";
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log({ videoFile, slideFile });
+  };
+
+  const handleVideoDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    setVideoFile(event.dataTransfer.files?.[0] ?? null);
+  };
+
+  const handleVideoZoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      fileInputRef.current?.click();
+    }
+  };
 
   return (
     <AdminLayout>
@@ -63,7 +112,7 @@ function VideoUploadPage() {
           {/* Upload form */}
           <div className="lg:col-span-7 space-y-5">
             <div className="bg-white border border-outline-variant/30 p-6 rounded-2xl shadow-sm">
-              <div className="space-y-5">
+              <form className="space-y-5" onSubmit={handleSubmit}>
                 {/* Course & lesson selectors */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -113,21 +162,113 @@ function VideoUploadPage() {
                   }`}
                   onDragEnter={() => setIsDragging(true)}
                   onDragLeave={() => setIsDragging(false)}
-                  onDrop={() => setIsDragging(false)}
-                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={handleVideoDrop}
+                  onClick={(event) => {
+                    if (event.target !== fileInputRef.current) {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  onKeyDown={handleVideoZoneKeyDown}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Chọn hoặc kéo thả video bài học"
                 >
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-1 transition-all ${isDragging ? "bg-primary/20 scale-110" : "bg-primary/10"}`}>
                     <span className="material-symbols-outlined text-primary text-4xl">cloud_upload</span>
                   </div>
                   <p className="font-semibold text-on-surface text-center">Kéo thả video vào đây hoặc chọn file</p>
                   <p className="text-sm text-on-surface-variant text-center">Hỗ trợ định dạng MP4, MOV · Tối đa 500MB</p>
-                  <input ref={fileInputRef} type="file" accept="video/*" className="hidden" />
+                  <label htmlFor="lesson-video" className="sr-only">
+                    Chọn video bài học
+                  </label>
+                  <input
+                    id="lesson-video"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(event) => setVideoFile(event.target.files?.[0] ?? null)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="lesson-slide"
+                    className="text-xs font-bold text-on-surface-variant uppercase tracking-wide"
+                  >
+                    Upload slide bài học
+                  </label>
+                  <label
+                    htmlFor="lesson-slide"
+                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-outline-variant/50 p-6 text-center transition-all hover:border-primary hover:bg-primary/5"
+                  >
+                    <span
+                      className="material-symbols-outlined text-4xl text-error"
+                      aria-hidden={true}
+                    >
+                      picture_as_pdf
+                    </span>
+                    <span className="text-sm font-semibold text-on-surface">
+                      Chọn slide PDF
+                    </span>
+                    <span className="text-xs text-on-surface-variant">
+                      Chỉ hỗ trợ file PDF. Học viên có thể tải slide này trong trang học bài.
+                    </span>
+                  </label>
+                  <input
+                    id="lesson-slide"
+                    ref={slideInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="sr-only"
+                    onChange={handleSlideChange}
+                    aria-describedby={slideError ? "slide-error" : "slide-helper"}
+                  />
+                  <p id="slide-helper" className="sr-only">
+                    Chỉ hỗ trợ file PDF.
+                  </p>
+
+                  {slideError && (
+                    <p id="slide-error" className="text-sm font-semibold text-error" role="alert">
+                      {slideError}
+                    </p>
+                  )}
+
+                  {slideFile && (
+                    <div className="flex items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low p-3">
+                      <span
+                        className="material-symbols-outlined text-3xl text-error"
+                        aria-hidden={true}
+                      >
+                        picture_as_pdf
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-on-surface">{slideFile.name}</p>
+                        <p className="text-xs text-on-surface-variant">
+                          {(slideFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveSlide}
+                        className="rounded-lg p-2 text-error transition-colors hover:bg-error-container"
+                        aria-label="Xóa file slide đã chọn"
+                      >
+                        <span className="material-symbols-outlined" aria-hidden={true}>
+                          delete
+                        </span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-on-surface-variant font-medium">Đang tải lên: Python_Lesson_01.mp4</span>
+                    <span className="text-on-surface-variant font-medium">
+                      Đang tải lên: {videoFile?.name ?? "Python_Lesson_01.mp4"}
+                    </span>
                     <span className="text-primary font-bold">{uploadProgress}%</span>
                   </div>
                   <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
@@ -140,16 +281,16 @@ function VideoUploadPage() {
 
                 {/* Action buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button className="flex-1 bg-primary text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-sm">
-                    <span className="material-symbols-outlined">upload</span>
+                  <button type="submit" className="flex-1 bg-primary text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-sm">
+                    <span className="material-symbols-outlined" aria-hidden={true}>upload</span>
                     Upload video
                   </button>
-                  <button className="flex-1 bg-secondary/10 text-secondary font-bold py-4 px-6 rounded-xl hover:bg-secondary/20 transition-all flex items-center justify-center gap-2 text-sm border border-secondary/20">
-                    <span className="material-symbols-outlined">auto_awesome</span>
+                  <button type="button" className="flex-1 bg-secondary/10 text-secondary font-bold py-4 px-6 rounded-xl hover:bg-secondary/20 transition-all flex items-center justify-center gap-2 text-sm border border-secondary/20">
+                    <span className="material-symbols-outlined" aria-hidden={true}>auto_awesome</span>
                     Bắt đầu xử lý AI
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
 
@@ -228,7 +369,7 @@ function VideoUploadPage() {
         <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center">
             <h3 className="font-bold text-on-surface">Video tải lên gần đây</h3>
-            <button className="text-primary text-sm font-bold hover:underline">Xem tất cả</button>
+            <button type="button" className="text-primary text-sm font-bold hover:underline">Xem tất cả</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -273,15 +414,15 @@ function VideoUploadPage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1">
                         {v.aiStatus === "error" ? (
-                          <button className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="Xử lý lại">
+                          <button type="button" className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="Xử lý lại">
                             <span className="material-symbols-outlined text-[20px]">refresh</span>
                           </button>
                         ) : (
-                          <button className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="Xem chi tiết">
+                          <button type="button" className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="Xem chi tiết">
                             <span className="material-symbols-outlined text-[20px]">visibility</span>
                           </button>
                         )}
-                        <button className="p-2 hover:bg-error-container text-error rounded-lg transition-colors" title="Xóa">
+                        <button type="button" className="p-2 hover:bg-error-container text-error rounded-lg transition-colors" title="Xóa">
                           <span className="material-symbols-outlined text-[20px]">delete</span>
                         </button>
                       </div>

@@ -8,16 +8,17 @@ interface Lesson {
   title: string;
   duration: string;
   hasVideo: boolean;
+  hasSlide: boolean;
   hasQuiz: boolean;
   status: "published" | "draft";
 }
 
 const mockLessons: Lesson[] = [
-  { id: 1, order: 1, title: "Bài 1: Giới thiệu Python", duration: "08:15", hasVideo: true, hasQuiz: true, status: "published" },
-  { id: 2, order: 2, title: "Bài 2: Biến và Kiểu dữ liệu", duration: "15:40", hasVideo: true, hasQuiz: true, status: "published" },
-  { id: 3, order: 3, title: "Bài 3: Cấu trúc điều kiện", duration: "10:20", hasVideo: false, hasQuiz: false, status: "draft" },
-  { id: 4, order: 4, title: "Bài 4: Vòng lặp for và while", duration: "18:05", hasVideo: true, hasQuiz: true, status: "published" },
-  { id: 5, order: 5, title: "Bài 5: Hàm và Module", duration: "22:30", hasVideo: false, hasQuiz: false, status: "draft" },
+  { id: 1, order: 1, title: "Bài 1: Giới thiệu Python", duration: "08:15", hasVideo: true, hasSlide: false, hasQuiz: true, status: "published" },
+  { id: 2, order: 2, title: "Bài 2: Biến và Kiểu dữ liệu", duration: "15:40", hasVideo: true, hasSlide: true, hasQuiz: true, status: "published" },
+  { id: 3, order: 3, title: "Bài 3: Cấu trúc điều kiện", duration: "10:20", hasVideo: false, hasSlide: false, hasQuiz: false, status: "draft" },
+  { id: 4, order: 4, title: "Bài 4: Vòng lặp for và while", duration: "18:05", hasVideo: true, hasSlide: true, hasQuiz: true, status: "published" },
+  { id: 5, order: 5, title: "Bài 5: Hàm và Module", duration: "22:30", hasVideo: false, hasSlide: false, hasQuiz: false, status: "draft" },
 ];
 
 const courses = ["Python cơ bản", "Python cho AI nâng cao", "Xử lý dữ liệu với Pandas", "Machine Learning căn bản"];
@@ -52,7 +53,7 @@ function LessonManagementPage() {
                 </div>
               </div>
 
-              <button className="bg-gradient-to-r from-primary to-secondary text-white px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm">
+              <button type="button" className="bg-gradient-to-r from-primary to-secondary text-white px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm">
                 <span className="material-symbols-outlined text-[20px]">add_circle</span>
                 Thêm bài học mới
               </button>
@@ -64,7 +65,7 @@ function LessonManagementPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                      {["Thứ tự", "Tên bài học", "Thời lượng", "Video", "Quiz", "Trạng thái", "Hành động"].map((h) => (
+                      {["Thứ tự", "Tên bài học", "Thời lượng", "Video", "Slide", "Quiz", "Trạng thái", "Hành động"].map((h) => (
                         <th key={h} className={`px-5 py-4 text-[11px] font-bold text-outline uppercase tracking-wider ${h === "Hành động" ? "text-right" : ""}`}>
                           {h}
                         </th>
@@ -107,6 +108,24 @@ function LessonManagementPage() {
                             </span>
                           )}
                         </td>
+                        <td className="px-5 py-4">
+                          {lesson.hasSlide ? (
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+                                Có PDF
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(event) => event.stopPropagation()}
+                                className="text-xs font-bold text-primary hover:underline"
+                              >
+                                Xem
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-medium text-outline-variant">Chưa có</span>
+                          )}
+                        </td>
                         <td className="px-5 py-4 text-sm text-on-surface-variant font-medium">
                           {lesson.hasQuiz ? "Có" : <span className="opacity-50">Không</span>}
                         </td>
@@ -123,16 +142,17 @@ function LessonManagementPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-outline hover:text-primary transition-colors">
+                            <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-outline hover:text-primary transition-colors">
                               <span className="material-symbols-outlined text-[18px]">visibility</span>
                             </button>
                             <button
+                              type="button"
                               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-outline hover:text-primary transition-colors"
                               onClick={(e) => { e.stopPropagation(); setSelectedLesson(lesson); }}
                             >
                               <span className="material-symbols-outlined text-[18px]">edit</span>
                             </button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container text-error transition-colors">
+                            <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container text-error transition-colors">
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                           </div>
@@ -149,10 +169,10 @@ function LessonManagementPage() {
                   Hiển thị <span className="font-bold">1–5</span> trên <span className="font-bold">45</span> bài học
                 </p>
                 <div className="flex gap-2">
-                  <button disabled className="p-2 rounded-lg border border-outline-variant/30 hover:bg-white transition-colors disabled:opacity-40">
+                  <button type="button" disabled className="p-2 rounded-lg border border-outline-variant/30 hover:bg-white transition-colors disabled:opacity-40">
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
-                  <button className="p-2 rounded-lg border border-outline-variant/30 hover:bg-white transition-colors">
+                  <button type="button" className="p-2 rounded-lg border border-outline-variant/30 hover:bg-white transition-colors">
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
@@ -170,7 +190,7 @@ function LessonManagementPage() {
               </span>
               <h2 className="font-bold text-lg tracking-tight">Thông tin bài học</h2>
             </div>
-            <button className="text-outline hover:text-error transition-colors">
+            <button type="button" className="text-outline hover:text-error transition-colors">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -216,7 +236,7 @@ function LessonManagementPage() {
               <div className="border border-outline-variant/50 rounded-xl overflow-hidden">
                 <div className="bg-surface-container-low p-2 flex gap-1 border-b border-outline-variant/30">
                   {["format_bold", "format_italic", "format_list_bulleted", "link", "code"].map((icon) => (
-                    <button key={icon} className="w-8 h-8 rounded hover:bg-white text-outline-variant flex items-center justify-center">
+                    <button type="button" key={icon} className="w-8 h-8 rounded hover:bg-white text-outline-variant flex items-center justify-center">
                       <span className="material-symbols-outlined text-[18px]">{icon}</span>
                     </button>
                   ))}
@@ -241,6 +261,33 @@ function LessonManagementPage() {
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <label
+                htmlFor="lesson-slide-edit"
+                className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide"
+              >
+                Slide bài học
+              </label>
+              <label
+                htmlFor="lesson-slide-edit"
+                className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 p-5 transition-colors hover:bg-surface-container-low"
+              >
+                <span className="material-symbols-outlined text-3xl text-error" aria-hidden={true}>
+                  picture_as_pdf
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-outline">
+                  Upload hoặc thay slide PDF
+                </span>
+                <span className="text-[10px] text-outline-variant">Chỉ hỗ trợ PDF</span>
+              </label>
+              <input
+                id="lesson-slide-edit"
+                type="file"
+                accept=".pdf,application/pdf"
+                className="sr-only"
+              />
+            </div>
+
             {/* Status */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Trạng thái</label>
@@ -260,10 +307,10 @@ function LessonManagementPage() {
           </div>
 
           <div className="p-5 border-t border-outline-variant/30 bg-surface-bright grid grid-cols-2 gap-3">
-            <button className="py-3 border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-surface transition-colors text-sm">
+            <button type="button" className="py-3 border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-surface transition-colors text-sm">
               Hủy
             </button>
-            <button className="py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm">
+            <button type="button" className="py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm">
               Lưu thay đổi
             </button>
           </div>

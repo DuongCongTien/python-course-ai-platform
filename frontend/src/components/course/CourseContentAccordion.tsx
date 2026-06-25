@@ -1,12 +1,15 @@
-import { CheckCircle2, ChevronDown, ListChecks, Unlock } from "lucide-react";
+import { CheckCircle2, ChevronDown, ListChecks, Lock, Unlock } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { type CourseChapter, type LessonItem } from "./courseDetailTypes";
 
 interface CourseContentAccordionProps {
   chapters: CourseChapter[];
+  courseId: string;
+  isAuthenticated: boolean;
 }
 
-function CourseContentAccordion({ chapters }: CourseContentAccordionProps) {
+function CourseContentAccordion({ chapters, courseId, isAuthenticated }: CourseContentAccordionProps) {
   const [activeChapterId, setActiveChapterId] = useState(chapters[0]?.id ?? "");
 
   const toggleChapter = (chapterId: string) => {
@@ -55,7 +58,12 @@ function CourseContentAccordion({ chapters }: CourseContentAccordionProps) {
                   {chapter.lessons ? (
                     <div className="space-y-3">
                       {chapter.lessons.map((lesson) => (
-                        <LessonRow key={lesson.id} lesson={lesson} />
+                        <LessonRow
+                          key={lesson.id}
+                          lesson={lesson}
+                          courseId={courseId}
+                          isAuthenticated={isAuthenticated}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -75,28 +83,58 @@ function CourseContentAccordion({ chapters }: CourseContentAccordionProps) {
 
 interface LessonRowProps {
   lesson: LessonItem;
+  courseId: string;
+  isAuthenticated: boolean;
 }
 
-function LessonRow({ lesson }: LessonRowProps) {
+function LessonRow({ lesson, courseId, isAuthenticated }: LessonRowProps) {
   const isCompleted = lesson.status === "completed";
+  const destination = isAuthenticated
+    ? `/learning/${courseId}/${lesson.id}`
+    : "/login";
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-3">
+    <Link
+      to={destination}
+      state={isAuthenticated ? undefined : { from: { pathname: `/learning/${courseId}/${lesson.id}` } }}
+      className="focus-ring flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-3 transition hover:bg-indigo-50"
+      aria-label={
+        isAuthenticated
+          ? `Học ${lesson.title}`
+          : `Đăng nhập để học bài ${lesson.title}`
+      }
+    >
       <div className="flex items-center gap-3">
         <span
           className={`flex h-9 w-9 items-center justify-center rounded-full ${
-            isCompleted ? "bg-emerald-100 text-emerald-600" : "bg-indigo-100 text-indigo-600"
+            !isAuthenticated
+              ? "bg-slate-200 text-slate-500"
+              : isCompleted
+                ? "bg-emerald-100 text-emerald-600"
+                : "bg-indigo-100 text-indigo-600"
           }`}
         >
-          {isCompleted ? <CheckCircle2 size={18} /> : <Unlock size={18} />}
+          {!isAuthenticated ? (
+            <Lock size={18} aria-hidden={true} />
+          ) : isCompleted ? (
+            <CheckCircle2 size={18} aria-hidden={true} />
+          ) : (
+            <Unlock size={18} aria-hidden={true} />
+          )}
         </span>
         <div>
           <p className="text-sm font-bold text-slate-900">{lesson.title}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{isCompleted ? "Đã hoàn thành" : "Sẵn sàng học"}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {!isAuthenticated
+              ? "Đăng nhập để học bài này"
+              : isCompleted
+                ? "Đã hoàn thành"
+                : "Sẵn sàng học"}
+          </p>
         </div>
       </div>
       <span className="text-sm font-bold text-slate-500">{lesson.duration}</span>
-    </div>
+    </Link>
   );
 }
 

@@ -7,6 +7,7 @@ import CourseHero from "../../components/course/CourseHero";
 import CourseObjectives from "../../components/course/CourseObjectives";
 import CourseSidebar from "../../components/course/CourseSidebar";
 import { type CourseDetail } from "../../components/course/courseDetailTypes";
+import { useAuth } from "../../context/AuthContext";
 
 const courseDetail: CourseDetail = {
   id: "python-cho-nguoi-moi-bat-dau",
@@ -100,6 +101,7 @@ const navigation = [
 
 function CourseDetailPage() {
   const { courseId } = useParams();
+  const { isAuthenticated } = useAuth();
   const course = { ...courseDetail, id: courseId ?? courseDetail.id };
 
   return (
@@ -109,12 +111,16 @@ function CourseDetailPage() {
 
         <section className="page-container grid gap-8 py-10 lg:grid-cols-[1fr_360px] lg:py-14 xl:grid-cols-[1fr_400px]">
           <div className="space-y-8">
-            <CourseContentAccordion chapters={course.chapters} />
+            <CourseContentAccordion
+              chapters={course.chapters}
+              courseId={course.id}
+              isAuthenticated={isAuthenticated}
+            />
             <CourseObjectives objectives={course.objectives} />
             <CourseAIFeatures features={course.aiFeatures} />
           </div>
 
-          <CourseSidebar course={course} />
+          <CourseSidebar course={course} isAuthenticated={isAuthenticated} />
         </section>
       </main>
 

@@ -1,237 +1,266 @@
-import { useEffect, useRef, useState } from "react";
-import { Braces, Menu, X } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
-import AIAssistantSidebar from "../../components/ai/AIAssistantSidebar";
-import ChatHeader from "../../components/ai/ChatHeader";
-import ChatInput from "../../components/ai/ChatInput";
-import ChatMessage from "../../components/ai/ChatMessage";
-import SuggestedQuestionChips from "../../components/ai/SuggestedQuestionChips";
-import { type ChatMessage as ChatMessageType, type LearningProgressItem, type SuggestedQuestion } from "../../components/ai/aiTypes";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Bot, MessageSquarePlus, Send, UserRound } from "lucide-react";
 
-const initialMessages: ChatMessageType[] = [
+interface ChatSession {
+  id: string;
+  title: string;
+  time: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "assistant" | "user";
+  content: string;
+}
+
+const initialSessions: ChatSession[] = [
+  { id: "list-comprehension", title: "Giải thích list comprehension", time: "10 phút trước" },
+  { id: "for-loop", title: "Hỏi về vòng lặp for", time: "Hôm qua" },
   {
-    id: "assistant-1",
-    role: "assistant",
-    time: "10:24 AM",
-    content:
-      "Chào bạn! Tôi là trợ lý AI đồng hành cùng bạn trong khóa học Python. Bạn đang ở bài Vòng lặp For và While. Bạn có thắc mắc gì về cách sử dụng vòng lặp không?",
+    id: "variables",
+    title: "Tóm tắt bài học biến và kiểu dữ liệu",
+    time: "2 ngày trước",
   },
+];
+
+const initialMessages: ChatMessage[] = [
   {
     id: "user-1",
     role: "user",
-    time: "10:25 AM",
-    content: "Giúp mình phân biệt khi nào dùng for và khi nào dùng while với?",
+    content: "List comprehension là gì?",
   },
   {
-    id: "assistant-2",
+    id: "assistant-1",
     role: "assistant",
-    time: "10:25 AM",
     content:
-      "Câu hỏi rất hay! Đơn giản nhất:\n\n• For: Dùng khi bạn biết trước số lần lặp, ví dụ lặp qua danh sách.\n• While: Dùng khi bạn lặp cho đến khi một điều kiện nào đó không còn đúng.",
-    code: `# Dùng FOR khi lặp qua list
-fruits = ["táo", "chuối", "cam"]
-
-for fruit in fruits:
-    print(fruit)
-
-# Dùng WHILE khi chờ điều kiện
-count = 0
-
-while count < 3:
-    print("Số lần:", count)
-    count += 1`,
-    source: "Nguồn: Giáo trình Bài 4.2",
+      "List comprehension là cú pháp ngắn gọn để tạo list mới từ một iterable trong Python.",
   },
-];
-
-const suggestedQuestions: SuggestedQuestion[] = [
-  { id: "nested-loop", label: "Ví dụ về vòng lặp lồng nhau" },
-  { id: "break-continue", label: "Lệnh break và continue" },
-  { id: "practice", label: "Luyện tập bài này" },
-];
-
-const progressItems: LearningProgressItem[] = [
-  { id: "variables", title: "Biến và kiểu dữ liệu", status: "completed" },
-  { id: "loops", title: "Vòng lặp For và While", status: "current" },
-  { id: "functions", title: "Hàm và Module", status: "pending" },
-];
-
-const navigation = [
-  { label: "Trang chủ", to: "/" },
-  { label: "Khóa học", to: "/courses" },
-  { label: "AI Assistant", to: "/ai-assistant" },
 ];
 
 function AIAssistantPage() {
-  const [messages, setMessages] = useState<ChatMessageType[]>(initialMessages);
+  const [sessions, setSessions] = useState(initialSessions);
+  const [activeSessionId, setActiveSessionId] = useState(initialSessions[0].id);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const responseTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = (value = inputValue) => {
-    const trimmedValue = value.trim();
-    if (!trimmedValue || isTyping) return;
+  useEffect(
+    () => () => {
+      if (responseTimerRef.current) {
+        window.clearTimeout(responseTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleNewSession = () => {
+    if (responseTimerRef.current) {
+      window.clearTimeout(responseTimerRef.current);
+      responseTimerRef.current = null;
+    }
+
+    const id = `session-${Date.now()}`;
+    const nextSession: ChatSession = {
+      id,
+      title: "Cuộc trò chuyện mới",
+      time: "Vừa xong",
+    };
+
+    setSessions((current) => [nextSession, ...current]);
+    setActiveSessionId(id);
+    setMessages([]);
+    setInputValue("");
+    setIsTyping(false);
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    if (responseTimerRef.current) {
+      window.clearTimeout(responseTimerRef.current);
+      responseTimerRef.current = null;
+    }
+
+    setActiveSessionId(sessionId);
+    setMessages(initialMessages);
+    setInputValue("");
+    setIsTyping(false);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const question = inputValue.trim();
+    if (!question || isTyping) return;
 
     setMessages((current) => [
       ...current,
-      { id: `user-${Date.now()}`, role: "user", content: trimmedValue, time: "Vừa xong" },
+      { id: `user-${Date.now()}`, role: "user", content: question },
     ]);
     setInputValue("");
     setIsTyping(true);
 
-    window.setTimeout(() => {
+    setSessions((current) =>
+      current.map((session) =>
+        session.id === activeSessionId && session.title === "Cuộc trò chuyện mới"
+          ? { ...session, title: question.slice(0, 48), time: "Vừa xong" }
+          : session,
+      ),
+    );
+
+    responseTimerRef.current = window.setTimeout(() => {
       setMessages((current) => [
         ...current,
         {
           id: `assistant-${Date.now()}`,
           role: "assistant",
           content:
-            "AI đang dựa trên nội dung bài học và transcript để trả lời câu hỏi của bạn. Phần kết nối backend/RAG sẽ được tích hợp ở giai đoạn sau.",
-          time: "Vừa xong",
+            "Đây là phản hồi AI mô phỏng. Bạn có thể tiếp tục đặt câu hỏi về Python và nội dung khóa học.",
         },
       ]);
       setIsTyping(false);
-    }, 1200);
+      responseTimerRef.current = null;
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="page-container grid gap-6 py-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <AIAssistantSidebar progressItems={progressItems} />
+    <div className="page-container py-6 lg:py-8">
+      <div className="grid min-h-[calc(100vh-210px)] overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-card lg:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="border-b border-slate-200 bg-slate-50/80 p-4 lg:border-b-0 lg:border-r lg:p-5">
+          <h1 className="text-lg font-extrabold text-slate-950">Lịch sử trò chuyện</h1>
+          <button
+            type="button"
+            onClick={handleNewSession}
+            className="focus-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
+          >
+            <MessageSquarePlus size={18} aria-hidden={true} />
+            Cuộc trò chuyện mới
+          </button>
 
-        <section className="flex min-h-[calc(100vh-180px)] flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-card">
-          <ChatHeader />
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-2 lg:overflow-visible">
+            {sessions.map((session) => {
+              const isActive = session.id === activeSessionId;
 
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50/70 p-4 sm:p-6">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-            {isTyping && <TypingIndicator />}
+              return (
+                <button
+                  key={session.id}
+                  type="button"
+                  onClick={() => handleSelectSession(session.id)}
+                  className={`focus-ring min-w-64 rounded-2xl px-4 py-3 text-left transition lg:w-full ${
+                    isActive
+                      ? "bg-indigo-100 text-indigo-950"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="block truncate text-sm font-bold">{session.title}</span>
+                  <span className="mt-1 block text-xs text-slate-500">{session.time}</span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <section className="flex min-h-[620px] min-w-0 flex-col">
+          <header className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <h2 className="font-extrabold text-slate-950">AI Assistant</h2>
+            <p className="mt-1 text-sm text-slate-500">Hỏi đáp nhanh về Python</p>
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50/50 p-4 sm:p-6">
+            {messages.length === 0 && (
+              <div className="flex h-full min-h-80 flex-col items-center justify-center text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+                  <Bot size={28} aria-hidden={true} />
+                </span>
+                <h3 className="mt-4 text-lg font-extrabold text-slate-950">
+                  Bắt đầu cuộc trò chuyện mới
+                </h3>
+                <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                  Nhập câu hỏi về Python để nhận phản hồi AI mô phỏng.
+                </p>
+              </div>
+            )}
+
+            {messages.map((message) => {
+              const isUser = message.role === "user";
+
+              return (
+                <div
+                  key={message.id}
+                  className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+                >
+                  {!isUser && (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                      <Bot size={18} aria-hidden={true} />
+                    </span>
+                  )}
+                  <p
+                    className={`max-w-[82%] rounded-3xl px-4 py-3 text-sm leading-6 shadow-sm ${
+                      isUser
+                        ? "rounded-tr-md bg-indigo-600 text-white"
+                        : "rounded-tl-md bg-white text-slate-700"
+                    }`}
+                  >
+                    {message.content}
+                  </p>
+                  {isUser && (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600">
+                      <UserRound size={18} aria-hidden={true} />
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
+            {isTyping && (
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                  <Bot size={18} aria-hidden={true} />
+                </span>
+                <div className="rounded-2xl bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+                  AI đang trả lời
+                  <span className="ml-1 animate-pulse">...</span>
+                </div>
+              </div>
+            )}
             <div ref={chatEndRef} />
           </div>
 
-          <div className="space-y-4 border-t border-slate-100 bg-white p-4 sm:p-5">
-            <SuggestedQuestionChips questions={suggestedQuestions} onSelect={sendMessage} />
-            <ChatInput value={inputValue} isTyping={isTyping} onChange={setInputValue} onSend={() => sendMessage()} />
-          </div>
+          <form onSubmit={handleSubmit} className="border-t border-slate-100 bg-white p-4 sm:p-5">
+            <div className="flex items-end gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100">
+              <label htmlFor="ai-question" className="sr-only">
+                Câu hỏi dành cho AI Assistant
+              </label>
+              <textarea
+                id="ai-question"
+                rows={1}
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                placeholder="Nhập câu hỏi của bạn về Python..."
+                className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              />
+              <button
+                type="submit"
+                disabled={isTyping || !inputValue.trim()}
+                className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send size={17} aria-hidden={true} />
+                Gửi
+              </button>
+            </div>
+          </form>
         </section>
-      </main>
-
-    </div>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-3 text-sm text-slate-500">
-      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <span className="mr-3 font-medium">AI đang suy nghĩ...</span>
-        {[0, 1, 2].map((item) => (
-          <span
-            key={item}
-            className="typing-dot mx-0.5 inline-block h-2 w-2 rounded-full bg-indigo-500"
-            style={{ animationDelay: `${item * 0.15}s` }}
-          />
-        ))}
       </div>
     </div>
-  );
-}
-
-function AIAssistantNavbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-      <div className="page-container flex h-[72px] items-center justify-between py-3">
-        <Link to="/" className="focus-ring flex items-center gap-2 rounded-lg" aria-label="Python AI Learning">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white shadow-lg shadow-indigo-200">
-            <Braces size={21} strokeWidth={2.5} />
-          </span>
-          <span className="text-base font-extrabold tracking-tight text-slate-950 sm:text-lg">
-            Python <span className="text-indigo-600">AI</span> Learning
-          </span>
-        </Link>
-
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Điều hướng chính">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={({ isActive }) =>
-                `focus-ring rounded px-1 py-2 text-sm font-semibold transition-colors ${
-                  isActive ? "text-indigo-600" : "text-slate-600 hover:text-indigo-600"
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-2 sm:flex">
-          <Link to="/login" className="focus-ring rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-indigo-600">
-            Đăng nhập
-          </Link>
-          <Link to="/register" className="focus-ring rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700">
-            Đăng ký
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          className="focus-ring rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
-          aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <nav className="page-container flex flex-col gap-1 border-t border-slate-100 bg-white py-4 md:hidden">
-          {navigation.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              onClick={() => setIsMenuOpen(false)}
-              className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                item.to === "/ai-assistant" ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-indigo-50"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      )}
-    </header>
-  );
-}
-
-function AIAssistantFooter() {
-  const links = ["Về chúng tôi", "Điều khoản dịch vụ", "Chính sách bảo mật", "Liên hệ", "Hướng dẫn"];
-
-  return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="page-container flex flex-col gap-4 py-7 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="font-extrabold text-slate-950">Python AI Learning</p>
-          <p className="mt-1 text-sm text-slate-500">© 2024 Python AI Learning. Nâng tầm tri thức công nghệ Việt.</p>
-        </div>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2">
-          {links.map((link) => (
-            <Link key={link} to="/" className="text-sm font-medium text-slate-500 transition hover:text-indigo-600">
-              {link}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </footer>
   );
 }
 

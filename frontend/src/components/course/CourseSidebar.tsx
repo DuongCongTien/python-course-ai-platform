@@ -5,6 +5,7 @@ import { type CourseDetail } from "./courseDetailTypes";
 
 interface CourseSidebarProps {
   course: CourseDetail;
+  isAuthenticated: boolean;
 }
 
 const extras = [
@@ -14,27 +15,43 @@ const extras = [
   { label: "Cập nhật nội dung trọn đời", icon: RefreshCw },
 ];
 
-function CourseSidebar({ course }: CourseSidebarProps) {
+function CourseSidebar({ course, isAuthenticated }: CourseSidebarProps) {
   return (
     <aside className="space-y-5 lg:sticky lg:top-24">
-      <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-card">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold text-slate-950">Tiến độ của bạn</h2>
-          <span className="text-2xl font-extrabold text-indigo-600">25%</span>
+      {isAuthenticated ? (
+        <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-card">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-extrabold text-slate-950">Tiến độ của bạn</h2>
+            <span className="text-2xl font-extrabold text-indigo-600">25%</span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500" />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Bạn đã hoàn thành 6 trên tổng số 24 bài học.
+          </p>
+          <Link
+            to={`/learning/${course.id}/${course.firstLessonId}`}
+            className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
+          >
+            Tiếp tục bài học
+          </Link>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500" />
+      ) : (
+        <div className="rounded-[26px] border border-indigo-100 bg-indigo-50/70 p-5 shadow-card">
+          <h2 className="text-lg font-extrabold text-slate-950">Theo dõi tiến độ học tập</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Đăng nhập để xem tiến độ học tập của bạn.
+          </p>
+          <Link
+            to="/login"
+            state={{ from: { pathname: `/courses/${course.id}` } }}
+            className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
+          >
+            Đăng nhập ngay
+          </Link>
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          Bạn đã hoàn thành 6 trên tổng số 24 bài học.
-        </p>
-        <Link
-          to={`/learning/${course.id}/${course.firstLessonId}`}
-          className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
-        >
-          Tiếp tục bài học
-        </Link>
-      </div>
+      )}
 
       <InstructorCard />
 
