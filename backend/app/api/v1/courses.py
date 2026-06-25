@@ -1,23 +1,25 @@
-# backend/app/api/v1/auth.py
-from fastapi import APIRouter, status, Query
-# Import cấu trúc đầu vào (Schema) và tầng xử lý (Service)
-from backend.app.schemas.auth import UserRegisterInput, UserLoginInput
-from backend.app.services.auth_service import AuthService
+# backend/app/api/v1/courses.py
+from fastapi import APIRouter, status, Depends
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.services.course_service import CoursesService
 
 router = APIRouter()
 
-# khóa học --------------------------------------
 @router.get("/", status_code=status.HTTP_200_OK)
-def get_all_courses():
-    """
-    API Lấy danh sách toàn bộ khóa học để hiển thị lên Trang chủ / Trang khóa học (Tuần 2)
-    """
-    # 1. Gọi sang tầng Service để xử lý kéo dữ liệu từ DB
-    courses_list = CoursesService.get_all_published_courses()
-    
-    # 2. Trả dữ liệu JSON chuẩn về cho Frontend React
+def get_all_published_courses(db = Depends(get_db)):
+    courses_list = CoursesService.get_all_published_courses(db = db)
     return {
         "status": "success",
-        "results": len(courses_list),
+        "count": len(courses_list),
         "data": courses_list
     }
+
+@router.get("/{id}", status_code=status.HTTP_200_OK)
+def get_course_by_id(id: int, db = Depends(get_db)):
+    course = CoursesService.get_course_by_id(id=id, db=db)
+    return {
+        "status": "success",
+        "results": course
+    }
+    
