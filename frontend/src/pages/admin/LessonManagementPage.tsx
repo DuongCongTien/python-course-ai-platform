@@ -11,7 +11,10 @@ interface Lesson {
   hasSlide: boolean;
   hasQuiz: boolean;
   status: "published" | "draft";
+  course: string;
 }
+
+const courses = ["Python cơ bản", "Python cho AI nâng cao", "Xử lý dữ liệu với Pandas", "Machine Learning căn bản"];
 
 const mockLessons: Lesson[] = [
   { id: 1, order: 1, title: "Bài 1: Giới thiệu Python", duration: "08:15", hasVideo: true, hasSlide: false, hasQuiz: true, status: "published" },
@@ -21,31 +24,50 @@ const mockLessons: Lesson[] = [
   { id: 5, order: 5, title: "Bài 5: Hàm và Module", duration: "22:30", hasVideo: false, hasSlide: false, hasQuiz: false, status: "draft" },
 ];
 
-const courses = ["Python cơ bản", "Python cho AI nâng cao", "Xử lý dữ liệu với Pandas", "Machine Learning căn bản"];
-
 function LessonManagementPage() {
-  const [selectedLesson, setSelectedLesson] = useState<Lesson>(mockLessons[2]);
-  const [selectedCourse, setSelectedCourse] = useState(courses[0]);
+  // 1. Đổi giá trị mặc định thành chuỗi rỗng "" (Đại diện cho "Tất cả")
+  const [selectedCourse, setSelectedCourse] = useState("");
+  
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+
+  // 2. Cập nhật logic lọc: Nếu selectedCourse là "" thì giữ lại tất cả, ngược lại thì lọc theo tên khóa học
+  const filteredLessons = mockLessons.filter(lesson => 
+    selectedCourse === "" || lesson.course === selectedCourse
+  );
+
+  const handleAddNew = () => {
+    setSelectedLesson(null);
+    setIsPanelOpen(true);
+  };
+
+  const handleEdit = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    setIsPanelOpen(true);
+  };
 
   return (
     <AdminLayout>
       <AdminHeader title="Quản lý bài học" />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Center content */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
+      <div className="flex flex-1 flex-col lg:flex-row relative">
+        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
           <div className="p-6 space-y-5">
-            {/* Controls row */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <label className="text-sm font-medium text-on-surface-variant whitespace-nowrap">Chọn khóa học:</label>
                 <div className="relative w-full sm:w-72">
                   <select
                     value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                    className="w-full pl-4 pr-10 py-2.5 bg-white border border-outline-variant/50 rounded-xl appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm font-medium"
+                    onChange={(e) => {
+                      setSelectedCourse(e.target.value);
+                      setIsPanelOpen(false);
+                    }}
+                    className="w-full pl-4 pr-10 py-2.5 bg-white border border-outline-variant/50 rounded-xl appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm font-medium cursor-pointer"
                   >
-                    {courses.map((c) => <option key={c}>{c}</option>)}
+                    {/* 3. Thêm tùy chọn "Tất cả khóa học" có value="" */}
+                    <option value="">Tất cả khóa học</option>
+                    {courses.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">
                     expand_more
@@ -59,7 +81,6 @@ function LessonManagementPage() {
               </button>
             </div>
 
-            {/* Table */}
             <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -158,15 +179,14 @@ function LessonManagementPage() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
 
-              {/* Pagination */}
               <div className="px-5 py-4 flex items-center justify-between border-t border-outline-variant/20 bg-surface-container-low/20">
                 <p className="text-sm text-on-surface-variant">
-                  Hiển thị <span className="font-bold">1–5</span> trên <span className="font-bold">45</span> bài học
+                  Hiển thị <span className="font-bold">{filteredLessons.length}</span> bài học
                 </p>
                 <div className="flex gap-2">
                   <button type="button" disabled className="p-2 rounded-lg border border-outline-variant/30 hover:bg-white transition-colors disabled:opacity-40">
@@ -181,54 +201,66 @@ function LessonManagementPage() {
           </div>
         </div>
 
-        {/* Right panel - Lesson form */}
-        <aside className="hidden lg:flex w-[400px] bg-white border-l border-outline-variant/30 flex-col h-screen sticky top-0 shadow-2xl z-10">
-          <div className="p-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-bright">
-            <div className="flex items-center gap-2 text-primary">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                edit_note
-              </span>
-              <h2 className="font-bold text-lg tracking-tight">Thông tin bài học</h2>
+        {isPanelOpen && (
+          <aside className="w-full lg:w-[400px] bg-white border-t lg:border-t-0 lg:border-l border-outline-variant/30 flex flex-col lg:sticky lg:top-0 lg:h-screen lg:shadow-2xl z-10 shrink-0">
+            <div className="p-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-bright">
+              <div className="flex items-center gap-2 text-primary">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {selectedLesson ? "edit_note" : "add_box"}
+                </span>
+                <h2 className="font-bold text-lg tracking-tight">
+                  {selectedLesson ? "Chỉnh sửa bài học" : "Thêm bài học mới"}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setIsPanelOpen(false)}
+                className="text-outline hover:text-error transition-colors p-1 rounded-md hover:bg-error-container/50"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
             <button type="button" className="text-outline hover:text-error transition-colors">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            {/* Lesson name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
-                Tên bài học <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                value={selectedLesson?.title ?? ""}
-                onChange={() => {}}
-                className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
-              />
-            </div>
+            <div className="flex-1 lg:overflow-y-auto p-5 space-y-5">
+              {/* Thuộc khóa học nào - Hiển thị để dễ cấu hình */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  Thuộc khóa học <span className="text-error">*</span>
+                </label>
+                <select
+                  value={selectedLesson?.course ?? (selectedCourse || courses[0])}
+                  onChange={() => {}}
+                  className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
+                >
+                  {courses.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
 
-            {/* Order */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Thứ tự</label>
-              <input
-                type="number"
-                value={selectedLesson?.order ?? 1}
-                onChange={() => {}}
-                className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
-              />
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  Tên bài học <span className="text-error">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={selectedLesson?.title ?? ""}
+                  onChange={() => {}}
+                  placeholder="Nhập tên bài học..."
+                  className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
+                />
+              </div>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Mô tả</label>
-              <textarea
-                rows={3}
-                placeholder="Tóm tắt nội dung bài học..."
-                className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none text-sm"
-              />
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Thứ tự</label>
+                <input
+                  type="number"
+                  value={selectedLesson?.order ?? (filteredLessons.length + 1)}
+                  onChange={() => {}}
+                  className="w-full px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
+                />
+              </div>
 
             {/* Rich text placeholder */}
             <div className="space-y-1.5">
@@ -245,21 +277,19 @@ function LessonManagementPage() {
                   Nhập nội dung chi tiết bài học tại đây...
                 </div>
               </div>
-            </div>
 
-            {/* Video upload */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Video bài học</label>
-              <div className="w-full p-5 border-2 border-dashed border-outline-variant/50 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
-                <span className="material-symbols-outlined text-3xl text-outline group-hover:text-primary transition-colors">
-                  cloud_upload
-                </span>
-                <p className="text-xs font-bold text-outline uppercase tracking-wider group-hover:text-primary transition-colors">
-                  Tải video lên hoặc chọn từ kho
-                </p>
-                <p className="text-[10px] text-outline-variant">MP4 · Tối đa 500MB</p>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Video bài học</label>
+                <div className="w-full p-5 border-2 border-dashed border-outline-variant/50 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer group">
+                  <span className="material-symbols-outlined text-3xl text-outline group-hover:text-primary transition-colors">
+                    cloud_upload
+                  </span>
+                  <p className="text-xs font-bold text-outline uppercase tracking-wider group-hover:text-primary transition-colors">
+                    Tải video lên hoặc chọn từ kho
+                  </p>
+                  <p className="text-[10px] text-outline-variant">MP4 · Tối đa 500MB</p>
+                </div>
               </div>
-            </div>
 
             <div className="space-y-1.5">
               <label
@@ -304,7 +334,6 @@ function LessonManagementPage() {
                 </span>
               </div>
             </div>
-          </div>
 
           <div className="p-5 border-t border-outline-variant/30 bg-surface-bright grid grid-cols-2 gap-3">
             <button type="button" className="py-3 border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-surface transition-colors text-sm">

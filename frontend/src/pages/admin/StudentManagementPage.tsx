@@ -239,23 +239,23 @@ export default function StudentManagementPage() {
                           <td className="p-4">
                             <input type="checkbox" className="rounded border-outline-variant text-primary focus:ring-primary" defaultChecked={isSelected} />
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 min-w-[190px]">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${student.avatarBg}`}>
+                              <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold ${student.avatarBg}`}>
                                 {student.avatarInitials}
                               </div>
-                              <div>
+                              <div className="whitespace-nowrap">
                                 <p className="font-bold text-on-surface">{student.name}</p>
                                 <p className="text-xs text-on-surface-variant">Tham gia: {student.joinDate}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 whitespace-nowrap">
                             <p className="text-sm">{student.email}</p>
                             <p className="text-xs text-on-surface-variant">{student.phone}</p>
                           </td>
                           <td className="p-4 min-w-[200px]">
-                            <p className="text-sm mb-1">{student.course}</p>
+                            <p className="text-sm mb-1 whitespace-nowrap">{student.course}</p>
                             <div className="flex items-center gap-3">
                               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full ${student.progress > 0 ? 'bg-primary' : 'bg-slate-300'}`} style={{ width: `${student.progress}%` }}></div>
@@ -268,7 +268,7 @@ export default function StudentManagementPage() {
                               {student.aiQuestions}
                             </span>
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 whitespace-nowrap">
                             {renderStatus(student.status)}
                           </td>
                           <td className="p-4 text-right">

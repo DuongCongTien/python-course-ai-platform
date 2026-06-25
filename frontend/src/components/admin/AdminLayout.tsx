@@ -7,11 +7,12 @@ interface AdminLayoutProps {
 
 function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <div className="flex min-h-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <AdminSidebar />
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <main className="flex-1 h-full overflow-y-auto flex flex-col min-w-0">
         {children}
       </main>
+
     </div>
   );
 }

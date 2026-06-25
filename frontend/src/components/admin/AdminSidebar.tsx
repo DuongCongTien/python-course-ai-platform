@@ -34,8 +34,8 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                         admin_panel_settings
                     </span>
                 </div>
-                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào! 
-                    <br/>Quản Trị Viên</span>
+                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào!
+                    <br />Quản Trị Viên</span>
             </div>
 
             {/* Nav */}
