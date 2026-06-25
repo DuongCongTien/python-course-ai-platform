@@ -1,8 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-interface SidebarProps {
+interface AdminSidebarProps {
     aiSystemStatus?: "online" | "offline";
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
 const navItems = [
@@ -15,7 +17,7 @@ const navItems = [
     { label: "Học viên", icon: "group", to: "/admin/students" },
 ];
 
-function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
+function AdminSidebar({ aiSystemStatus = "online", isOpen = false, onClose }: AdminSidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -26,7 +28,20 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
     };
 
     return (
-        <aside className="hidden lg:flex w-64 flex-col bg-surface-container-low border-r border-outline-variant/30 h-screen sticky top-0 shrink-0">
+      <>
+        <button
+          type="button"
+          aria-label="Đóng menu quản trị"
+          className={`fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+            isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
+          onClick={onClose}
+        />
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 transform flex-col border-r border-outline-variant/30 bg-surface-container-low shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:translate-x-0 lg:shadow-none ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
             {/* Logo */}
             <div className="px-6 py-8 flex items-center gap-3">
                 <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
@@ -34,6 +49,18 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                         admin_panel_settings
                     </span>
                 </div>
+                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào! 
+                    <br/>Quản Trị Viên</span>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-on-surface-variant transition hover:bg-surface-container lg:hidden"
+                  aria-label="Đóng menu quản trị"
+                >
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden={true}>
+                    close
+                  </span>
+                </button>
                 <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào!
                     <br />Quản Trị Viên</span>
             </div>
@@ -50,6 +77,7 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                         <Link
                             key={item.to}
                             to={item.to}
+                            onClick={onClose}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${isActive
                                 ? "bg-primary text-white shadow-md shadow-primary/20"
                                 : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
@@ -118,6 +146,7 @@ function AdminSidebar({ aiSystemStatus = "online" }: SidebarProps) {
                 </button>
             </div>
         </aside>
+      </>
     );
 }
 

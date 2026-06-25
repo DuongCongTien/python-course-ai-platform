@@ -1,13 +1,15 @@
 import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 function AccountActions() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-      console.log("Logging out...");
-      navigate("/login");
+      logout();
+      navigate("/login", { replace: true });
     }
   };
 
@@ -15,7 +17,7 @@ function AccountActions() {
     <section className="grid gap-3 rounded-[28px] border border-slate-200 bg-white p-5 shadow-card">
       <button
         type="button"
-        onClick={() => navigate("/profile")}
+        onClick={() => navigate("/profile/settings")}
         className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
       >
         <Settings size={17} />

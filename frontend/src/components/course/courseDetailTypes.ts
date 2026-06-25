@@ -30,6 +30,7 @@ export interface AIFeature {
 export interface CourseDetail {
   id: string;
   firstLessonId: string;
+  currentLessonId?: string;
   title: string;
   description: string;
   level: string;

@@ -37,14 +37,46 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+type MessagesBySession = Record<string, ChatMessage[]>;
+
+const initialMessagesBySession: MessagesBySession = {
+  "list-comprehension": initialMessages,
+  "for-loop": [
+    {
+      id: "user-for-loop",
+      role: "user",
+      content: "Vòng lặp for hoạt động như thế nào?",
+    },
+    {
+      id: "assistant-for-loop",
+      role: "assistant",
+      content: "Vòng lặp for dùng để duyệt qua iterable như list, tuple hoặc range.",
+    },
+  ],
+  variables: [
+    {
+      id: "user-variables",
+      role: "user",
+      content: "Tóm tắt bài biến và kiểu dữ liệu.",
+    },
+    {
+      id: "assistant-variables",
+      role: "assistant",
+      content: "Bài học giới thiệu biến, kiểu số, chuỗi, boolean và cách gán giá trị.",
+    },
+  ],
+};
+
 function AIAssistantPage() {
   const [sessions, setSessions] = useState(initialSessions);
   const [activeSessionId, setActiveSessionId] = useState(initialSessions[0].id);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messagesBySession, setMessagesBySession] =
+    useState<MessagesBySession>(initialMessagesBySession);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const responseTimerRef = useRef<number | null>(null);
+  const messages = messagesBySession[activeSessionId] ?? [];
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,8 +105,8 @@ function AIAssistantPage() {
     };
 
     setSessions((current) => [nextSession, ...current]);
+    setMessagesBySession((current) => ({ ...current, [id]: [] }));
     setActiveSessionId(id);
-    setMessages([]);
     setInputValue("");
     setIsTyping(false);
   };
@@ -86,7 +118,6 @@ function AIAssistantPage() {
     }
 
     setActiveSessionId(sessionId);
-    setMessages(initialMessages);
     setInputValue("");
     setIsTyping(false);
   };
@@ -96,10 +127,14 @@ function AIAssistantPage() {
     const question = inputValue.trim();
     if (!question || isTyping) return;
 
-    setMessages((current) => [
+    const sessionId = activeSessionId;
+    setMessagesBySession((current) => ({
       ...current,
-      { id: `user-${Date.now()}`, role: "user", content: question },
-    ]);
+      [sessionId]: [
+        ...(current[sessionId] ?? []),
+        { id: `user-${Date.now()}`, role: "user", content: question },
+      ],
+    }));
     setInputValue("");
     setIsTyping(true);
 
@@ -112,15 +147,18 @@ function AIAssistantPage() {
     );
 
     responseTimerRef.current = window.setTimeout(() => {
-      setMessages((current) => [
+      setMessagesBySession((current) => ({
         ...current,
-        {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content:
-            "Đây là phản hồi AI mô phỏng. Bạn có thể tiếp tục đặt câu hỏi về Python và nội dung khóa học.",
-        },
-      ]);
+        [sessionId]: [
+          ...(current[sessionId] ?? []),
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            content:
+              "Đây là phản hồi AI mô phỏng. Bạn có thể tiếp tục đặt câu hỏi về Python và nội dung khóa học.",
+          },
+        ],
+      }));
       setIsTyping(false);
       responseTimerRef.current = null;
     }, 1000);

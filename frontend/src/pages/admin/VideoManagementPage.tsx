@@ -228,7 +228,12 @@ function VideoManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý video & AI" actionLabel="Tải lên Video mới" actionIcon="cloud_upload" />
+      <AdminHeader
+        title="Quản lý video & AI"
+        actionLabel="Tải lên Video mới"
+        actionIcon="cloud_upload"
+        onAction={() => showToast("Mở luồng tải video mới")}
+      />
 
       <div className="flex flex-1 flex-col lg:flex-row relative">
         {/* Main table area */}

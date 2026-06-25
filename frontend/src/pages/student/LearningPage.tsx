@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, FileText } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AIAssistantPanel from "../../components/learning/AIAssistantPanel";
 import LessonInfoSection from "../../components/learning/LessonInfoSection";
 import LessonSidebar from "../../components/learning/LessonSidebar";
@@ -14,32 +14,32 @@ import {
 } from "../../components/learning/learningTypes";
 
 const lessons: Lesson[] = [
-  { id: "lesson-1", title: "Bài 1: Giới thiệu về Python", duration: "08:15", status: "completed" },
+  { id: "lesson-1-1", title: "Bài 1: Giới thiệu về Python", duration: "08:15", status: "completed" },
   {
-    id: "lesson-2",
+    id: "lesson-1-2",
     title: "Bài 2: Biến và kiểu dữ liệu",
     duration: "15:40",
-    status: "completed",
+    status: "current",
     slideFile: {
       fileName: "bien-va-kieu-du-lieu-python.pdf",
       fileUrl: "/mock/slides/bien-va-kieu-du-lieu-python.pdf",
       fileSize: "2.4 MB",
     },
   },
-  { id: "lesson-3", title: "Bài 3: Cấu trúc điều kiện If-Else", duration: "10:20", status: "completed" },
+  { id: "lesson-2-1", title: "Bài 3: Cấu trúc điều kiện If-Else", duration: "10:20", status: "completed" },
   {
-    id: "lesson-4",
+    id: "lesson-2-2",
     title: "Bài 4: Vòng lặp trong Python",
     duration: "12:30",
-    status: "current",
+    status: "completed",
     slideFile: {
       fileName: "vong-lap-trong-python.pdf",
       fileUrl: "/mock/slides/vong-lap-trong-python.pdf",
       fileSize: "1.8 MB",
     },
   },
-  { id: "lesson-5", title: "Bài 5: Hàm và Module", duration: "22:10", status: "locked" },
-  { id: "lesson-6", title: "Bài 6: Xử lý file trong Python", duration: "18:45", status: "locked" },
+  { id: "lesson-3-1", title: "Bài 5: Hàm và Module", duration: "22:10", status: "locked" },
+  { id: "lesson-3-2", title: "Bài 6: Xử lý file trong Python", duration: "18:45", status: "locked" },
 ];
 
 const initialMessages: ChatMessage[] = [
@@ -76,12 +76,29 @@ const transcriptSegments: TranscriptSegment[] = [
 ];
 
 function LearningPage() {
-  const { courseId = "python-cho-nguoi-moi-bat-dau", lessonId = "lesson-4" } = useParams();
+  const { courseId = "python-cho-nguoi-moi-bat-dau", lessonId } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<LessonTab>("overview");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialMessages);
   const [chatInput, setChatInput] = useState("");
-  const [selectedLesson, setSelectedLesson] = useState(lessonId);
-  const activeLesson = lessons.find((lesson) => lesson.id === selectedLesson);
+  const normalizedLessonId = useMemo(() => {
+    if (lessonId && lessons.some((lesson) => lesson.id === lessonId)) {
+      return lessonId;
+    }
+
+    return lessons.find((lesson) => lesson.status === "current")?.id ?? lessons[0]?.id ?? "";
+  }, [lessonId]);
+  const activeLesson = lessons.find((lesson) => lesson.id === normalizedLessonId);
+
+  useEffect(() => {
+    if ((!lessonId || !lessons.some((lesson) => lesson.id === lessonId)) && normalizedLessonId) {
+      navigate(`/learning/${courseId}/${normalizedLessonId}`, { replace: true });
+    }
+  }, [courseId, lessonId, navigate, normalizedLessonId]);
+
+  const handleSelectLesson = (nextLessonId: string) => {
+    navigate(`/learning/${courseId}/${nextLessonId}`);
+  };
 
   const handleSendMessage = () => {
     const trimmedInput = chatInput.trim();
@@ -110,7 +127,7 @@ function LearningPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="grid gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)_360px] lg:px-8">
-        <LessonSidebar lessons={lessons} selectedLessonId={selectedLesson} onSelectLesson={setSelectedLesson} />
+        <LessonSidebar lessons={lessons} selectedLessonId={normalizedLessonId} onSelectLesson={handleSelectLesson} />
 
         <div className="min-w-0 space-y-6">
           <VideoPlayerSection />
@@ -119,7 +136,7 @@ function LearningPage() {
           <LessonTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            lessonId={selectedLesson}
+            lessonId={normalizedLessonId}
             courseId={courseId}
             transcriptSegments={transcriptSegments}
           />
