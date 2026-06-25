@@ -23,6 +23,13 @@ function AdminLayout({ children }: AdminLayoutProps) {
         </main>
       </div>
     </AdminNavigationContext.Provider>
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      <AdminSidebar />
+      <main className="flex-1 h-full overflow-y-auto flex flex-col min-w-0">
+        {children}
+      </main>
+
+    </div>
   );
 }
 

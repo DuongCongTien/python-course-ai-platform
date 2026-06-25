@@ -1,8 +1,7 @@
 # backend/app/api/v1/auth.py
 from fastapi import APIRouter, status, Query
-# Import cấu trúc đầu vào (Schema) và tầng xử lý (Service)
-from backend.app.schemas.auth import UserRegisterInput, UserLoginInput
-from backend.app.services.auth_service import AuthService
+from app.schemas.auth import UserRegisterInput, UserLoginInput
+from app.services.auth_service import AuthService
 
 router = APIRouter()
 
@@ -36,11 +35,5 @@ def login(login_data: UserLoginInput):
         }
     }
 
-@router.get("/me")
-def get_current_user_profile(token: str = Query(..., description="Truyền Access Token vào đây để lấy profile")):
-    user_profile = AuthService.verify_current_user(token)
-    return {
-        "status": "success",
-        "user": user_profile
-    }
+
     

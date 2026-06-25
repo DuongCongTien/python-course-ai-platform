@@ -96,48 +96,90 @@ function CourseEditPanel({ open, onClose, course }: EditPanelProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div key={course?.id || 'new'} className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Tên khóa học */}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant">Tiêu đề khóa học</label>
+            <label className="text-sm font-semibold text-on-surface-variant">
+              Tên khóa học <span className="text-error">*</span>
+            </label>
             <input
               type="text"
               defaultValue={course?.title}
+              placeholder="Nhập tiêu đề khóa học..."
               className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background outline-none transition-all text-sm"
             />
           </div>
 
+          {/* Mô tả (Chỉ hiển thị thêm cho đầy đủ form) */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-on-surface-variant">Mô tả ngắn</label>
             <textarea
               rows={3}
+              defaultValue={course?.id ? "Mô tả mẫu cho khóa học..." : ""}
               className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background outline-none transition-all resize-none text-sm"
               placeholder="Tóm tắt nội dung khóa học..."
             />
           </div>
 
+          {/* Grid 2 cột: Trình độ & Trạng thái */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-on-surface-variant">Trình độ</label>
               <select
-                defaultValue={course?.level}
+                defaultValue={course?.level || "Cơ bản"}
                 className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
               >
-                <option>Cơ bản</option>
-                <option>Trung cấp</option>
-                <option>Nâng cao</option>
+                <option value="Cơ bản">Cơ bản</option>
+                <option value="Trung cấp">Trung cấp</option>
+                <option value="Nâng cao">Nâng cao</option>
               </select>
             </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-on-surface-variant">Trạng thái</label>
+              <select
+                defaultValue={course?.status || "draft"}
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
+              >
+                <option value="published">Công khai</option>
+                <option value="draft">Nháp</option>
+                <option value="hidden">Tạm ẩn</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Grid 3 cột: Số bài học, Số học viên, Ngày tạo */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-on-surface-variant">Số bài học</label>
               <input
                 type="number"
-                defaultValue={course?.lessons}
+                defaultValue={course?.lessons || 0}
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-on-surface-variant">Học viên</label>
+              <input
+                type="number"
+                defaultValue={course?.students || 0}
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-on-surface-variant">Ngày tạo</label>
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                defaultValue={course?.createdAt || ""}
                 className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
               />
             </div>
           </div>
 
-          {/* Thumbnail upload */}
+          {/* Ảnh đại diện */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-on-surface-variant">Ảnh đại diện</label>
             <div className="border-2 border-dashed border-outline-variant/50 rounded-xl p-8 text-center bg-surface-container-low/30 hover:bg-surface-container-low/60 transition-colors cursor-pointer group">
@@ -150,21 +192,9 @@ function CourseEditPanel({ open, onClose, course }: EditPanelProps) {
               <p className="text-xs text-outline mt-1">JPG, PNG, WEBP · Tối đa 2MB</p>
             </div>
           </div>
-
-          {/* Publish toggle */}
-          <div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
-            <div>
-              <p className="font-semibold text-on-surface text-sm">Trạng thái công khai</p>
-              <p className="text-xs text-on-surface-variant">Hiển thị cho học viên ngay lập tức</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" defaultChecked={course?.status === "published"} className="sr-only peer" />
-              <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-            </label>
-          </div>
         </div>
 
-        <div className="p-6 border-t border-outline-variant/30 grid grid-cols-2 gap-4">
+        <div className="p-6 border-t border-outline-variant/30 grid grid-cols-2 gap-4 mt-auto">
           <button
             onClick={onClose}
             className="py-3 border border-outline-variant text-on-surface font-bold rounded-xl hover:bg-surface-container-low transition-colors text-sm"
@@ -184,46 +214,73 @@ function CourseManagementPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+
   const openEdit = (course?: Course) => {
     setSelectedCourse(course ?? null);
     setPanelOpen(true);
   };
 
+  const filteredCourses = mockCourses.filter((course) => {
+    const matchesSearch = 
+      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "" || course.status === statusFilter;
+    const matchesLevel = levelFilter === "" || course.level === levelFilter;
+    return matchesSearch && matchesStatus && matchesLevel;
+  });
+
   return (
     <AdminLayout>
-      <AdminHeader
-        title="Quản lý khóa học"
-        actionLabel="Thêm khóa học"
-        actionIcon="add"
-        onAction={() => openEdit()}
-      />
+      <AdminHeader title="Quản lý khóa học" />
 
       <div className="p-6 space-y-6">
-        {/* Filters */}
-        <div className="bg-white border border-outline-variant/30 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        {/* Filters & Add Button */}
+        <div className="bg-white border border-outline-variant/30 p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
               search
             </span>
             <input
               type="text"
-              placeholder="Tìm kiếm khóa học..."
+              placeholder="Tìm kiếm khóa học theo tên, ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background outline-none transition-all text-sm"
             />
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <select className="px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]">
-              <option>Trạng thái</option>
-              <option>Công khai</option>
-              <option>Nháp</option>
-              <option>Tạm ẩn</option>
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full lg:w-auto">
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="published">Công khai</option>
+              <option value="draft">Nháp</option>
+              <option value="hidden">Tạm ẩn</option>
             </select>
-            <select className="px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]">
-              <option>Trình độ</option>
-              <option>Cơ bản</option>
-              <option>Trung cấp</option>
-              <option>Nâng cao</option>
+            
+            <select 
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]"
+            >
+              <option value="">Tất cả trình độ</option>
+              <option value="Cơ bản">Cơ bản</option>
+              <option value="Trung cấp">Trung cấp</option>
+              <option value="Nâng cao">Nâng cao</option>
             </select>
+
+            <button 
+              onClick={() => openEdit()}
+              className="hidden sm:flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 transition-all text-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Tạo khóa học mới
+            </button>
           </div>
         </div>
 
@@ -236,7 +293,7 @@ function CourseManagementPage() {
                   {["Ảnh", "Tên khóa học", "Trình độ", "Bài học", "Học viên", "Trạng thái", "Ngày tạo", "Thao tác"].map((h) => (
                     <th
                       key={h}
-                      className={`px-5 py-4 text-[11px] font-bold text-outline uppercase tracking-wider ${
+                      className={`px-5 py-4 text-[11px] font-bold text-outline uppercase tracking-wider whitespace-nowrap ${
                         ["Bài học", "Học viên"].includes(h) ? "text-center" : h === "Thao tác" ? "text-right" : ""
                       }`}
                     >
@@ -246,66 +303,74 @@ function CourseManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {mockCourses.map((course) => {
-                  const st = statusConfig[course.status];
-                  const lv = levelStyle[course.level];
-                  return (
-                    <tr key={course.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-5 py-4">
-                        <div className="w-16 h-10 rounded-lg overflow-hidden border border-outline-variant/30">
-                          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-on-surface text-sm">{course.title}</p>
-                        <p className="text-xs text-on-surface-variant mt-0.5">ID: {course.id}</p>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lv}`}>{course.level}</span>
-                      </td>
-                      <td className="px-5 py-4 text-center font-medium text-sm">{course.lessons}</td>
-                      <td className="px-5 py-4 text-center font-medium text-sm">{course.students.toLocaleString()}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${st.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                          {st.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-on-surface-variant">{course.createdAt}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
-                          <button className="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors" title="Xem">
-                            <span className="material-symbols-outlined text-[20px]">visibility</span>
-                          </button>
-                          <button
-                            className="p-2 hover:bg-secondary-fixed rounded-lg text-secondary transition-colors"
-                            title="Sửa"
-                            onClick={() => openEdit(course)}
-                          >
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button className="p-2 hover:bg-error-container rounded-lg text-error transition-colors" title="Xóa">
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredCourses.length > 0 ? (
+                  filteredCourses.map((course) => {
+                    const st = statusConfig[course.status];
+                    const lv = levelStyle[course.level];
+                    return (
+                      <tr key={course.id} className="hover:bg-surface-container-low/30 transition-colors">
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="w-16 h-10 rounded-lg overflow-hidden border border-outline-variant/30">
+                            <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <p className="font-bold text-on-surface text-sm">{course.title}</p>
+                          <p className="text-xs text-on-surface-variant mt-0.5">ID: {course.id}</p>
+                        </td>
+                        <td className="px-5 py-4 text-center whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lv}`}>{course.level}</span>
+                        </td>
+                        <td className="px-5 py-4 text-center font-medium text-sm whitespace-nowrap">{course.lessons}</td>
+                        <td className="px-5 py-4 text-center font-medium text-sm whitespace-nowrap">{course.students.toLocaleString()}</td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${st.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                            {st.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-on-surface-variant whitespace-nowrap">{course.createdAt}</td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="flex justify-end gap-1">
+                            <button className="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors" title="Xem">
+                              <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
+                            <button
+                              className="p-2 hover:bg-secondary-fixed rounded-lg text-secondary transition-colors"
+                              title="Sửa"
+                              onClick={() => openEdit(course)}
+                            >
+                              <span className="material-symbols-outlined text-[20px]">edit</span>
+                            </button>
+                            <button className="p-2 hover:bg-error-container rounded-lg text-error transition-colors" title="Xóa">
+                              <span className="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="px-5 py-8 text-center text-on-surface-variant text-sm">
+                      Không tìm thấy khóa học nào phù hợp.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="px-5 py-4 border-t border-outline-variant/30 flex items-center justify-between">
-            <p className="text-sm text-on-surface-variant">Hiển thị 1–3 trong 12 khóa học</p>
+          <div className="px-5 py-4 border-t border-outline-variant/30 flex items-center justify-between bg-surface-container-low/20">
+            <p className="text-sm text-on-surface-variant">
+              Hiển thị <span className="font-bold">{filteredCourses.length}</span> khóa học
+            </p>
             <div className="flex gap-2">
-              <button disabled className="p-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors disabled:opacity-40">
+              <button disabled className="p-2 border border-outline-variant rounded-lg hover:bg-white transition-colors disabled:opacity-40">
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
               <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">1</button>
-              <button className="px-4 py-2 border border-outline-variant rounded-lg hover:bg-surface-container font-medium text-sm">2</button>
-              <button className="p-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">
+              <button className="p-2 border border-outline-variant rounded-lg hover:bg-white transition-colors disabled:opacity-40" disabled>
                 <span className="material-symbols-outlined">chevron_right</span>
               </button>
             </div>

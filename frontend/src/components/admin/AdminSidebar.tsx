@@ -61,6 +61,8 @@ function AdminSidebar({ aiSystemStatus = "online", isOpen = false, onClose }: Ad
                     close
                   </span>
                 </button>
+                <span className="font-headline-md font-bold text-primary tracking-tight">Xin chào!
+                    <br />Quản Trị Viên</span>
             </div>
 
             {/* Nav */}
