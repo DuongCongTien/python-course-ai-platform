@@ -38,9 +38,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Chèn dữ liệu bảng users (Password giả lập đã được băm mã hóa)
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `phone`, `full_name`, `avatar_url`, `role`, `status`) VALUES
 (1, 'admin_system', 'admin@pythonailearning.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905111222', 'Nguyễn Quản Trị', 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin', 'admin', 'active'),
-(2, 'thinh_nguyen', 'thinhnguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905333444', 'Nguyễn Tiến Thịnh', 'https://api.dicebear.com/7.x/adventurer/svg?seed=thinh', 'student', 'active'),
-(3, 'huy_dang', 'dangquanghuy@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905555666', 'Đặng Quang Huy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=huy', 'student', 'active'),
-(4, 'nguyen_le', 'lenguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905777888', 'Lê Khắc Nguyên', 'https://api.dicebear.com/7.x/adventurer/svg?seed=nguyen', 'student', 'active');
+(2, 'thinh_tran', 'thinhnguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905333444', 'Trần Kim Thịnh', 'https://api.dicebear.com/7.x/adventurer/svg?seed=thinh', 'student', 'active'),
+(3, 'huydz252', '252quanghuy@gmail.com', '$2a$10$dE4mjbVp6aBiT7eBeWXA/ehS3dKvCkOJ0LsFzj3WhwmOxF80.i0p.', '0813118974', 'Trần Quang Huy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=huy', 'student', 'active'),
+(4, 'tien_nguyen', 'tiennguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905777888', 'Tiến Nguyễn', 'https://api.dicebear.com/7.x/adventurer/svg?seed=nguyen', 'student', 'active');
 
 -- Chèn dữ liệu cấu hình mặc định user_settings
 INSERT INTO `user_settings` (`id`, `user_id`, `two_factor_enabled`, `save_ai_history`, `learning_reminder_enabled`, `theme`) VALUES

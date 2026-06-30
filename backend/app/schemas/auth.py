@@ -5,6 +5,7 @@ from typing import Optional
 class UserRegisterInput(BaseModel):
     username: str
     email: EmailStr
+    full_name: str
     password: str
     role: Optional[str] = "student"
 
