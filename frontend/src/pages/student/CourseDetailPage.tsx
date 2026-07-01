@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bot, Braces, Building2, FileText, HelpCircle, Mail, Menu, ScrollText, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bot, Braces, Building2, Mail, Menu, X } from "lucide-react";
 import { Link, NavLink, useParams } from "react-router-dom";
 import CourseAIFeatures from "../../components/course/CourseAIFeatures";
 import CourseContentAccordion from "../../components/course/CourseContentAccordion";
@@ -8,91 +8,7 @@ import CourseObjectives from "../../components/course/CourseObjectives";
 import CourseSidebar from "../../components/course/CourseSidebar";
 import { type CourseDetail } from "../../components/course/courseDetailTypes";
 import { useAuth } from "../../context/AuthContext";
-
-const courseDetail: CourseDetail = {
-  id: "python-cho-nguoi-moi-bat-dau",
-  firstLessonId: "lesson-1-1",
-  currentLessonId: "lesson-1-2",
-  title: "Python cơ bản cho người mới bắt đầu",
-  description:
-    "Khóa học giúp học viên nắm vững cú pháp Python, biến, kiểu dữ liệu, điều kiện, vòng lặp, hàm và các ví dụ thực hành thông qua hệ thống học tập AI tiên tiến nhất.",
-  level: "Cơ bản",
-  lessonsCount: 24,
-  duration: "10 giờ",
-  hasAI: true,
-  studentsThisMonth: "+1,200 học viên",
-  chapters: [
-    {
-      id: "chapter-1",
-      title: "Chương 1: Giới thiệu về Python",
-      meta: "4 bài học • 45 phút",
-      lessons: [
-        {
-          id: "lesson-1-1",
-          title: "Bài 1.1: Lịch sử và đặc điểm của Python",
-          duration: "08:15",
-          status: "completed",
-        },
-        {
-          id: "lesson-1-2",
-          title: "Bài 1.2: Cài đặt môi trường Python",
-          duration: "12:30",
-          status: "available",
-        },
-      ],
-    },
-    {
-      id: "chapter-2",
-      title: "Chương 2: Biến và Kiểu dữ liệu",
-      meta: "6 bài học • 90 phút",
-      placeholder: "Nội dung chương đang được cập nhật...",
-    },
-    {
-      id: "chapter-3",
-      title: "Chương 3: Cấu trúc điều khiển",
-      meta: "8 bài học • 120 phút",
-      placeholder: "Nội dung chương đang được cập nhật...",
-    },
-  ],
-  objectives: [
-    {
-      id: "objective-1",
-      text: "Nắm vững cú pháp cơ bản và cách viết mã Python chuẩn PEP8.",
-    },
-    {
-      id: "objective-2",
-      text: "Hiểu rõ cách hoạt động của các cấu trúc lặp và rẽ nhánh.",
-    },
-    {
-      id: "objective-3",
-      text: "Làm quen với các thư viện tiêu chuẩn quan trọng nhất trong Python.",
-    },
-    {
-      id: "objective-4",
-      text: "Xây dựng được các ứng dụng dòng lệnh (CLI) đơn giản phục vụ đời sống.",
-    },
-  ],
-  aiFeatures: [
-    {
-      id: "transcript",
-      title: "Tự động tạo transcript",
-      description: "Chuyển đổi video bài giảng thành văn bản chi tiết, hỗ trợ tìm kiếm nhanh.",
-      icon: ScrollText,
-    },
-    {
-      id: "summary",
-      title: "Tóm tắt bài học",
-      description: "Sử dụng AI để rút trích các kiến thức trọng tâm từ mỗi chương, giúp ôn tập nhanh.",
-      icon: FileText,
-    },
-    {
-      id: "qa",
-      title: "Giải đáp thắc mắc",
-      description: "Chatbot thông minh giải đáp câu hỏi dựa trên nội dung đang hiển thị trong video.",
-      icon: HelpCircle,
-    },
-  ],
-};
+import { getCourseById, getCourseLessons, mapCourseDetail } from "../../services/course.service";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
@@ -103,14 +19,90 @@ const navigation = [
 function CourseDetailPage() {
   const { courseId } = useParams();
   const { isAuthenticated } = useAuth();
-  const course = { ...courseDetail, id: courseId ?? courseDetail.id };
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(
-    course.currentLessonId ?? null,
-  );
+  const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+
+  const loadCourseDetail = useCallback(async () => {
+    if (!courseId) {
+      setErrorMessage("Khong tim thay khoa hoc.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const [courseResponse, lessonsResponse] = await Promise.all([
+        getCourseById(courseId),
+        getCourseLessons(courseId),
+      ]);
+
+      if (!courseResponse.data) {
+        throw new Error("Khong tim thay khoa hoc.");
+      }
+
+      const mappedCourse = mapCourseDetail(courseResponse.data, lessonsResponse.data ?? []);
+
+      setCourse(mappedCourse);
+      setActiveLessonId(mappedCourse.currentLessonId ?? mappedCourse.firstLessonId ?? null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Khong the tai chi tiet khoa hoc.");
+      setCourse(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    loadCourseDetail();
+  }, [loadCourseDetail]);
 
   const handleSelectLesson = (lessonId: string) => {
     setActiveLessonId(lessonId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <main className="page-container py-16">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center shadow-card">
+            <p className="text-sm font-bold text-slate-600">Dang tai chi tiet khoa hoc...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (errorMessage || !course) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <main className="page-container py-16">
+          <div className="rounded-[28px] border border-red-100 bg-red-50 p-10 text-center">
+            <h1 className="text-xl font-extrabold text-red-700">Khong tim thay khoa hoc.</h1>
+            <p className="mt-2 text-sm text-red-600">{errorMessage || "Khoa hoc khong ton tai hoac chua duoc xuat ban."}</p>
+            {courseId && (
+              <button
+                type="button"
+                onClick={loadCourseDetail}
+                className="focus-ring mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
+              >
+                Thu lai
+              </button>
+            )}
+            <Link
+              to="/courses"
+              className="focus-ring mt-5 inline-flex rounded-2xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-50"
+            >
+              Quay lai danh sach khoa hoc
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

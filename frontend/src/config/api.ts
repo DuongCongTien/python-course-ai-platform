@@ -1,0 +1,48 @@
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://cobweb-lunchbox-upcoming.ngrok-free.dev/api/v1"
+).replace(/\/+$/, "");
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "ngrok-skip-browser-warning": "true",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers ?? {}),
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok) {
+    let message = `API loi ${response.status}`;
+
+    if (contentType.includes("application/json")) {
+      const errorBody = await response.json().catch(() => null);
+      message =
+        errorBody?.message ||
+        errorBody?.detail ||
+        errorBody?.error ||
+        message;
+    } else {
+      const text = await response.text().catch(() => "");
+      if (text) message = text.slice(0, 200);
+    }
+
+    throw new Error(message);
+  }
+
+  if (!contentType.includes("application/json")) {
+    throw new Error("API khong tra ve JSON. Co the ngrok dang chan request.");
+  }
+
+  return response.json();
+}
