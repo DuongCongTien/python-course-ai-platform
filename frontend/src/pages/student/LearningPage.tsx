@@ -14,32 +14,102 @@ import {
 } from "../../components/learning/learningTypes";
 
 const lessons: Lesson[] = [
-  { id: "lesson-1-1", title: "Bài 1: Giới thiệu về Python", duration: "08:15", status: "completed" },
+  {
+    id: "lesson-1-1",
+    title: "Bài 1: Giới thiệu về Python",
+    duration: "08:15",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "gioi-thieu-python.pdf",
+      fileUrl: "/mock/slides/gioi-thieu-python.pdf",
+      fileSize: "1.2 MB",
+    },
+  },
   {
     id: "lesson-1-2",
     title: "Bài 2: Biến và kiểu dữ liệu",
     duration: "15:40",
     status: "current",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
     slideFile: {
       fileName: "bien-va-kieu-du-lieu-python.pdf",
       fileUrl: "/mock/slides/bien-va-kieu-du-lieu-python.pdf",
       fileSize: "2.4 MB",
     },
   },
-  { id: "lesson-2-1", title: "Bài 3: Cấu trúc điều kiện If-Else", duration: "10:20", status: "completed" },
   {
-    id: "lesson-2-2",
+    id: "lesson-1-3",
+    title: "Bài 3: Cấu trúc điều kiện If-Else",
+    duration: "10:20",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "cau-truc-dieu-kien-if-else.pdf",
+      fileUrl: "/mock/slides/cau-truc-dieu-kien-if-else.pdf",
+      fileSize: "1.5 MB",
+    },
+  },
+  {
+    id: "lesson-1-4",
     title: "Bài 4: Vòng lặp trong Python",
     duration: "12:30",
     status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
     slideFile: {
       fileName: "vong-lap-trong-python.pdf",
       fileUrl: "/mock/slides/vong-lap-trong-python.pdf",
       fileSize: "1.8 MB",
     },
   },
-  { id: "lesson-3-1", title: "Bài 5: Hàm và Module", duration: "22:10", status: "locked" },
-  { id: "lesson-3-2", title: "Bài 6: Xử lý file trong Python", duration: "18:45", status: "locked" },
+  {
+    id: "lesson-1-5",
+    title: "Bài 5: Hàm (Function) trong Python",
+    duration: "18:00",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "ham-function-trong-python.pdf",
+      fileUrl: "/mock/slides/ham-function-trong-python.pdf",
+      fileSize: "2.0 MB",
+    },
+  },
+  {
+    id: "lesson-1-6",
+    title: "Bài 6: List và Tuple",
+    duration: "14:20",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "list-va-tuple.pdf",
+      fileUrl: "/mock/slides/list-va-tuple.pdf",
+      fileSize: "1.6 MB",
+    },
+  },
+  {
+    id: "lesson-1-7",
+    title: "Bài 7: Dictionary và Set",
+    duration: "16:45",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "dictionary-va-set.pdf",
+      fileUrl: "/mock/slides/dictionary-va-set.pdf",
+      fileSize: "1.9 MB",
+    },
+  },
+  {
+    id: "lesson-1-8",
+    title: "Bài 8: Xử lý file trong Python",
+    duration: "20:10",
+    status: "completed",
+    videoUrl: "https://www.youtube.com/embed/kqtD5dpn9C8",
+    slideFile: {
+      fileName: "xu-ly-file-trong-python.pdf",
+      fileUrl: "/mock/slides/xu-ly-file-trong-python.pdf",
+      fileSize: "2.2 MB",
+    },
+  },
 ];
 
 const initialMessages: ChatMessage[] = [
@@ -130,7 +200,7 @@ function LearningPage() {
         <LessonSidebar lessons={lessons} selectedLessonId={normalizedLessonId} onSelectLesson={handleSelectLesson} />
 
         <div className="min-w-0 space-y-6">
-          <VideoPlayerSection />
+          <VideoPlayerSection videoUrl={activeLesson?.videoUrl} />
           <LessonSlideCard slideFile={activeLesson?.slideFile} />
           <LessonInfoSection />
           <LessonTabs

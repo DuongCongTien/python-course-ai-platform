@@ -3,6 +3,7 @@ export interface Lesson {
   title: string;
   duration: string;
   status: "completed" | "current" | "locked";
+  videoUrl?: string; 
   slideFile?: {
     fileName: string;
     fileUrl: string;
