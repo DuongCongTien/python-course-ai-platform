@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 type AIStatus = "completed" | "processing" | "embedding" | "error";
 
@@ -191,6 +191,8 @@ function Toast({ message, visible }: { message: string; visible: boolean }) {
 }
 
 function VideoManagementPage() {
+  const navigate = useNavigate();
+
   // 1. Chỉnh sửa mặc định thành null để ẩn Panel lúc ban đầu
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -228,16 +230,28 @@ function VideoManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader
-        title="Quản lý video & AI"
-        actionLabel="Tải lên Video mới"
-        actionIcon="cloud_upload"
-        onAction={() => showToast("Mở luồng tải video mới")}
-      />
-
       <div className="flex flex-1 flex-col lg:flex-row relative">
         {/* Main table area */}
         <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+          <div className="flex flex-col gap-4 p-5 pb-0 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-on-surface">Quản lý video & AI</h1>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                Theo dõi video, transcript và trạng thái xử lý dữ liệu AI.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/upload")}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden={true}>
+                cloud_upload
+              </span>
+              Tải lên video mới
+            </button>
+          </div>
+
           {/* Filters */}
           <div className="p-5 pb-0">
             <div className="bg-white rounded-2xl border border-outline-variant/30 p-4 flex flex-wrap gap-3 items-center shadow-sm">

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 interface Lesson {
   id: number;
@@ -104,11 +103,16 @@ function LessonManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý bài học" />
-
       <div className="relative flex flex-1 flex-col lg:flex-row">
         <div className="flex min-w-0 flex-1 flex-col transition-all duration-300">
           <div className="space-y-5 p-6">
+            <div>
+              <h1 className="text-2xl font-bold text-on-surface">Quản lý bài học</h1>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                Sắp xếp và cập nhật bài học theo từng khóa học.
+              </p>
+            </div>
+
             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                 <label className="whitespace-nowrap text-sm font-medium text-on-surface-variant">

@@ -1,5 +1,5 @@
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
+import { useNavigate } from "react-router-dom";
 
 interface StatCard {
   label: string;
@@ -103,24 +103,29 @@ const aiQueryBars = [
 ];
 
 function AdminDashboardPage() {
+  const navigate = useNavigate();
+
   return (
     <AdminLayout>
-      <AdminHeader
-        title="Dashboard"
-        actionLabel="Tạo khóa học mới"
-        actionIcon="add"
-        onAction={() => console.log("Mock create course action")}
-      />
-
       <div className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
         {/* Page heading */}
-        <div className="flex justify-between items-end">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-on-surface">Dashboard quản trị</h2>
             <p className="text-on-surface-variant text-sm mt-1">
               Chào mừng quay trở lại — đây là tóm tắt hoạt động hôm nay.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/courses")}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden={true}>
+              add
+            </span>
+            Tạo khóa học mới
+          </button>
         </div>
 
         {/* Stat cards */}

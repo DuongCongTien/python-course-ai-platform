@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 // Dữ liệu mẫu (Mock data) bóc từ HTML
 const mockQuizzes = [
@@ -117,8 +116,6 @@ export default function QuizManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý Quiz" />
-
       <div
         className="p-6 space-y-6 w-full min-h-screen overflow-x-hidden"
         style={{ zoom: "0.8" }}

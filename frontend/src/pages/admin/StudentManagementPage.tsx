@@ -1,6 +1,5 @@
 import { useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 // Dữ liệu mẫu (Mock data) bóc từ HTML
 const mockStudents = [
@@ -98,8 +97,6 @@ export default function StudentManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý học viên" />
-      
       <div className="p-8 min-h-screen">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">

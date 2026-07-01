@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 interface AIStep {
   label: string;
@@ -92,9 +91,14 @@ function VideoUploadPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Upload video bài giảng" />
-
       <div className="p-6 space-y-6 max-w-[1400px] mx-auto w-full">
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface">Upload video bài giảng</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Tải video và slide bài học để chuẩn bị dữ liệu cho hệ thống AI.
+          </p>
+        </div>
+
         {/* Info banner */}
         <div className="bg-primary/5 border border-primary/10 p-5 rounded-2xl flex items-start gap-4">
           <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
