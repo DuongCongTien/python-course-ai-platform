@@ -15,7 +15,7 @@ The seed creates/updates 3 published courses, their sections, lessons, demo vide
 
 ```bash
 cd backend
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+npm run dev
 ```
 
 ## Run frontend
