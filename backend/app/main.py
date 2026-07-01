@@ -1,18 +1,20 @@
 # backend/app/main.py
 import os
 import sys
-
-# Tự động thêm thư mục gốc của dự án vào hệ thống tìm kiếm của Python
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.courses import router as courses_router
 from app.api.v1.users import router as users_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Python Course AI Platform")
+
+origins = [
+    "http://localhost:5173",      # Port FE mặc định của Vite
+]
 
 app.add_middleware(
     CORSMiddleware,
