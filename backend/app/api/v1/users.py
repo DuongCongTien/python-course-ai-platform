@@ -7,8 +7,8 @@ from app.core.database import get_db
 router = APIRouter()
 
 @router.get("/me")
-def get_current_user_profile(token: str = Query(..., description="Truyền Access Token vào đây để lấy profile")):
-    user_profile = AuthService.verify_current_user(token)
+def get_current_user_profile(token: str = Query(..., description="Truyền Access Token vào đây để lấy profile"),db = Depends(get_db)):
+    user_profile = UserService.verify_current_user(token, db=db)
     return {
         "status": "success",
         "user": user_profile
