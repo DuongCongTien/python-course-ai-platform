@@ -5,6 +5,7 @@ USE python_ai_learning_db;
 
 -- Ngắt kiểm tra để đảm bảo quá trình chèn chuỗi sạch không bị kẹt ngắt quãng
 SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_SAFE_UPDATES = 0;
 DELETE FROM `admin_audit_logs`;
 DELETE FROM `notifications`;
 DELETE FROM `contact_messages`;

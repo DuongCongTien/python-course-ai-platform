@@ -1,9 +1,12 @@
 import { ArrowRight, BarChart3, Clock3, Code2, Database, Globe2, type LucideIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getFeaturedCourses, mapCourseListItem } from "../../services/course.service";
 
 type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
 
 interface Course {
+  id: string;
   title: string;
   level: CourseLevel;
   lessons: number;
@@ -13,36 +16,6 @@ interface Course {
   gradient: string;
 }
 
-const courses: Course[] = [
-  {
-    title: "Python Cơ Bản",
-    level: "Beginner",
-    lessons: 20,
-    duration: "10 giờ",
-    description: "Nắm vững cú pháp, tư duy lập trình và xây dựng nền tảng Python chắc chắn.",
-    icon: Code2,
-    gradient: "from-blue-500 to-indigo-600",
-  },
-  {
-    title: "Python & AI Data Science",
-    level: "Intermediate",
-    lessons: 35,
-    duration: "25 giờ",
-    description: "Phân tích dữ liệu, trực quan hóa và làm quen với các mô hình machine learning.",
-    icon: Database,
-    gradient: "from-violet-500 to-fuchsia-600",
-  },
-  {
-    title: "Lập trình Web với Django",
-    level: "Advanced",
-    lessons: 30,
-    duration: "20 giờ",
-    description: "Xây dựng ứng dụng web hoàn chỉnh với Django, database và REST API.",
-    icon: Globe2,
-    gradient: "from-cyan-500 to-blue-600",
-  },
-];
-
 const badgeStyles: Record<CourseLevel, string> = {
   Beginner: "bg-emerald-50 text-emerald-700",
   Intermediate: "bg-amber-50 text-amber-700",
@@ -50,6 +23,54 @@ const badgeStyles: Record<CourseLevel, string> = {
 };
 
 function CourseHighlightSection() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadFeaturedCourses() {
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+        const response = await getFeaturedCourses();
+        const mappedCourses = (response.data ?? []).map((course, index) => {
+          const mappedCourse = mapCourseListItem(course, index);
+          return {
+            id: mappedCourse.id,
+            title: mappedCourse.title,
+            level: mapHomeLevel(mappedCourse.level),
+            lessons: mappedCourse.lessons,
+            duration: mappedCourse.duration,
+            description: mappedCourse.description,
+            icon: [Code2, Database, Globe2][index % 3],
+            gradient: mappedCourse.gradient,
+          };
+        });
+
+        if (isMounted) {
+          setCourses(mappedCourses);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : "Khong the tai khoa hoc noi bat.");
+          setCourses([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadFeaturedCourses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section id="courses" className="scroll-mt-20 bg-white py-20 sm:py-24">
       <div className="page-container">
@@ -67,14 +88,34 @@ function CourseHighlightSection() {
           </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard key={course.title} course={course} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm font-bold text-slate-600">
+            Dang tai khoa hoc noi bat...
+          </div>
+        ) : errorMessage ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center text-sm font-bold text-red-600">
+            {errorMessage}
+          </div>
+        ) : courses.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-bold text-slate-500">
+            Chua co khoa hoc noi bat.
+          </div>
+        )}
       </div>
     </section>
   );
+}
+
+function mapHomeLevel(level: string): CourseLevel {
+  if (level === "Trung cấp") return "Intermediate";
+  if (level === "Nâng cao") return "Advanced";
+  return "Beginner";
 }
 
 function CourseCard({ course }: { course: Course }) {
@@ -105,7 +146,7 @@ function CourseCard({ course }: { course: Course }) {
             {course.duration}
           </span>
         </div>
-        <Link to="/courses/python-basic" className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 px-4 py-3 font-bold text-indigo-600 transition hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
+        <Link to={`/courses/${course.id}`} className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 px-4 py-3 font-bold text-indigo-600 transition hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
           Xem chi tiết
           <ArrowRight size={17} />
         </Link>

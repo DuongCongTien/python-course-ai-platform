@@ -4,7 +4,10 @@ export interface LessonItem {
   id: string;
   title: string;
   duration: string;
+  durationSeconds?: number;
   status: "completed" | "available" | "locked";
+  isFree?: boolean;
+  sortOrder?: number;
 }
 
 export interface CourseChapter {

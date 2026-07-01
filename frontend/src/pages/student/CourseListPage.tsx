@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, Braces, Facebook, Github, Linkedin, Mail, Menu, X } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import CourseCard, { type Course, type CourseLevel } from "../../components/course/CourseCard";
@@ -6,62 +6,11 @@ import CourseFilterChips, { type CourseChip } from "../../components/course/Cour
 import CourseFilterSidebar, { type DurationFilter } from "../../components/course/CourseFilterSidebar";
 import CoursePagination from "../../components/course/CoursePagination";
 import CourseSearchBar from "../../components/course/CourseSearchBar";
+import { getCourses, mapCourseListItem } from "../../services/course.service";
+
+type CourseApiItem = Parameters<typeof mapCourseListItem>[0];
 
 const chips: CourseChip[] = ["Tất cả", "Cơ bản", "Trung cấp", "Có AI hỗ trợ", "Đang học"];
-
-const courses: Course[] = [
-  {
-    id: "phan-tich-du-lieu-voi-ai",
-    title: "Phân tích dữ liệu với AI",
-    level: "Trung cấp",
-    lessons: 24,
-    duration: "18 giờ",
-    durationHours: 18,
-    description:
-      "Học cách ứng dụng machine learning và các mô hình AI để xử lý dữ liệu thực tế chuyên sâu.",
-    hasAI: true,
-    isLearning: true,
-    progress: 65,
-    lessonId: "lesson-08",
-    gradient: "from-indigo-600 via-blue-600 to-cyan-500",
-  },
-  {
-    id: "python-cho-nguoi-moi-bat-dau",
-    title: "Python Cho Người Mới Bắt Đầu",
-    level: "Cơ bản",
-    lessons: 15,
-    duration: "10 giờ",
-    durationHours: 10,
-    description:
-      "Bắt đầu hành trình lập trình của bạn với những kiến thức nền tảng vững chắc nhất về Python.",
-    popular: true,
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
-  },
-  {
-    id: "lap-trinh-web-voi-django-ai",
-    title: "Lập trình Web với Django & AI",
-    level: "Trung cấp",
-    lessons: 32,
-    duration: "25 giờ",
-    durationHours: 25,
-    description:
-      "Xây dựng các ứng dụng web mạnh mẽ và tích hợp các tính năng thông minh bằng Django framework.",
-    hasAI: true,
-    gradient: "from-blue-600 via-indigo-600 to-violet-600",
-  },
-  {
-    id: "deep-learning-computer-vision",
-    title: "Deep Learning & Computer Vision",
-    level: "Nâng cao",
-    lessons: 40,
-    duration: "35 giờ",
-    durationHours: 35,
-    description:
-      "Chinh phục những công nghệ AI phức tạp nhất hiện nay trong lĩnh vực thị giác máy tính.",
-    hasAI: true,
-    gradient: "from-purple-600 via-fuchsia-600 to-pink-500",
-  },
-];
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
@@ -70,10 +19,39 @@ const navigation = [
 ];
 
 function CourseListPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeChip, setActiveChip] = useState<CourseChip>("Tất cả");
   const [selectedLevels, setSelectedLevels] = useState<CourseLevel[]>([]);
   const [selectedDuration, setSelectedDuration] = useState<DurationFilter | "">("");
+
+  const loadCourses = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await getCourses({ page: 1, pageSize: 20 });
+      const items = extractCourseItems(response);
+      const mappedCourses = items.map((item, index) => mapCourseListItem(item, index));
+
+      setCourses(mappedCourses);
+    } catch (error) {
+      console.error("Load courses failed:", error);
+
+      setErrorMessage(
+        error instanceof Error ? error.message : "Khong the tai danh sach khoa hoc.",
+      );
+      setCourses([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
 
   const filteredCourses = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -100,7 +78,7 @@ function CourseListPage() {
 
       return matchesSearch && matchesChip && matchesLevels && matchesDuration;
     });
-  }, [activeChip, searchTerm, selectedDuration, selectedLevels]);
+  }, [activeChip, courses, searchTerm, selectedDuration, selectedLevels]);
 
   const handleToggleLevel = (level: CourseLevel) => {
     setSelectedLevels((current) =>
@@ -163,7 +141,28 @@ function CourseListPage() {
                 <p className="text-sm font-medium text-slate-500">Sắp xếp: Phù hợp nhất</p>
               </div>
 
-              {filteredCourses.length > 0 ? (
+              {isLoading ? (
+                <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center shadow-card">
+                  <p className="text-sm font-bold text-slate-600">Dang tai danh sach khoa hoc...</p>
+                </div>
+              ) : errorMessage ? (
+                <div className="rounded-[28px] border border-red-100 bg-red-50 p-10 text-center">
+                  <h3 className="text-lg font-extrabold text-red-700">Khong the tai danh sach khoa hoc</h3>
+                  <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+                  <button
+                    type="button"
+                    onClick={loadCourses}
+                    className="focus-ring mt-5 rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
+                  >
+                    Thu lai
+                  </button>
+                </div>
+              ) : courses.length === 0 ? (
+                <div className="rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center">
+                  <h3 className="text-lg font-extrabold text-slate-950">Chua co khoa hoc nao</h3>
+                  <p className="mt-2 text-sm text-slate-500">Danh sach khoa hoc se hien thi khi backend co du lieu published.</p>
+                </div>
+              ) : filteredCourses.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2">
                   {filteredCourses.map((course) => (
                     <CourseCard key={course.id} course={course} />
@@ -183,7 +182,7 @@ function CourseListPage() {
                 </div>
               )}
 
-              <CoursePagination />
+              {!isLoading && !errorMessage && courses.length > 0 && <CoursePagination />}
             </div>
           </div>
         </section>
@@ -191,6 +190,20 @@ function CourseListPage() {
 
     </div>
   );
+}
+
+function extractCourseItems(response: unknown): CourseApiItem[] {
+  const payload = response as {
+    data?: CourseApiItem[] | { items?: CourseApiItem[] };
+    items?: CourseApiItem[];
+  };
+
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (!Array.isArray(payload.data) && Array.isArray(payload.data?.items)) return payload.data.items;
+  if (Array.isArray(payload.items)) return payload.items;
+
+  return [];
 }
 
 function CourseNavbar() {

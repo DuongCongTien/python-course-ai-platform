@@ -1,6 +1,5 @@
 import { useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 type CourseLevel = "Cơ bản" | "Trung cấp" | "Nâng cao";
 type CourseStatus = "published" | "draft" | "hidden";
@@ -234,9 +233,14 @@ function CourseManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý khóa học" />
-
       <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface">Quản lý khóa học</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Tạo, chỉnh sửa và quản lý nội dung các khóa học.
+          </p>
+        </div>
+
         {/* Filters & Add Button */}
         <div className="bg-white border border-outline-variant/30 p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
@@ -276,7 +280,7 @@ function CourseManagementPage() {
 
             <button 
               onClick={() => openEdit()}
-              className="hidden sm:flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 transition-all text-sm"
+              className="flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 transition-all text-sm"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               Tạo khóa học mới
