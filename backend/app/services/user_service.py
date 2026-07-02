@@ -1,9 +1,31 @@
 from fastapi import APIRouter, status, Query, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models.users_model import User
+from jose import jwt, JWTError
+import os
 from sqlalchemy import or_
 
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = os.getenv("JWT_ALGORITHM")
+
 class UserService:
+    
+    @staticmethod
+    def verify_current_user(token: str, db: Session):
+        try:
+            # 1. Giải mã token để lấy payload
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("sub")
+            
+            if not user_id:
+                return None
+            
+            # 2. Tìm user trong DB theo ID
+            user = db.query(User).filter(User.id == int(user_id)).first()
+            return user
+            
+        except JWTError:
+            return None
     
     @staticmethod
     def get_total_users(db: Session) : 

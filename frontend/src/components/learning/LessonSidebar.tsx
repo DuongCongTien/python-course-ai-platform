@@ -12,7 +12,7 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
   const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
   return (
-    <aside className="rounded-[26px] border border-slate-200 bg-white shadow-card lg:max-h-[calc(100vh-116px)] lg:overflow-y-auto">
+    <aside className="rounded-[26px] border border-slate-200 bg-white shadow-card lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] lg:overflow-y-auto">
       <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-5 backdrop-blur">
         <h2 className="text-lg font-extrabold text-slate-950">Nội dung khóa học</h2>
         <div className="mt-3 flex items-center justify-between text-sm">
@@ -82,4 +82,4 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
   );
 }
 
-export default LessonSidebar;
+export default LessonSidebar;   

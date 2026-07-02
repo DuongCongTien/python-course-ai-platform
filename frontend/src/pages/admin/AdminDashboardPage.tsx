@@ -61,15 +61,6 @@ const recentActivity = [
     statusColor: "bg-green-100 text-green-700",
   },
   {
-    time: "15 phút trước",
-    subject: "Video 'Vòng lặp while'",
-    subjectType: "video",
-    initial: "",
-    action: "Đang xử lý transcript AI",
-    status: "PROCESSING",
-    statusColor: "bg-blue-100 text-blue-700",
-  },
-  {
     time: "1 giờ trước",
     subject: "Trần Thị B",
     subjectType: "user",
@@ -331,24 +322,6 @@ function AdminDashboardPage() {
                   <span className="text-[10px] text-outline">Tải hệ thống: 78%</span>
                   <span className="text-[10px] text-outline">Nhiệt độ: 62°C</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div className="bg-inverse-surface text-inverse-on-surface rounded-2xl p-6 shadow-xl">
-              <h4 className="font-bold mb-4 text-sm">Lối tắt nhanh</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {quickActions.map((action) => (
-                  <button
-                    key={action.label}
-                    className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors group"
-                  >
-                    <span className="material-symbols-outlined mb-2 text-[22px] group-hover:scale-110 transition-transform">
-                      {action.icon}
-                    </span>
-                    <span className="text-[10px] font-medium">{action.label}</span>
-                  </button>
-                ))}
               </div>
             </div>
           </div>
