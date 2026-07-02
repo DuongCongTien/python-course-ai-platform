@@ -58,7 +58,6 @@ if __name__ == "__main__":
             print("[WARNING] Ket noi DB on dinh nhung bang 'courses' dang trong (chua chay file seed_data.sql).")
 
         print("\n--- TEST 2: Lay thong tin tai khoan admin tu bang 'users' ---")
-        # ĐỔI THÀNH admin_system cho khớp chuẩn xác với file seed_data.sql mới
         admin_user = db.query(User).filter(User.username == "admin_system").first()
         if admin_user:
             print(f"[SUCCESS] Tim thay tai khoan Admin: {admin_user.full_name} ({admin_user.email})")
