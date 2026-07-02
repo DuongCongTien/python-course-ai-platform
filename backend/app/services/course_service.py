@@ -41,7 +41,7 @@ COURSE_OBJECTIVES = {
 
 class CoursesService:
     @staticmethod
-    def get_published_courses(
+    def get_all_published_courses(
         db: Session,
         keyword: Optional[str] = None,
         level: Optional[str] = None,

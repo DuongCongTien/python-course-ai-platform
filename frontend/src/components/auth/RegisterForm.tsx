@@ -7,13 +7,17 @@ import {
   LockKeyhole,
   Mail,
   UserRound,
+  AtSign,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { parseApiError } from "../../services/authService";
 
 type UserRole = "student" | "instructor";
 
 interface RegisterFormData {
+  username: string;
   fullName: string;
   email: string;
   password: string;
@@ -22,7 +26,7 @@ interface RegisterFormData {
   acceptedTerms: boolean;
 }
 
-type RegisterFormErrors = Partial<Record<keyof RegisterFormData, string>>;
+type RegisterFormErrors = Partial<Record<keyof RegisterFormData, string>> & { submit?: string };
 
 interface FormFieldProps {
   id: string;
@@ -38,6 +42,7 @@ interface FormFieldProps {
 }
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernamePattern = /^[a-zA-Z0-9_.]{3,30}$/;
 
 function FormField({
   id,
@@ -105,6 +110,7 @@ function GoogleIcon() {
 }
 
 function RegisterForm() {
+  const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -113,7 +119,10 @@ function RegisterForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<RegisterFormErrors>({});
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const clearError = (field: keyof RegisterFormData) => {
     if (errors[field]) {
@@ -121,11 +130,18 @@ function RegisterForm() {
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors: RegisterFormErrors = {};
     const normalizedEmail = email.trim();
+    const normalizedUsername = username.trim();
+
+    if (!normalizedUsername) {
+      nextErrors.username = "Vui lòng nhập tên đăng nhập.";
+    } else if (!usernamePattern.test(normalizedUsername)) {
+      nextErrors.username = "Tên đăng nhập chỉ gồm chữ, số, dấu gạch dưới, 3-30 ký tự.";
+    }
 
     if (!fullName.trim()) nextErrors.fullName = "Vui lòng nhập họ và tên.";
 
@@ -149,19 +165,31 @@ function RegisterForm() {
 
     if (!acceptedTerms) nextErrors.acceptedTerms = "Bạn cần đồng ý với điều khoản sử dụng.";
 
-    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
 
-    if (Object.keys(nextErrors).length === 0) {
-      const registerData: RegisterFormData = {
-        fullName: fullName.trim(),
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      await register({
+        username: normalizedUsername,
         email: normalizedEmail,
+        full_name: fullName.trim(),
         password,
-        confirmPassword,
         role,
-        acceptedTerms,
-      };
+      });
 
-      console.log("Register data:", registerData);
+      navigate("/login", {
+        replace: true,
+        state: { registeredMessage: "Đăng ký thành công! Vui lòng đăng nhập." },
+      });
+    } catch (error) {
+      setErrors({ submit: parseApiError(error) });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -197,6 +225,21 @@ function RegisterForm() {
         </header>
 
         <form noValidate onSubmit={handleSubmit} className="space-y-4">
+          <FormField
+            id="username"
+            label="Tên đăng nhập"
+            type="text"
+            value={username}
+            placeholder="nguyenvana"
+            autoComplete="username"
+            icon={<AtSign size={19} />}
+            error={errors.username}
+            onChange={(value) => {
+              setUsername(value);
+              clearError("username");
+            }}
+          />
+
           <FormField
             id="fullName"
             label="Họ và tên"
@@ -336,11 +379,15 @@ function RegisterForm() {
 
           <button
             type="submit"
-            className="focus-ring group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700 hover:shadow-xl active:scale-[0.98]"
+            disabled={isSubmitting}
+            className="focus-ring group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700 hover:shadow-xl active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
           >
-            Đăng ký
-            <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+            {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
+            {!isSubmitting && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
           </button>
+          {errors.submit && (
+            <p className="text-center text-sm font-medium text-rose-600">{errors.submit}</p>
+          )}
         </form>
 
         <div className="my-6 flex items-center gap-3" aria-label="Hoặc đăng ký bằng">

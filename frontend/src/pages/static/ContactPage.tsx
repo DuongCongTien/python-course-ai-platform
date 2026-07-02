@@ -12,10 +12,16 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
+import emailjs from "@emailjs/browser";
 import { type FormEvent, type ReactElement, useState } from "react";
 import { Link } from "react-router-dom";
 
 const supportIllustration = new URL("../../assets/images/register-illustration.png.png", import.meta.url).href;
+
+// EmailJS config — lấy từ dashboard emailjs.com (Email Services / Email Templates / Account > API Keys)
+const EMAILJS_SERVICE_ID = "service_98p6f4h";
+const EMAILJS_TEMPLATE_ID = "template_5b8naf3";
+const EMAILJS_PUBLIC_KEY = "fhFVcc419rzuso6L0";
 
 interface ContactFormData {
   fullName: string;
@@ -39,14 +45,14 @@ const contactCards = [
   {
     title: "Email hỗ trợ",
     description: "Gửi câu hỏi hoặc yêu cầu hỗ trợ",
-    value: "support@pythonailearning.vn",
-    href: "mailto:support@pythonailearning.vn",
+    value: "252quanghuy@gmail.com",
+    href: "mailto:252quanghuy@gmail.com",
     icon: Mail,
   },
   {
     title: "Thời gian hỗ trợ",
     description: "Chúng tôi luôn sẵn sàng",
-    value: "Thứ 2 - Thứ 7 (08:00 - 17:30)",
+    value: "Thứ 2 - Thứ 6 (09:00 - 18:00)",
     icon: Phone,
   },
   {
@@ -107,12 +113,15 @@ function ContactPage() {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<ContactFormErrors>({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFaqIndex, setActiveFaqIndex] = useState(0);
 
   const updateField = (field: keyof ContactFormData, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
     setFormErrors((current) => ({ ...current, [field]: undefined }));
     setSuccessMessage("");
+    setErrorMessage("");
   };
 
   const validateForm = () => {
@@ -126,15 +135,37 @@ function ContactPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSuccessMessage("");
+    setErrorMessage("");
 
     if (!validateForm()) return;
 
-    console.log("Mock contact form submit:", formData);
-    setSuccessMessage("Yêu cầu của bạn đã được ghi nhận.");
-    setFormData(initialFormData);
+    setIsSubmitting(true);
+
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || "Không cung cấp",
+          topic: formData.topic,
+          message: formData.message,
+        },
+        EMAILJS_PUBLIC_KEY,
+      );
+
+      setSuccessMessage("Yêu cầu của bạn đã được gửi thành công. Chúng tôi sẽ phản hồi sớm nhất!");
+      setFormData(initialFormData);
+    } catch (error) {
+      console.error("EmailJS send error:", error);
+      setErrorMessage("Gửi yêu cầu thất bại, vui lòng thử lại sau hoặc liên hệ trực tiếp qua email.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -294,12 +325,19 @@ function ContactPage() {
               </p>
             )}
 
+            {errorMessage && (
+              <p className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {errorMessage}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="gradient-primary mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 font-bold text-white shadow-lg shadow-indigo-200 transition hover:opacity-95 active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="gradient-primary mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 font-bold text-white shadow-lg shadow-indigo-200 transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Send size={20} aria-hidden={true} />
-              Gửi liên hệ
+              {isSubmitting ? "Đang gửi..." : "Gửi liên hệ"}
             </button>
           </form>
         </div>

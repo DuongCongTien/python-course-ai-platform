@@ -25,10 +25,9 @@ function AppHeader() {
   const navigate = useNavigate();
 
   const navClassName = ({ isActive }: { isActive: boolean }) =>
-    `focus-ring border-b-2 px-1 py-2 text-sm font-semibold transition-colors ${
-      isActive
-        ? "border-indigo-600 text-indigo-600"
-        : "border-transparent text-slate-600 hover:text-indigo-600"
+    `focus-ring border-b-2 px-1 py-2 text-sm font-semibold transition-colors ${isActive
+      ? "border-indigo-600 text-indigo-600"
+      : "border-transparent text-slate-600 hover:text-indigo-600"
     }`;
 
   const handleLogout = () => {
@@ -74,24 +73,24 @@ function AppHeader() {
             </>
           ) : (
             <>
-              {user?.role === "admin" ? (
-                <Link
-                  to="/admin"
-                  className="focus-ring inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                >
-                  Trang quản trị
-                </Link>
-              ) : (
-                <Link
-                  to="/profile"
-                  className="focus-ring inline-flex items-center gap-3 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-xs font-extrabold text-white">
-                    {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full rounded-full object-cover" /> : getInitials(user?.fullName ?? "")}
-                  </span>
+              <Link
+                to={user?.role === "admin" ? "/admin" : "/profile"}
+                className="focus-ring inline-flex items-center gap-3 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-xs font-extrabold text-white">
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    getInitials(user?.fullName ?? "")
+                  )}
+                </span>
+                <span className="flex flex-col items-start leading-tight">
                   <span>{user?.fullName}</span>
-                </Link>
-              )}
+                  {user?.role === "admin" && (
+                    <span className="text-[11px] font-medium text-indigo-600">Quản trị viên</span>
+                  )}
+                </span>
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -123,8 +122,7 @@ function AppHeader() {
               end={item.to === "/"}
               onClick={() => setIsMenuOpen(false)}
               className={({ isActive }) =>
-                `rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                  isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-indigo-50"
+                `rounded-xl px-4 py-3 text-sm font-semibold transition ${isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-indigo-50"
                 }`
               }
             >

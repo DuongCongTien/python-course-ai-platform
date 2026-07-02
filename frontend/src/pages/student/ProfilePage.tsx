@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Braces, ChevronDown, Menu, Search, X } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import AccountActions from "../../components/profile/AccountActions";
 import PremiumStatusCard from "../../components/profile/PremiumStatusCard";
 import ProfileHeaderCard from "../../components/profile/ProfileHeaderCard";
@@ -13,6 +12,9 @@ import {
   type ProfileFormData,
   type RecentActivity,
 } from "../../components/profile/profileTypes";
+import { useAuth } from "../../context/AuthContext";
+import { profileService } from "../../services/profileService";
+import { parseApiError } from "../../services/authService";
 
 const activities: RecentActivity[] = [
   {
@@ -38,18 +40,17 @@ const activities: RecentActivity[] = [
   },
 ];
 
-const navigation = [
-  { label: "Trang chủ", to: "/" },
-  { label: "Khóa học", to: "/courses" },
-  { label: "AI Assistant", to: "/ai-assistant" },
-];
-
 function ProfilePage() {
+  const { user, token, refreshUser } = useAuth();
+
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
-    fullName: "Nguyễn Văn A",
-    email: "nguyen.vana@example.com",
-    phone: "090 123 4567",
+    fullName: "",
+    email: "",
+    phone: "",
   });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
     currentPassword: "",
     newPassword: "",
@@ -57,8 +58,43 @@ function ProfilePage() {
   });
   const [passwordErrors, setPasswordErrors] = useState<PasswordFormErrors>({});
 
-  const handleProfileSubmit = () => {
-    console.log("Profile update data:", profileForm);
+  // Đổ dữ liệu user thật vào form ngay khi có (hoặc khi user thay đổi)
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone ?? "",
+      });
+    }
+  }, [user]);
+
+  // Tự động ẩn thông báo sau 4 giây
+  useEffect(() => {
+    if (!profileMessage) return;
+    const timer = window.setTimeout(() => setProfileMessage(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [profileMessage]);
+
+  const handleProfileSubmit = async () => {
+    if (!user || !token) return;
+
+    setIsSavingProfile(true);
+    setProfileMessage(null);
+
+    try {
+      await profileService.updateProfile(user.id, token, {
+        full_name: profileForm.fullName,
+        email: profileForm.email,
+        phone_number: profileForm.phone,
+      });
+      await refreshUser(); // load lại thông tin mới nhất, đồng bộ với Header
+      setProfileMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
+    } catch (error) {
+      setProfileMessage({ type: "error", text: parseApiError(error) });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleSecuritySubmit = () => {
@@ -80,9 +116,12 @@ function ProfilePage() {
     setPasswordErrors(nextErrors);
 
     if (Object.keys(nextErrors).length === 0) {
+      // TODO: chưa có endpoint đổi mật khẩu trong Swagger hiện tại -> hỏi lại backend khi cần làm phần này
       console.log("Security update data:", passwordForm);
     }
   };
+
+  if (!user) return null; // ProtectedRoute đảm bảo có user, phòng hờ render trước khi hydrate xong
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -98,8 +137,32 @@ function ProfilePage() {
 
         <section className="page-container grid gap-7 py-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:py-10">
           <div className="space-y-7">
-            <ProfileHeaderCard />
+            <ProfileHeaderCard
+              fullName={user.fullName}
+              email={user.email}
+              role={user.role}
+              avatarUrl={user.avatarUrl}
+            />
+
             <ProfileInfoForm data={profileForm} onChange={setProfileForm} onSubmit={handleProfileSubmit} />
+            {isSavingProfile && <p className="text-sm font-medium text-slate-500">Đang lưu...</p>}
+            {profileMessage && (
+              <div
+                className={`flex items-center gap-3 rounded-2xl border p-4 text-sm font-semibold shadow-sm transition ${
+                  profileMessage.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-rose-200 bg-rose-50 text-rose-700"
+                }`}
+              >
+                {profileMessage.type === "success" ? (
+                  <CheckCircle2 size={20} className="shrink-0 text-emerald-600" />
+                ) : (
+                  <XCircle size={20} className="shrink-0 text-rose-600" />
+                )}
+                <span>{profileMessage.text}</span>
+              </div>
+            )}
+
             <SecurityForm
               data={passwordForm}
               errors={passwordErrors}
@@ -118,112 +181,7 @@ function ProfilePage() {
           </aside>
         </section>
       </main>
-
     </div>
-  );
-}
-
-function ProfileNavbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-      <div className="page-container flex h-[72px] items-center justify-between gap-4 py-3">
-        <Link to="/" className="focus-ring flex shrink-0 items-center gap-2 rounded-lg" aria-label="Python AI Learning">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white shadow-lg shadow-indigo-200">
-            <Braces size={21} strokeWidth={2.5} />
-          </span>
-          <span className="text-base font-extrabold tracking-tight text-slate-950 sm:text-lg">
-            Python <span className="text-indigo-600">AI</span> Learning
-          </span>
-        </Link>
-
-        <nav className="hidden items-center gap-7 lg:flex" aria-label="Điều hướng chính">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={({ isActive }) =>
-                `focus-ring rounded px-1 py-2 text-sm font-semibold transition-colors ${
-                  isActive ? "text-indigo-600" : "text-slate-600 hover:text-indigo-600"
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="relative hidden max-w-xs flex-1 xl:block">
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            placeholder="Tìm kiếm khóa học..."
-            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-          />
-        </div>
-
-        <button
-          type="button"
-          className="hidden items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 transition hover:bg-indigo-50 sm:flex"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-xs font-extrabold text-white">
-            NA
-          </span>
-          <span className="hidden text-sm font-bold text-slate-700 md:inline">Nguyễn Văn A</span>
-          <ChevronDown size={17} className="text-slate-500" />
-        </button>
-
-        <button
-          type="button"
-          className="focus-ring rounded-lg p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
-          aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <nav className="page-container flex flex-col gap-1 border-t border-slate-100 bg-white py-4 lg:hidden">
-          {navigation.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              onClick={() => setIsMenuOpen(false)}
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-600"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      )}
-    </header>
-  );
-}
-
-function ProfileFooter() {
-  const links = ["Về chúng tôi", "Điều khoản", "Chính sách bảo mật"];
-
-  return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="page-container flex flex-col gap-4 py-8 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="font-extrabold text-slate-950">Python AI Learning</p>
-          <p className="mt-1 text-sm text-slate-500">
-            © 2024 Python AI Learning. Nền tảng học tập Python & AI.
-          </p>
-        </div>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2">
-          {links.map((link) => (
-            <Link key={link} to="/" className="text-sm font-medium text-slate-500 transition hover:text-indigo-600">
-              {link}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </footer>
   );
 }
 

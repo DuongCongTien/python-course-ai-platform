@@ -242,21 +242,6 @@ INSERT INTO `lesson_videos` (`id`, `lesson_id`, `video_url`, `storage_provider`,
 (78, 78, 'https://www.youtube.com/watch?v=rlJh36N_IYU&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=19', 'YouTube', NULL, NULL, 1643, 'completed');
 
 -- --------------------------------------------------------
--- NHÓM 3: TRANSCRIPT, TÓM TẮT VÀ DỮ LIỆU AI PIPELINE
--- --------------------------------------------------------
-
--- Chèn văn bản bóc tách từ video sang bảng lesson_transcripts
-INSERT INTO `lesson_transcripts` (`id`, `lesson_id`, `transcript_text`, `language`, `generated_by`, `status`) VALUES
-
--- Chèn bản tóm tắt nội dung chính sinh bởi AI lesson_summaries
-INSERT INTO `lesson_summaries` (`id`, `lesson_id`, `summary_text`, `key_points`, `generated_by`) VALUES
-
--- Chèn dữ liệu phân mảnh định danh đồng bộ với Vector DB transcript_chunks
-INSERT INTO `transcript_chunks` (`id`, `lesson_id`, `transcript_id`, `chunk_index`, `chunk_text`, `vector_id`) VALUES
-
-
-
--- --------------------------------------------------------
 -- NHÓM 4: AI ASSISTANT VÀ LỊCH SỬ CHAT
 -- --------------------------------------------------------
 
@@ -271,11 +256,6 @@ INSERT INTO `ai_chat_messages` (`id`, `session_id`, `sender`, `message_text`, `m
 (2, 1, 'assistant', 'Lỗi này xuất hiện do bạn chưa thêm đường dẫn cài đặt Python vào biến môi trường Environment Variables (PATH). Hãy tích chọn ô "Add Python to PATH" lúc chạy lại file cài đặt nhé.', 'Qwen2.5-Coder-7B'),
 (3, 2, 'user', 'Trong Python dùng dấu nháy đơn hay nháy kép để bọc chuỗi thì tốt hơn?', NULL),
 (4, 2, 'assistant', 'Trong Python, cặp nháy đơn và nháy kép có giá trị sử dụng tương đương nhau. Tuy nhiên, nếu chuỗi của bạn chứa dấu nháy đơn, hãy bọc ngoài bằng dấu nháy kép để tránh lỗi cú pháp.', 'Qwen2.5-Coder-7B');
-
--- Chèn log truy vết RAG ai_retrieval_logs
-INSERT INTO `ai_retrieval_logs` (`id`, `message_id`, `chunk_id`, `similarity_score`) VALUES
-(1, 2, 1, 0.8923),
-(2, 4, 3, 0.7412);
 
 
 -- --------------------------------------------------------

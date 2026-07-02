@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import AIReviewSuggestionCard from "../../components/progress/AIReviewSuggestionCard";
 import MyCourseProgressList from "../../components/progress/MyCourseProgressList";
 import ProfileCard from "../../components/progress/ProfileCard";
@@ -9,105 +7,53 @@ import {
   type CourseProgress,
   type ProgressStat,
   type RecentActivity,
-  type StudentProfile,
 } from "../../components/progress/progressTypes";
 import { useAuth } from "../../context/AuthContext";
-import { getCourses } from "../../services/course.service";
-import {
-  getCourseProgress,
-  type CourseProgressData,
-  unwrapProgressData,
-} from "../../services/progress.service";
+
+// ⚠️ Dữ liệu bên dưới vẫn là dữ liệu giả — chưa có endpoint backend trả tiến độ/thống kê thật.
+// Khi backend có API tương ứng, thay 3 mảng này bằng dữ liệu gọi API về.
+const stats: ProgressStat[] = [
+  { id: "courses", icon: "menu_book", value: 3, label: "Khóa học đang học" },
+  { id: "lessons", icon: "check_circle", value: 24, label: "Bài học đã xong" },
+  { id: "quiz", icon: "grade", value: "8.5/10", label: "Điểm quiz TB" },
+  { id: "ai", icon: "smart_toy", value: 12, label: "Số lần hỏi AI" },
+];
+
+const activities: RecentActivity[] = [
+  { id: "activity-1", title: "Đã xem bài: Cấu trúc điều kiện", time: "2 giờ trước", icon: "visibility", type: "view" },
+  { id: "activity-2", title: "Hoàn thành Quiz: Vòng lặp", time: "5 giờ trước", icon: "task_alt", type: "quiz" },
+  { id: "activity-3", title: "Đã hỏi AI về: Đệ quy trong Python", time: "Hôm qua", icon: "psychology", type: "ai" },
+];
+
+const myCourses: CourseProgress[] = [
+  {
+    id: "python-basic",
+    title: "Lập trình Python Cơ bản",
+    completedLessons: 17,
+    totalLessons: 20,
+    progress: 85,
+  },
+  {
+    id: "data-science-python",
+    title: "Data Science với Python",
+    completedLessons: 9,
+    totalLessons: 20,
+    progress: 45,
+  },
+  {
+    id: "advanced-machine-learning",
+    title: "Machine Learning nâng cao",
+    completedLessons: 2,
+    totalLessons: 20,
+    progress: 10,
+    isMuted: true,
+  },
+];
 
 function MyProgressPage() {
-  const { user, isAuthenticated } = useAuth();
-  const [courses, setCourses] = useState<CourseProgress[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    let isMounted = true;
-
-    const loadProgress = async () => {
-      try {
-        setIsLoading(true);
-        const coursesResponse = await getCourses({ pageSize: 50 });
-        const courseItems = extractCourseItems(coursesResponse);
-        const progressRows = await Promise.all(
-          courseItems.map(async (course) => {
-            try {
-              const progressResponse = await getCourseProgress(course.id);
-              const progress = unwrapProgressData<CourseProgressData>(progressResponse);
-              return {
-                id: course.id,
-                title: course.title,
-                completedLessons: progress.completedLessons,
-                totalLessons: progress.totalLessons,
-                progress: progress.progressPercent,
-              };
-            } catch {
-              return null;
-            }
-          }),
-        );
-
-        if (isMounted) {
-          setCourses(progressRows.filter((item): item is CourseProgress => Boolean(item)));
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadProgress().catch((error) => {
-      console.warn("Khong the tai trang tien do:", error);
-      if (isMounted) {
-        setCourses([]);
-        setIsLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isAuthenticated]);
-
-  const profile: StudentProfile = {
-    name: user?.fullName || "Hoc vien",
-    email: user?.email || "",
-    level: "Dang hoc",
-    avatarUrl: user?.avatarUrl,
-  };
-
-  const stats: ProgressStat[] = useMemo(() => {
-    const completedLessons = courses.reduce((sum, course) => sum + course.completedLessons, 0);
-    return [
-      { id: "courses", icon: "menu_book", value: courses.length, label: "Khoa hoc dang hoc" },
-      { id: "lessons", icon: "check_circle", value: completedLessons, label: "Bai hoc da xong" },
-      { id: "quiz", icon: "grade", value: "-", label: "Diem quiz TB" },
-      { id: "ai", icon: "smart_toy", value: "-", label: "So lan hoi AI" },
-    ];
-  }, [courses]);
-
-  const activities: RecentActivity[] = [];
-
-  if (!isAuthenticated) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-12">
-        <div className="mx-auto max-w-xl rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-card">
-          <h1 className="text-2xl font-extrabold text-slate-950">Dang nhap de xem tien do</h1>
-          <Link
-            to="/login"
-            state={{ from: { pathname: "/my-progress" } }}
-            className="focus-ring mt-6 inline-flex rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white"
-          >
-            Dang nhap
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  if (!user) return null; // ProtectedRoute đảm bảo có user, phòng hờ render trước khi hydrate xong
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -125,7 +71,14 @@ function MyProgressPage() {
 
         <section className="page-container grid gap-7 py-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-10">
           <div className="space-y-7 lg:order-1">
-            <ProfileCard profile={profile} />
+            <ProfileCard
+              profile={{
+                name: user.fullName,
+                email: user.email,
+                // Chưa có field "trình độ" thật từ backend, tạm giữ nhãn cố định
+                level: "Học viên",
+              }}
+            />
             <div className="hidden lg:block">
               <AIReviewSuggestionCard />
             </div>
@@ -154,25 +107,6 @@ function MyProgressPage() {
       </main>
     </div>
   );
-}
-
-function extractCourseItems(payload: unknown): Array<{ id: string; title: string }> {
-  const record = asRecord(payload);
-  const data = asRecord(record.data);
-  const items = Array.isArray(data.items) ? data.items : Array.isArray(record.data) ? record.data : [];
-
-  return items
-    .map((item) => {
-      const course = asRecord(item);
-      const id = String(course.slug || course.id || "");
-      const title = String(course.title || "Khoa hoc");
-      return id ? { id, title } : null;
-    })
-    .filter((item): item is { id: string; title: string } => Boolean(item));
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 export default MyProgressPage;
