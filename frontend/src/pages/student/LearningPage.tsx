@@ -209,6 +209,8 @@ function LearningPage() {
         <div className="min-w-0 space-y-6">
           <VideoPlayerSection
             videoUrl={lesson.videoUrl}
+            embedUrl={lesson.embedUrl}
+            provider={lesson.videoProvider}
             title={lesson.title}
             courseId={courseId || lesson.courseId}
             lessonId={lesson.id}
@@ -294,6 +296,7 @@ function LearningPageSkeleton() {
 function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDetail {
   const data = asRecord(lessonData);
   const resources = asRecord(resourcesData);
+  const video = asRecord(getValue(resources.video, data.video, null));
 
   return {
     id: String(getValue(data.id, "")),
@@ -302,14 +305,31 @@ function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDe
     description: String(getValue(data.description, "")),
     durationSeconds: Number(getValue(data.durationSeconds, data.duration_seconds, 0)),
     videoUrl: getStringOrNull(
-      getNested(resources, "video", "videoUrl"),
-      getNested(resources, "video", "video_url"),
-      getNested(data, "video", "videoUrl"),
-      getNested(data, "video", "video_url"),
+      video.videoUrl,
+      video.video_url,
       resources.videoUrl,
       resources.video_url,
       data.videoUrl,
       data.video_url,
+    ),
+    embedUrl: getStringOrNull(
+      video.embedUrl,
+      video.embed_url,
+      resources.embedUrl,
+      resources.embed_url,
+      data.embedUrl,
+      data.embed_url,
+    ),
+    videoProvider: getStringOrNull(
+      video.provider,
+      video.storageProvider,
+      video.storage_provider,
+      resources.provider,
+      resources.storageProvider,
+      resources.storage_provider,
+      data.provider,
+      data.storageProvider,
+      data.storage_provider,
     ),
     slideFile: mapSlideFile(getValue(resources.slideFile, resources.slide_file, data.slideFile, data.slide_file)),
     transcript: getStringOrNull(

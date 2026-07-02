@@ -3,7 +3,8 @@ export const API_BASE_URL = (
   "https://cobweb-lunchbox-upcoming.ngrok-free.dev/api/v1"
 ).replace(/\/+$/, "");
 
-const TOKEN_STORAGE_KEY = "python_ai_learning_token";
+const TOKEN_STORAGE_KEY = "pyai_token";
+const LEGACY_TOKEN_STORAGE_KEY = "python_ai_learning_token";
 
 export async function apiFetch<T>(
   path: string,
@@ -11,15 +12,15 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
 
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: "application/json",
+      "Content-Type": "application/json",
       "ngrok-skip-browser-warning": "true",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.headers ?? {}),
     },
   });
@@ -33,7 +34,8 @@ export async function apiFetch<T>(
       const errorBody = await response.json().catch(() => null);
       message =
         errorBody?.message ||
-        errorBody?.detail ||
+        errorBody?.detail?.message ||
+        (typeof errorBody?.detail === "string" ? errorBody.detail : undefined) ||
         errorBody?.error ||
         message;
     } else {

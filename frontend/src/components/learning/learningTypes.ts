@@ -28,6 +28,8 @@ export interface LessonDetail {
   description: string;
   durationSeconds: number;
   videoUrl: string | null;
+  embedUrl: string | null;
+  videoProvider: string | null;
   slideFile: Lesson["slideFile"] | null;
   transcript: string | null;
   summary: string | null;

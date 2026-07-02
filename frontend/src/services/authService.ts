@@ -20,22 +20,22 @@ function extractToken(data: unknown): string {
 
 export const authService = {
   async login(payload: LoginPayload): Promise<string> {
-    const { data } = await httpClient.post("/api/v1/auth/login", payload);
+    const { data } = await httpClient.post("/auth/login", payload);
     return extractToken(data);
   },
 
   async register(payload: RegisterPayload): Promise<unknown> {
-    const { data } = await httpClient.post("/api/v1/auth/register", payload);
+    const { data } = await httpClient.post("/auth/register", payload);
     return data;
   },
 
   async loginWithGoogle(idToken: string): Promise<string> {
-    const { data } = await httpClient.post("/api/v1/auth/google-login", { id_token_str: idToken });
+    const { data } = await httpClient.post("/auth/google-login", { id_token_str: idToken });
     return extractToken(data);
   },
 
   async getMe(token: string): Promise<ApiUser> {
-    const { data } = await httpClient.get("/api/v1/users/me", {
+    const { data } = await httpClient.get("/users/me", {
       params: { token },
     });
     // Response thật có dạng { status: "success", user: {...} }, không phải user trực tiếp

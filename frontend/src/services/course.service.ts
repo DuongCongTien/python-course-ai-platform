@@ -150,7 +150,7 @@ export async function getCourses(params?: {
 
   const query = searchParams.toString();
   return requestApi<CoursesResponseData>(
-    `/courses${query ? `?${query}` : ""}`,
+    `/courses/${query ? `?${query}` : ""}`,
     "Khong the tai danh sach khoa hoc.",
   );
 }
