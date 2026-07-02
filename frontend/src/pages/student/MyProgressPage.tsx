@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Bell, Braces, Menu, Settings, X } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
 import AIReviewSuggestionCard from "../../components/progress/AIReviewSuggestionCard";
 import MyCourseProgressList from "../../components/progress/MyCourseProgressList";
 import ProfileCard from "../../components/progress/ProfileCard";
@@ -10,15 +7,11 @@ import {
   type CourseProgress,
   type ProgressStat,
   type RecentActivity,
-  type StudentProfile,
 } from "../../components/progress/progressTypes";
+import { useAuth } from "../../context/AuthContext";
 
-const profile: StudentProfile = {
-  name: "Nguyễn Văn A",
-  email: "vana.nguyen@example.com",
-  level: "Trung cấp",
-};
-
+// ⚠️ Dữ liệu bên dưới vẫn là dữ liệu giả — chưa có endpoint backend trả tiến độ/thống kê thật.
+// Khi backend có API tương ứng, thay 3 mảng này bằng dữ liệu gọi API về.
 const stats: ProgressStat[] = [
   { id: "courses", icon: "menu_book", value: 3, label: "Khóa học đang học" },
   { id: "lessons", icon: "check_circle", value: 24, label: "Bài học đã xong" },
@@ -57,13 +50,11 @@ const myCourses: CourseProgress[] = [
   },
 ];
 
-const navigation = [
-  { label: "Trang chủ", to: "/" },
-  { label: "Khóa học", to: "/courses" },
-  { label: "AI Assistant", to: "/ai-assistant" },
-];
-
 function MyProgressPage() {
+  const { user } = useAuth();
+
+  if (!user) return null; // ProtectedRoute đảm bảo có user, phòng hờ render trước khi hydrate xong
+
   return (
     <div className="min-h-screen bg-slate-50">
       <main>
@@ -80,7 +71,14 @@ function MyProgressPage() {
 
         <section className="page-container grid gap-7 py-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-10">
           <div className="space-y-7 lg:order-1">
-            <ProfileCard profile={profile} />
+            <ProfileCard
+              profile={{
+                name: user.fullName,
+                email: user.email,
+                // Chưa có field "trình độ" thật từ backend, tạm giữ nhãn cố định
+                level: "Học viên",
+              }}
+            />
             <div className="hidden lg:block">
               <AIReviewSuggestionCard />
             </div>
@@ -101,110 +99,7 @@ function MyProgressPage() {
           </div>
         </section>
       </main>
-
     </div>
-  );
-}
-
-function ProgressNavbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl">
-      <div className="page-container flex h-[72px] items-center justify-between py-3">
-        <Link to="/" className="focus-ring flex items-center gap-2 rounded-lg" aria-label="Python AI Learning">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white shadow-lg shadow-indigo-200">
-            <Braces size={21} strokeWidth={2.5} />
-          </span>
-          <span className="text-base font-extrabold tracking-tight text-slate-950 sm:text-lg">
-            Python <span className="text-indigo-600">AI</span> Learning
-          </span>
-        </Link>
-
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Điều hướng chính">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={({ isActive }) =>
-                `focus-ring rounded px-1 py-2 text-sm font-semibold transition-colors ${
-                  isActive ? "text-indigo-600" : "text-slate-600 hover:text-indigo-600"
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-2 sm:flex">
-          <button
-            type="button"
-            className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
-            aria-label="Thông báo"
-          >
-            <Bell size={18} />
-          </button>
-          <button
-            type="button"
-            className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
-            aria-label="Cài đặt"
-          >
-            <Settings size={18} />
-          </button>
-          <div className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 text-sm font-extrabold text-white">
-            NA
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="focus-ring rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
-          aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <nav className="page-container flex flex-col gap-1 border-t border-slate-100 bg-white py-4 md:hidden">
-          {navigation.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              onClick={() => setIsMenuOpen(false)}
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-600"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      )}
-    </header>
-  );
-}
-
-function ProgressFooter() {
-  const links = ["Privacy Policy", "Terms of Service", "Help Center", "Contact"];
-
-  return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="page-container flex flex-col gap-4 py-8 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="font-extrabold text-slate-950">Python AI Learning</p>
-          <p className="mt-1 text-sm text-slate-500">© 2024 Python AI Learning. All rights reserved.</p>
-        </div>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2">
-          {links.map((link) => (
-            <Link key={link} to="/" className="text-sm font-medium text-slate-500 transition hover:text-indigo-600">
-              {link}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </footer>
   );
 }
 

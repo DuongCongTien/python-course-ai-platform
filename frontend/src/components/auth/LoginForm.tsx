@@ -2,38 +2,21 @@ import { type FormEvent, useState } from "react";
 import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { parseApiError } from "../../services/authService";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 interface LoginFormErrors {
-  email?: string;
+  identifier?: string;
   password?: string;
   submit?: string;
 }
 
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.6h3.2c1.9-1.8 3-4.4 3-7.5Z"
-      />
-      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.3l-3.2-2.6c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.5-4H3.2v2.6A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.5 14.1a6 6 0 0 1 0-4.2V7.3H3.2a10 10 0 0 0 0 9.4l3.3-2.6Z" />
-      <path fill="#EA4335" d="M12 5.9c1.5 0 2.9.5 4 1.5l3-3A10 10 0 0 0 3.2 7.3l3.3 2.6a5.8 5.8 0 0 1 5.5-4Z" />
-    </svg>
-  );
-}
-
 function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -47,40 +30,43 @@ function LoginForm() {
 
     const nextErrors: LoginFormErrors = {};
 
-    if (!email.trim()) {
-      nextErrors.email = "Vui lòng nhập email.";
+    if (!identifier.trim()) {
+      nextErrors.identifier = "Vui lòng nhập email hoặc tên đăng nhập.";
     }
 
     if (!password) {
       nextErrors.password = "Vui lòng nhập mật khẩu.";
     }
 
-    if (Object.keys(nextErrors).length === 0) {
-      try {
-        const authenticatedUser = await login(email.trim(), password);
-
-        if (authenticatedUser.role === "admin") {
-          navigate("/admin", { replace: true });
-          return;
-        }
-
-        const studentRedirect =
-          redirectTo?.pathname?.startsWith("/admin")
-            ? "/courses"
-            : redirectTo
-              ? `${redirectTo.pathname ?? "/courses"}${redirectTo.search ?? ""}${redirectTo.hash ?? ""}`
-              : "/courses";
-
-        navigate(
-          studentRedirect,
-          { replace: true },
-        );
-      } catch (error) {
-        setErrors({ submit: "Email hoặc mật khẩu không đúng." });
-      }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
     }
 
-    setErrors((current) => ({ ...current, ...nextErrors }));
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const authenticatedUser = await login(identifier.trim(), password);
+
+      if (authenticatedUser.role === "admin") {
+        navigate("/admin", { replace: true });
+        return;
+      }
+
+      const studentRedirect =
+        redirectTo?.pathname?.startsWith("/admin")
+          ? "/courses"
+          : redirectTo
+            ? `${redirectTo.pathname ?? "/courses"}${redirectTo.search ?? ""}${redirectTo.hash ?? ""}`
+            : "/courses";
+
+      navigate(studentRedirect, { replace: true });
+    } catch (error) {
+      setErrors({ submit: parseApiError(error) });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -95,38 +81,40 @@ function LoginForm() {
 
       <form noValidate onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">
-            Email
+          <label htmlFor="identifier" className="mb-2 block text-sm font-semibold text-slate-700">
+            Email hoặc tên đăng nhập
           </label>
           <div className="relative">
             <Mail
               size={19}
               className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 ${
-                errors.email ? "text-rose-500" : "text-slate-400"
+                errors.identifier ? "text-rose-500" : "text-slate-400"
               }`}
             />
             <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
+              id="identifier"
+              name="identifier"
+              type="text"
+              autoComplete="username"
+              value={identifier}
               onChange={(event) => {
-                setEmail(event.target.value);
-                if (errors.email || errors.submit) setErrors((current) => ({ ...current, email: undefined, submit: undefined }));
+                setIdentifier(event.target.value);
+                if (errors.identifier || errors.submit) {
+                  setErrors((current) => ({ ...current, identifier: undefined, submit: undefined }));
+                }
               }}
-              placeholder="email@example.com"
-              aria-describedby={errors.email ? "email-error" : undefined}
+              placeholder="email@example.com hoặc tên đăng nhập"
+              aria-describedby={errors.identifier ? "identifier-error" : undefined}
               className={`h-[52px] w-full rounded-2xl border bg-slate-50 py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
-                errors.email
+                errors.identifier
                   ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100"
                   : "border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-100"
               }`}
             />
           </div>
-          {errors.email && (
-            <p id="email-error" className="mt-1.5 text-xs font-medium text-rose-600">
-              {errors.email}
+          {errors.identifier && (
+            <p id="identifier-error" className="mt-1.5 text-xs font-medium text-rose-600">
+              {errors.identifier}
             </p>
           )}
         </div>
@@ -196,9 +184,10 @@ function LoginForm() {
 
         <button
           type="submit"
-          className="focus-ring group flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700 hover:shadow-xl hover:shadow-indigo-200"
+          disabled={isSubmitting}
+          className="focus-ring group flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700 hover:shadow-xl hover:shadow-indigo-200 disabled:cursor-wait disabled:opacity-70"
         >
-          Đăng nhập
+          {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
         </button>
         {errors.submit && (
           <p className="mt-3 text-center text-sm font-medium text-rose-600">
@@ -207,35 +196,14 @@ function LoginForm() {
         )}
       </form>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <p className="font-semibold text-slate-900">Tài khoản test:</p>
-        <p>Học viên: <span className="font-medium text-slate-800">student@test.com / 123456</span></p>
-        <p>Admin: <span className="font-medium text-slate-800">admin@test.com / 123456</span></p>
-      </div>
-
       <div className="my-7 flex items-center gap-3" aria-label="hoặc đăng nhập bằng">
         <span className="h-px flex-1 bg-slate-200" />
         <span className="text-xs font-medium text-slate-400">hoặc đăng nhập bằng</span>
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          className="focus-ring flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm"
-        >
-          <GoogleIcon />
-          Google
-        </button>
-        <button
-          type="button"
-          className="focus-ring flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm"
-        >
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] text-sm font-extrabold leading-none text-white">
-            f
-          </span>
-          Facebook
-        </button>
+      <div className="flex justify-center">
+        <GoogleLoginButton />
       </div>
 
       <p className="mt-7 text-center text-sm text-slate-500">
