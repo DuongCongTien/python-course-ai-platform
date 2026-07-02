@@ -3,11 +3,22 @@ export interface Lesson {
   title: string;
   duration: string;
   status: "completed" | "available" | "locked";
+  progressPercent?: number;
+  lastPositionSeconds?: number;
   slideFile?: {
     fileName: string;
     fileUrl: string;
     fileSize: string;
   };
+}
+
+export interface LessonProgress {
+  lessonId: number | string;
+  lastPositionSeconds: number;
+  watchedSeconds: number;
+  durationSeconds: number;
+  progressPercent: number;
+  isCompleted: boolean;
 }
 
 export interface LessonDetail {

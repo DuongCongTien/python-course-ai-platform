@@ -1,4 +1,5 @@
 import { type ReactNode, createContext, useContext, useMemo, useState } from "react";
+import { apiFetch } from "../config/api";
 
 export type UserRole = "student" | "admin";
 
@@ -17,32 +18,24 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface LoginResponse {
+  access_token: string;
+  user: {
+    id: number | string;
+    username?: string;
+    fullName?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+    avatarUrl?: string | null;
+    avatar_url?: string | null;
+    role?: UserRole;
+  };
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = "python_ai_learning_user";
-
-interface MockUser extends AuthUser {
-  password: string;
-}
-
-const mockUsers: MockUser[] = [
-  {
-    id: "student-001",
-    fullName: "Nguyễn Văn A",
-    email: "student@test.com",
-    password: "123456",
-    role: "student",
-    avatarUrl: "",
-  },
-  {
-    id: "admin-001",
-    fullName: "Quản trị viên",
-    email: "admin@test.com",
-    password: "123456",
-    role: "admin",
-    avatarUrl: "",
-  },
-];
+const TOKEN_STORAGE_KEY = "python_ai_learning_token";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -52,7 +45,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return null;
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!stored || !token) return null;
 
       const parsed = JSON.parse(stored) as AuthUser;
       if (parsed.role === "student" || parsed.role === "admin") {
@@ -60,41 +54,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
       return null;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
       return null;
     }
   });
 
   const login = async (email: string, password: string) => {
-    return new Promise<AuthUser>((resolve, reject) => {
-      const normalizedEmail = email.trim().toLowerCase();
-      const foundUser = mockUsers.find(
-        (item) => item.email === normalizedEmail && item.password === password,
-      );
-
-      if (!foundUser) {
-        reject(new Error("Email hoặc mật khẩu không đúng."));
-        return;
-      }
-
-      const nextUser: AuthUser = {
-        id: foundUser.id,
-        fullName: foundUser.fullName,
-        email: foundUser.email,
-        role: foundUser.role,
-        avatarUrl: foundUser.avatarUrl,
-      };
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
-      setUser(nextUser);
-      resolve(nextUser);
+    const response = await apiFetch<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        username: email.trim(),
+        password,
+      }),
     });
+
+    const nextUser: AuthUser = {
+      id: String(response.user.id),
+      fullName: response.user.fullName || response.user.full_name || response.user.username || email.trim(),
+      email: response.user.email || email.trim(),
+      role: response.user.role === "admin" ? "admin" : "student",
+      avatarUrl: response.user.avatarUrl || response.user.avatar_url || "",
+    };
+
+    localStorage.setItem(TOKEN_STORAGE_KEY, response.access_token);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+    return nextUser;
   };
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     setUser(null);
   };
 

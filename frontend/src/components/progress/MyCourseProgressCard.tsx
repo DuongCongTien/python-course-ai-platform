@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { type CourseProgress } from "./progressTypes";
+import { getCourseContinue, unwrapProgressData } from "../../services/progress.service";
 
 interface MyCourseProgressCardProps {
   course: CourseProgress;
@@ -8,6 +9,17 @@ interface MyCourseProgressCardProps {
 
 function MyCourseProgressCard({ course }: MyCourseProgressCardProps) {
   const navigate = useNavigate();
+
+  const handleContinue = async () => {
+    try {
+      const response = await getCourseContinue(course.id);
+      const continueData = unwrapProgressData(response);
+      navigate(`/learning/${course.id}/${continueData.lessonId}`);
+    } catch (error) {
+      console.warn("Khong the lay bai hoc tiep tuc:", error);
+      navigate(`/courses/${course.id}`);
+    }
+  };
 
   return (
     <article
@@ -43,7 +55,7 @@ function MyCourseProgressCard({ course }: MyCourseProgressCardProps) {
 
           <button
             type="button"
-            onClick={() => navigate(`/courses/${course.id}`)}
+            onClick={handleContinue}
             className="focus-ring mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700"
           >
             Tiếp tục học

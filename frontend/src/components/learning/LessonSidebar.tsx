@@ -14,9 +14,9 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
   return (
     <aside className="rounded-[26px] border border-slate-200 bg-white shadow-card lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] lg:overflow-y-auto">
       <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-5 backdrop-blur">
-        <h2 className="text-lg font-extrabold text-slate-950">Nội dung khóa học</h2>
+        <h2 className="text-lg font-extrabold text-slate-950">Noi dung khoa hoc</h2>
         <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="font-semibold text-slate-600">Hoàn thành: {progressPercent}%</span>
+          <span className="font-semibold text-slate-600">Hoan thanh: {progressPercent}%</span>
           <span className="font-extrabold text-indigo-600">
             {completedCount}/{lessons.length}
           </span>
@@ -28,12 +28,13 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
 
       <div className="space-y-2 p-3">
         {lessons.length === 0 ? (
-          <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">Khóa học này chưa có bài học.</p>
+          <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">Khoa hoc nay chua co bai hoc.</p>
         ) : (
           lessons.map((lesson) => {
             const isLocked = lesson.status === "locked";
             const isCurrent = lesson.id === selectedLessonId;
             const isCompleted = lesson.status === "completed";
+            const isInProgress = !isCompleted && (lesson.progressPercent ?? 0) > 0;
 
             return (
               <button
@@ -65,11 +66,25 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
                     <span className="block text-sm font-extrabold leading-5">{lesson.title}</span>
                     <span className="mt-1 flex items-center justify-between gap-2 text-xs font-medium">
                       <span>{lesson.duration}</span>
-                      {isCurrent && (
-                        <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                          Đang học
-                        </span>
-                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isCurrent
+                            ? "bg-indigo-600 text-white"
+                            : isCompleted
+                              ? "bg-emerald-100 text-emerald-700"
+                              : isInProgress
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {isCurrent
+                          ? "Dang hoc"
+                          : isCompleted
+                            ? "Da hoan thanh"
+                            : isInProgress
+                              ? `Dang hoc - ${lesson.progressPercent}%`
+                              : "Chua hoc"}
+                      </span>
                     </span>
                   </span>
                 </div>
@@ -82,4 +97,4 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
   );
 }
 
-export default LessonSidebar;   
+export default LessonSidebar;

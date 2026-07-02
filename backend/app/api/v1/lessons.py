@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.models.users_model import User
+from app.schemas.progress import LessonCompleteInput, LessonProgressUpdateInput
 from app.services.lesson_service import LessonService
+from app.services.progress_service import ProgressService
 
 router = APIRouter()
 
@@ -49,3 +53,32 @@ def get_lesson_resources(lesson_id: int, db: Session = Depends(get_db)):
         return lesson_error_response(exc)
 
     return success_response(resources)
+
+
+@router.get("/{lesson_id}/progress", status_code=status.HTTP_200_OK)
+def get_lesson_progress(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return success_response(ProgressService.get_lesson_progress(db, int(current_user.id), lesson_id))
+
+
+@router.put("/{lesson_id}/progress", status_code=status.HTTP_200_OK)
+def update_lesson_progress(
+    lesson_id: int,
+    payload: LessonProgressUpdateInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return success_response(ProgressService.update_lesson_progress(db, int(current_user.id), lesson_id, payload))
+
+
+@router.post("/{lesson_id}/complete", status_code=status.HTTP_200_OK)
+def complete_lesson(
+    lesson_id: int,
+    payload: LessonCompleteInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return success_response(ProgressService.complete_lesson(db, int(current_user.id), lesson_id, payload))
