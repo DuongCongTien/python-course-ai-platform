@@ -1,120 +1,111 @@
-import { type ReactNode, createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { authService } from "../services/authService";
+import { mapApiUserToAuthUser, type AuthUser, type RegisterPayload } from "../services/auth.types";
 
-export type UserRole = "student" | "admin";
+const TOKEN_STORAGE_KEY = "pyai_token";
 
-export interface AuthUser {
-  id: string;
-  fullName: string;
-  email: string;
-  role: UserRole;
-  avatarUrl?: string;
-}
-
-interface AuthContextType {
+interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  token: string | null;
+  isLoading: boolean;
+  login: (identifier: string, password: string) => Promise<AuthUser>;
+  loginWithGoogle: (idToken: string) => Promise<AuthUser>;
+  register: (payload: RegisterPayload) => Promise<void>;
+  refreshUser: () => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "python_ai_learning_user";
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
+  const [user, setUser] = useState<AuthUser | null>(null);
+  // isLoading = true khi đang khôi phục phiên đăng nhập từ token đã lưu (lúc load lại trang)
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-interface MockUser extends AuthUser {
-  password: string;
-}
+  useEffect(() => {
+    let isMounted = true;
 
-const mockUsers: MockUser[] = [
-  {
-    id: "student-001",
-    fullName: "Nguyễn Văn A",
-    email: "student@test.com",
-    password: "123456",
-    role: "student",
-    avatarUrl: "",
-  },
-  {
-    id: "admin-001",
-    fullName: "Quản trị viên",
-    email: "admin@test.com",
-    password: "123456",
-    role: "admin",
-    avatarUrl: "",
-  },
-];
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return null;
-
-      const parsed = JSON.parse(stored) as AuthUser;
-      if (parsed.role === "student" || parsed.role === "admin") {
-        return parsed;
-      }
-
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
-  });
-
-  const login = async (email: string, password: string) => {
-    return new Promise<AuthUser>((resolve, reject) => {
-      const normalizedEmail = email.trim().toLowerCase();
-      const foundUser = mockUsers.find(
-        (item) => item.email === normalizedEmail && item.password === password,
-      );
-
-      if (!foundUser) {
-        reject(new Error("Email hoặc mật khẩu không đúng."));
+    async function hydrateFromStoredToken() {
+      if (!token) {
+        setIsLoading(false);
         return;
       }
+      try {
+        const apiUser = await authService.getMe(token);
+        if (isMounted) setUser(mapApiUserToAuthUser(apiUser));
+      } catch {
+        // Token hết hạn hoặc không hợp lệ -> đăng xuất
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
 
-      const nextUser: AuthUser = {
-        id: foundUser.id,
-        fullName: foundUser.fullName,
-        email: foundUser.email,
-        role: foundUser.role,
-        avatarUrl: foundUser.avatarUrl,
-      };
+    hydrateFromStoredToken();
+    return () => {
+      isMounted = false;
+    };
+    // Chỉ chạy 1 lần khi mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
-      setUser(nextUser);
-      resolve(nextUser);
-    });
+  const login = async (identifier: string, password: string): Promise<AuthUser> => {
+    const newToken = await authService.login({ username: identifier, password });
+    localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+    setToken(newToken);
+
+    const apiUser = await authService.getMe(newToken);
+    const authUser = mapApiUserToAuthUser(apiUser);
+    setUser(authUser);
+    return authUser;
+  };
+
+  const loginWithGoogle = async (idToken: string): Promise<AuthUser> => {
+    const newToken = await authService.loginWithGoogle(idToken);
+    localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+    setToken(newToken);
+
+    const apiUser = await authService.getMe(newToken);
+    const authUser = mapApiUserToAuthUser(apiUser);
+    setUser(authUser);
+    return authUser;
+  };
+
+  const register = async (payload: RegisterPayload): Promise<void> => {
+    await authService.register(payload);
+    // Đăng ký xong không tự đăng nhập luôn (backend không trả token ở bước này),
+    // điều hướng người dùng sang trang đăng nhập ở component gọi hàm này.
+  };
+
+  const refreshUser = async (): Promise<void> => {
+    if (!token) return;
+    const apiUser = await authService.getMe(token);
+    setUser(mapApiUserToAuthUser(apiUser));
   };
 
   const logout = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    setToken(null);
     setUser(null);
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      login,
-      logout,
-    }),
-    [user],
+  return (
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, token, isLoading, login, loginWithGoogle, register, refreshUser, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth phải được sử dụng bên trong AuthProvider");
+  return ctx;
 }

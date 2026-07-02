@@ -1,9 +1,20 @@
 import { Braces } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import AuthIllustration from "../../components/auth/AuthIllustration";
 import LoginForm from "../../components/auth/LoginForm";
+import { useAuth } from "../../context/AuthContext";
 
 function LoginPage() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) return null; // chờ AuthContext xác nhận xong token, tránh nháy UI
+
+  if (isAuthenticated) {
+    const redirectTo = user?.role === "admin" ? "/admin" : "/courses";
+    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+  }
+
   return (
     <main className="flex min-h-screen bg-slate-50">
       <AuthIllustration />
