@@ -1,12 +1,13 @@
 import { ClipboardList, FileText, ListChecks, Search } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { type LessonTab, type TranscriptSegment } from "./learningTypes";
 
 interface LessonTabsProps {
   activeTab: LessonTab;
   onTabChange: (tab: LessonTab) => void;
   lessonId: string;
-  courseId: string;
+  transcript: string | null;
+  summary: string | null;
   transcriptSegments: TranscriptSegment[];
 }
 
@@ -17,16 +18,14 @@ const tabs: Array<{ id: LessonTab; label: string }> = [
   { id: "quiz", label: "Quiz" },
 ];
 
-function LessonTabs({ activeTab, onTabChange, lessonId, courseId, transcriptSegments }: LessonTabsProps) {
-  const navigate = useNavigate();
-
-  const handleTabChange = (tab: LessonTab) => {
-    if (tab === "transcript") {
-      navigate(`/learning/${courseId}/${lessonId}/transcript`);
-      return;
-    }
-    onTabChange(tab);
-  };
+function LessonTabs({
+  activeTab,
+  onTabChange,
+  lessonId,
+  transcript,
+  summary,
+  transcriptSegments,
+}: LessonTabsProps) {
   return (
     <section className="rounded-[26px] border border-slate-200 bg-white shadow-card">
       <div className="flex overflow-x-auto border-b border-slate-100 px-4" role="tablist" aria-label="Nội dung bài học">
@@ -38,7 +37,7 @@ function LessonTabs({ activeTab, onTabChange, lessonId, courseId, transcriptSegm
             aria-selected={activeTab === tab.id}
             aria-controls={`panel-${tab.id}`}
             id={`tab-${tab.id}`}
-            onClick={() => handleTabChange(tab.id)}
+            onClick={() => onTabChange(tab.id)}
             className={`min-w-max border-b-2 px-4 py-4 text-sm font-extrabold transition ${
               activeTab === tab.id
                 ? "border-indigo-600 text-indigo-600"
@@ -51,43 +50,38 @@ function LessonTabs({ activeTab, onTabChange, lessonId, courseId, transcriptSegm
       </div>
 
       <div className="p-5 sm:p-6">
-        {activeTab === "overview" && <OverviewTab />}
-        {activeTab === "transcript" && <TranscriptTab segments={transcriptSegments} />}
-        {activeTab === "summary" && <SummaryTab />}
+        {activeTab === "overview" && <OverviewTab summary={summary} />}
+        {activeTab === "transcript" && <TranscriptTab transcript={transcript} segments={transcriptSegments} />}
+        {activeTab === "summary" && <SummaryTab summary={summary} />}
         {activeTab === "quiz" && <QuizTab lessonId={lessonId} />}
       </div>
     </section>
   );
 }
 
-function OverviewTab() {
-  const notes = [
-    "Vòng lặp `for` được dùng khi biết trước số lần lặp.",
-    "Vòng lặp `while` lặp cho đến khi một điều kiện không còn đúng.",
-    "Sử dụng `break` để thoát vòng lặp ngay lập tức.",
-  ];
-
+function OverviewTab({ summary }: { summary: string | null }) {
   return (
     <div className="rounded-2xl bg-indigo-50/70 p-5">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
           <ListChecks size={20} />
         </span>
-        <h2 className="font-extrabold text-slate-950">Ghi chú quan trọng</h2>
+        <h2 className="font-extrabold text-slate-950">Nội dung chính</h2>
       </div>
-      <ul className="space-y-3">
-        {notes.map((note) => (
-          <li key={note} className="flex gap-3 text-sm leading-6 text-slate-700">
-            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-600" />
-            <span>{note}</span>
-          </li>
-        ))}
-      </ul>
+      {summary ? (
+        <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{summary}</p>
+      ) : (
+        <p className="text-sm leading-6 text-slate-500">Tóm tắt bài học chưa có.</p>
+      )}
     </div>
   );
 }
 
-function TranscriptTab({ segments }: { segments: TranscriptSegment[] }) {
+function TranscriptTab({ transcript, segments }: { transcript: string | null; segments: TranscriptSegment[] }) {
+  if (!transcript && segments.length === 0) {
+    return <p className="text-sm leading-6 text-slate-500">Transcript chưa được tạo.</p>;
+  }
+
   return (
     <div>
       <div className="relative mb-5">
@@ -100,31 +94,33 @@ function TranscriptTab({ segments }: { segments: TranscriptSegment[] }) {
           className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
         />
       </div>
-      <div className="space-y-3">
-        {segments.map((segment) => (
-          <div key={segment.time} className="flex gap-4 rounded-2xl bg-slate-50 p-4">
-            <span className="font-mono text-sm font-extrabold text-indigo-600">{segment.time}</span>
-            <p className="text-sm font-medium text-slate-700">{segment.title}</p>
-          </div>
-        ))}
-      </div>
+      {segments.length > 0 ? (
+        <div className="space-y-3">
+          {segments.map((segment) => (
+            <div key={`${segment.time}-${segment.title}`} className="flex gap-4 rounded-2xl bg-slate-50 p-4">
+              <span className="font-mono text-sm font-extrabold text-indigo-600">{segment.time}</span>
+              <p className="text-sm font-medium text-slate-700">{segment.title}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{transcript}</p>
+      )}
     </div>
   );
 }
 
-function SummaryTab() {
-  const summaries = ["Khái niệm vòng lặp", "Khi nào dùng for", "Khi nào dùng while", "Ví dụ ứng dụng thực tế"];
+function SummaryTab({ summary }: { summary: string | null }) {
+  if (!summary) {
+    return <p className="text-sm leading-6 text-slate-500">Tóm tắt bài học chưa có.</p>;
+  }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {summaries.map((item) => (
-        <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-            <FileText size={18} />
-          </span>
-          <span className="text-sm font-bold text-slate-700">{item}</span>
-        </div>
-      ))}
+    <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+        <FileText size={18} />
+      </span>
+      <p className="whitespace-pre-line text-sm font-medium leading-7 text-slate-700">{summary}</p>
     </div>
   );
 }

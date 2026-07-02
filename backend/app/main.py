@@ -7,8 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.courses import router as courses_router
+from app.api.v1.lessons import router as lessons_router
 from app.api.v1.users import router as users_router
-from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(title="Python Course AI Platform")
 
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(courses_router, prefix="/api/v1/courses", tags=["Courses"])
+app.include_router(lessons_router, prefix="/api/v1/lessons", tags=["Lessons"])
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 
 if __name__ == "__main__":

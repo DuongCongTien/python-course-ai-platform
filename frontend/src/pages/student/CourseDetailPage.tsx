@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Bot, Braces, Building2, Mail, Menu, X } from "lucide-react";
 import { Link, NavLink, useParams } from "react-router-dom";
 import CourseAIFeatures from "../../components/course/CourseAIFeatures";
-import CourseContentAccordion from "../../components/course/CourseContentAccordion";
 import CourseHero from "../../components/course/CourseHero";
+import CourseLessonList from "../../components/course/CourseLessonList";
 import CourseObjectives from "../../components/course/CourseObjectives";
 import CourseSidebar from "../../components/course/CourseSidebar";
-import { type CourseDetail } from "../../components/course/courseDetailTypes";
+import { type CourseDetail, type CourseLesson } from "../../components/course/courseDetailTypes";
 import { useAuth } from "../../context/AuthContext";
-import { getCourseById, getCourseLessons, mapCourseDetail } from "../../services/course.service";
+import { extractCourseLessons, getCourseById, getCourseLessons, mapCourseDetail, mapCourseLesson } from "../../services/course.service";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
@@ -20,12 +20,14 @@ function CourseDetailPage() {
   const { courseId } = useParams();
   const { isAuthenticated } = useAuth();
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [lessons, setLessons] = useState<CourseLesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
   const loadCourseDetail = useCallback(async () => {
     if (!courseId) {
+      setCourse(null);
+      setLessons([]);
       setErrorMessage("Khong tim thay khoa hoc.");
       setIsLoading(false);
       return;
@@ -44,13 +46,17 @@ function CourseDetailPage() {
         throw new Error("Khong tim thay khoa hoc.");
       }
 
-      const mappedCourse = mapCourseDetail(courseResponse.data, lessonsResponse.data ?? []);
+      const lessonItems = extractCourseLessons(lessonsResponse);
+      const mappedLessons = lessonItems.map(mapCourseLesson);
+      const mappedCourse = mapCourseDetail(courseResponse.data, lessonItems);
 
       setCourse(mappedCourse);
-      setActiveLessonId(mappedCourse.currentLessonId ?? mappedCourse.firstLessonId ?? null);
+      setLessons(mappedLessons);
     } catch (error) {
+      console.error("Load course detail failed:", error);
       setErrorMessage(error instanceof Error ? error.message : "Khong the tai chi tiet khoa hoc.");
       setCourse(null);
+      setLessons([]);
     } finally {
       setIsLoading(false);
     }
@@ -59,10 +65,6 @@ function CourseDetailPage() {
   useEffect(() => {
     loadCourseDetail();
   }, [loadCourseDetail]);
-
-  const handleSelectLesson = (lessonId: string) => {
-    setActiveLessonId(lessonId);
-  };
 
   if (isLoading) {
     return (
@@ -111,18 +113,12 @@ function CourseDetailPage() {
 
         <section className="page-container grid gap-8 py-10 lg:grid-cols-[1fr_360px] lg:py-14 xl:grid-cols-[1fr_400px]">
           <div className="space-y-8">
-            <CourseContentAccordion
-              chapters={course.chapters}
-              courseId={course.id}
-              isAuthenticated={isAuthenticated}
-              activeLessonId={activeLessonId}
-              onSelectLesson={handleSelectLesson}
-            />
+            <CourseLessonList courseId={course.id} lessons={lessons} isAuthenticated={isAuthenticated} />
             <CourseObjectives objectives={course.objectives} />
             <CourseAIFeatures features={course.aiFeatures} />
           </div>
 
-          <CourseSidebar course={course} isAuthenticated={isAuthenticated} />
+          <CourseSidebar course={course} lessons={lessons} isAuthenticated={isAuthenticated} />
         </section>
       </main>
 

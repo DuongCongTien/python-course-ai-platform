@@ -4,42 +4,37 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.courses_model import ContentStatus, Course, CourseSection, Lesson
+from app.models.courses_model import ContentStatus, Course, Lesson
 
 
 DEFAULT_AI_FEATURES = [
     {
         "id": "transcript",
-        "title": "Transcript tự động",
-        "description": "AI chuyển nội dung video thành văn bản.",
+        "title": "Transcript tu dong",
+        "description": "AI chuyen noi dung video thanh van ban.",
     },
     {
         "id": "summary",
-        "title": "Tóm tắt bài học",
-        "description": "AI rút ra các ý chính trong bài học.",
+        "title": "Tom tat bai hoc",
+        "description": "AI rut ra cac y chinh trong bai hoc.",
     },
     {
         "id": "qa",
-        "title": "Hỏi đáp theo bài học",
-        "description": "Chatbot trả lời dựa trên nội dung bài học.",
+        "title": "Hoi dap theo bai hoc",
+        "description": "Chatbot tra loi dua tren noi dung bai hoc.",
     },
 ]
 
 COURSE_OBJECTIVES = {
-    "python-cho-nguoi-moi-bat-dau": [
-        "Nắm được cú pháp Python cơ bản.",
-        "Hiểu biến, kiểu dữ liệu, điều kiện và vòng lặp.",
-        "Có thể viết các chương trình Python đơn giản.",
+    "python-co-ban-tich-hop-ai": [
+        "Nam duoc cu phap Python co ban.",
+        "Hieu bien, kieu du lieu, dieu kien va vong lap.",
+        "Biet ung dung AI Assistant de tang hieu suat viet code.",
     ],
-    "python-nang-cao": [
-        "Tổ chức code Python theo module và package.",
-        "Áp dụng lập trình hướng đối tượng trong project thực tế.",
-        "Xử lý file, exception và logging đúng cách.",
-    ],
-    "python-phan-tich-du-lieu": [
-        "Hiểu quy trình phân tích dữ liệu bằng Python.",
-        "Làm việc với NumPy, Pandas và dữ liệu CSV.",
-        "Trực quan hóa dữ liệu và xuất báo cáo cơ bản.",
+    "rag-fastapi-advanced": [
+        "Nam kien truc tong quan cua he thong RAG.",
+        "Biet cach ket hop vector database voi FastAPI.",
+        "Xay dung API tro ly thong minh dua tren noi dung bai hoc.",
     ],
 }
 
@@ -104,7 +99,6 @@ class CoursesService:
             db.query(Course)
             .options(
                 selectinload(Course.lessons),
-                selectinload(Course.sections).selectinload(CourseSection.lessons),
             )
             .filter(Course.status == ContentStatus.published)
         )
@@ -132,7 +126,11 @@ class CoursesService:
         published_lessons = CoursesService._published_lessons(course.lessons)
         lessons_count = len(published_lessons)
         duration_seconds = sum((lesson.duration_seconds or 0) for lesson in published_lessons)
-        first_lesson = min(published_lessons, key=lambda lesson: lesson.sort_order or 0) if published_lessons else None
+        first_lesson = (
+            min(published_lessons, key=lambda lesson: lesson.sort_order or 0)
+            if published_lessons
+            else None
+        )
 
         return {
             "id": int(course.id),
@@ -156,26 +154,17 @@ class CoursesService:
     @staticmethod
     def get_course_lessons(identifier: str, db: Session):
         course = CoursesService.get_course_by_identifier(identifier, db)
-        sections = sorted(course.sections, key=lambda section: section.sort_order or 0)
-
-        chapters = []
-        for section in sections:
-            lessons = [
-                lesson
-                for lesson in sorted(section.lessons, key=lambda item: item.sort_order or 0)
-                if lesson.status == ContentStatus.published
-            ]
-            duration_seconds = sum((lesson.duration_seconds or 0) for lesson in lessons)
-            chapters.append(
-                {
-                    "id": int(section.id),
-                    "title": section.title,
-                    "meta": f"{len(lessons)} bai hoc - {CoursesService._format_minutes(duration_seconds)}",
-                    "lessons": [CoursesService.serialize_lesson(lesson) for lesson in lessons],
-                }
+        lessons = (
+            db.query(Lesson)
+            .filter(
+                Lesson.course_id == course.id,
+                Lesson.status == ContentStatus.published,
             )
+            .order_by(Lesson.sort_order.asc(), Lesson.id.asc())
+            .all()
+        )
 
-        return chapters
+        return [CoursesService.serialize_lesson(lesson) for lesson in lessons]
 
     @staticmethod
     def serialize_course_list_item(course: Course):
@@ -216,6 +205,8 @@ class CoursesService:
         duration_seconds = lesson.duration_seconds or 0
         return {
             "id": int(lesson.id),
+            "courseId": int(lesson.course_id),
+            "sectionId": int(lesson.section_id) if lesson.section_id else None,
             "title": lesson.title,
             "description": lesson.description or "",
             "durationSeconds": duration_seconds,
