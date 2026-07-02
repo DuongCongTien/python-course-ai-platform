@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
+from urllib.parse import parse_qs, urlparse
 
 from app.models.ai_pipeline_model import LessonSummary, LessonTranscript
 from app.models.courses_model import ContentStatus, Lesson, LessonVideo
@@ -78,15 +79,42 @@ class LessonService:
 
     @staticmethod
     def serialize_video(video: LessonVideo):
+        provider = (video.storage_provider or "media").lower()
+        video_url = video.video_url
+
         return {
             "id": int(video.id),
-            "videoUrl": video.video_url,
+            "provider": provider,
+            "videoUrl": video_url,
+            "embedUrl": LessonService.build_youtube_embed_url(video_url) if provider == "youtube" else None,
             "storageProvider": video.storage_provider,
             "fileName": video.file_name,
             "fileSize": video.file_size,
             "durationSeconds": video.duration_seconds or 0,
             "processingStatus": video.processing_status,
         }
+
+    @staticmethod
+    def build_youtube_embed_url(url: str | None):
+        if not url:
+            return None
+
+        parsed = urlparse(url)
+        netloc = parsed.netloc.lower()
+
+        if "youtu.be" in netloc:
+            video_id = parsed.path.strip("/")
+            return f"https://www.youtube.com/embed/{video_id}" if video_id else None
+
+        if "youtube.com" in netloc:
+            if parsed.path.startswith("/embed/"):
+                return url
+
+            video_id = parse_qs(parsed.query).get("v", [None])[0]
+            if video_id:
+                return f"https://www.youtube.com/embed/{video_id}"
+
+        return None
 
     @staticmethod
     def serialize_transcript(transcript: LessonTranscript):

@@ -92,13 +92,7 @@ function MyProgressPage() {
             <div className="lg:hidden">
               <AIReviewSuggestionCard />
             </div>
-            {isLoading ? (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600 shadow-card">
-                Dang tai tien do...
-              </div>
-            ) : (
-              <MyCourseProgressList courses={courses} />
-            )}
+            <MyCourseProgressList courses={myCourses} />
             <div className="lg:hidden">
               <RecentActivityTimeline activities={activities} />
             </div>
