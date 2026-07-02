@@ -61,10 +61,10 @@ function MyProgressPage() {
         <section className="border-b border-slate-200 bg-gradient-to-br from-white via-blue-50 to-indigo-50">
           <div className="page-container py-10 sm:py-14">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
-              Tiến độ học tập của tôi
+              Tien do hoc tap cua toi
             </h1>
             <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
-              Theo dõi lộ trình làm chủ kiến thức cùng Python AI Learning
+              Theo doi lo trinh hoc Python AI cua ban
             </p>
           </div>
         </section>
@@ -92,7 +92,13 @@ function MyProgressPage() {
             <div className="lg:hidden">
               <AIReviewSuggestionCard />
             </div>
-            <MyCourseProgressList courses={myCourses} />
+            {isLoading ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600 shadow-card">
+                Dang tai tien do...
+              </div>
+            ) : (
+              <MyCourseProgressList courses={courses} />
+            )}
             <div className="lg:hidden">
               <RecentActivityTimeline activities={activities} />
             </div>

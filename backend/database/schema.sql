@@ -277,10 +277,15 @@ CREATE TABLE IF NOT EXISTS `enrollments` (
     `user_id` BIGINT NOT NULL,
     `course_id` BIGINT NOT NULL,
     `status` ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+    `current_lesson_id` BIGINT NULL,
+    `progress_percent` INT DEFAULT 0,
+    `completed_lessons_count` INT DEFAULT 0,
+    `last_accessed_at` DATETIME NULL,
     `enrolled_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `completed_at` DATETIME NULL,
     CONSTRAINT `fk_enrollments_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_enrollments_courses` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_enrollments_current_lesson` FOREIGN KEY (`current_lesson_id`) REFERENCES `lessons` (`id`) ON DELETE SET NULL,
     CONSTRAINT `uq_user_course` UNIQUE (`user_id`, `course_id`)
 ) ENGINE=InnoDB;
 
@@ -288,14 +293,21 @@ CREATE TABLE IF NOT EXISTS `enrollments` (
 CREATE TABLE IF NOT EXISTS `lesson_progress` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT NOT NULL,
+    `course_id` BIGINT NOT NULL,
     `lesson_id` BIGINT NOT NULL,
+    `last_position_seconds` INT DEFAULT 0,
     `watched_seconds` INT DEFAULT 0,
+    `duration_seconds` INT DEFAULT 0,
+    `progress_percent` INT DEFAULT 0,
     `is_completed` BOOLEAN DEFAULT FALSE,
     `completed_at` DATETIME NULL,
-    `last_accessed_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `last_watched_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `fk_progress_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_progress_courses` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_progress_lessons` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `uq_user_lesson` UNIQUE (`user_id`, `lesson_id`)
+    CONSTRAINT `unique_user_lesson` UNIQUE (`user_id`, `lesson_id`)
 ) ENGINE=InnoDB;
 
 

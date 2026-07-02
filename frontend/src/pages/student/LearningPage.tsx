@@ -15,6 +15,13 @@ import {
 } from "../../components/learning/learningTypes";
 import { getCourseLessons } from "../../services/course.service";
 import { getLessonById, getLessonResources } from "../../services/lesson.service";
+import {
+  getCourseProgress,
+  getLessonProgress,
+  type CourseProgressData,
+  type LessonProgressData,
+  unwrapProgressData,
+} from "../../services/progress.service";
 
 const initialMessages: ChatMessage[] = [
   {
@@ -34,8 +41,24 @@ function LearningPage() {
   const [chatInput, setChatInput] = useState("");
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [lessonProgress, setLessonProgress] = useState<LessonProgressData | null>(null);
+  const [courseProgress, setCourseProgress] = useState<CourseProgressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const loadCourseProgress = useCallback(async () => {
+    if (!courseId) return null;
+
+    try {
+      const response = await getCourseProgress(courseId);
+      const progress = unwrapProgressData<CourseProgressData>(response);
+      setCourseProgress(progress);
+      return progress;
+    } catch (error) {
+      console.warn("Khong the tai tien do khoa hoc:", error);
+      return null;
+    }
+  }, [courseId]);
 
   const loadLearningData = useCallback(async () => {
     if (!courseId || !lessonId) {
@@ -55,15 +78,31 @@ function LearningPage() {
           console.warn("Resources API chưa sẵn sàng:", error);
           return null;
         });
-      const [lessonResponse, resourcesData, lessonsResponse] = await Promise.all([
+      const progressPromise = getLessonProgress(lessonId)
+        .then((progressResponse) => unwrapProgressData<LessonProgressData>(progressResponse))
+        .catch((error) => {
+          console.warn("Khong the tai tien do bai hoc:", error);
+          return null;
+        });
+      const courseProgressPromise = getCourseProgress(courseId)
+        .then((progressResponse) => unwrapProgressData<CourseProgressData>(progressResponse))
+        .catch((error) => {
+          console.warn("Khong the tai tien do khoa hoc:", error);
+          return null;
+        });
+      const [lessonResponse, resourcesData, lessonsResponse, progressData, courseProgressData] = await Promise.all([
         getLessonById(lessonId),
         resourcesPromise,
         getCourseLessons(courseId),
+        progressPromise,
+        courseProgressPromise,
       ]);
       const mappedLesson = mapLessonDetail(unwrapApiData(lessonResponse), resourcesData);
 
       setLesson(mappedLesson);
-      setLessons(extractLessons(lessonsResponse));
+      setLessonProgress(progressData);
+      setCourseProgress(courseProgressData);
+      setLessons(applyCourseProgress(extractLessons(lessonsResponse), courseProgressData));
     } catch (error) {
       console.error("Load learning data failed:", error);
       setLesson(null);
@@ -81,6 +120,29 @@ function LearningPage() {
   const handleSelectLesson = (nextLessonId: string) => {
     if (!courseId) return;
     navigate(`/learning/${courseId}/${nextLessonId}`);
+  };
+
+  const handleVideoProgressChange = (nextProgress: LessonProgressData) => {
+    setLessonProgress(nextProgress);
+    setLessons((current) =>
+      current.map((item) =>
+        item.id === String(nextProgress.lessonId)
+          ? {
+              ...item,
+              status: nextProgress.isCompleted ? "completed" : "available",
+              progressPercent: nextProgress.progressPercent,
+              lastPositionSeconds: nextProgress.lastPositionSeconds,
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleLessonCompleted = async () => {
+    const nextCourseProgress = await loadCourseProgress();
+    if (nextCourseProgress) {
+      setLessons((current) => applyCourseProgress(current, nextCourseProgress));
+    }
   };
 
   const handleSendMessage = () => {
@@ -145,7 +207,16 @@ function LearningPage() {
         <LessonSidebar lessons={lessons} selectedLessonId={lesson.id} onSelectLesson={handleSelectLesson} />
 
         <div className="min-w-0 space-y-6">
-          <VideoPlayerSection videoUrl={lesson.videoUrl} title={lesson.title} />
+          <VideoPlayerSection
+            videoUrl={lesson.videoUrl}
+            title={lesson.title}
+            courseId={courseId || lesson.courseId}
+            lessonId={lesson.id}
+            durationSeconds={lesson.durationSeconds}
+            lessonProgress={lessonProgress}
+            onProgressChange={handleVideoProgressChange}
+            onCompleted={handleLessonCompleted}
+          />
           <LessonSlideCard slideFile={lesson.slideFile} />
           <LessonInfoSection title={lesson.title} description={lesson.description} />
           <LessonTabs
@@ -299,10 +370,30 @@ function extractLessons(response: unknown): Lesson[] {
       title: String(getValue(lesson.title, "Bài học")),
       duration: String(getValue(lesson.duration, formatLessonDuration(Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0))))),
       status: mapLessonStatus(getStringOrNull(lesson.status)),
+      progressPercent: Number(getValue(lesson.progressPercent, lesson.progress_percent, 0)),
+      lastPositionSeconds: Number(getValue(lesson.lastPositionSeconds, lesson.last_position_seconds, 0)),
     });
   });
 
   return lessons.filter((item) => item.id);
+}
+
+function applyCourseProgress(lessons: Lesson[], courseProgress: CourseProgressData | null): Lesson[] {
+  if (!courseProgress?.lessons?.length) return lessons;
+
+  const progressByLesson = new Map(courseProgress.lessons.map((progress) => [String(progress.lessonId), progress]));
+
+  return lessons.map((lesson) => {
+    const progress = progressByLesson.get(lesson.id);
+    if (!progress) return lesson;
+
+    return {
+      ...lesson,
+      status: progress.isCompleted ? "completed" : lesson.status === "locked" ? "locked" : "available",
+      progressPercent: progress.progressPercent,
+      lastPositionSeconds: progress.lastPositionSeconds,
+    };
+  });
 }
 
 function extractTranscriptSegments(...sources: unknown[]): TranscriptSegment[] {

@@ -299,16 +299,16 @@ INSERT INTO `quiz_attempt_answers` (`id`, `attempt_id`, `question_id`, `selected
 -- --------------------------------------------------------
 
 -- Chèn ghi nhận lượt tham gia học tập enrollments
-INSERT INTO `enrollments` (`id`, `user_id`, `course_id`, `status`, `enrolled_at`, `completed_at`) VALUES
-(1, 2, 1, 'active', '2026-06-20 08:30:00', NULL),
-(2, 3, 1, 'active', '2026-06-21 14:00:00', NULL),
-(3, 4, 1, 'completed', '2026-06-15 09:00:00', '2026-06-24 17:30:00');
+INSERT INTO `enrollments` (`id`, `user_id`, `course_id`, `status`, `current_lesson_id`, `progress_percent`, `completed_lessons_count`, `last_accessed_at`, `enrolled_at`, `completed_at`) VALUES
+(1, 2, 1, 'active', 2, 17, 1, '2026-06-22 10:20:00', '2026-06-20 08:30:00', NULL),
+(2, 3, 1, 'active', 1, 0, 0, '2026-06-21 14:20:00', '2026-06-21 14:00:00', NULL),
+(3, 4, 1, 'completed', 6, 100, 6, '2026-06-24 17:30:00', '2026-06-15 09:00:00', '2026-06-24 17:30:00');
 
 -- Chèn tiến trình phân tích thời lượng xem video bài học lesson_progress
-INSERT INTO `lesson_progress` (`id`, `user_id`, `lesson_id`, `watched_seconds`, `is_completed`, `completed_at`) VALUES
-(1, 2, 1, 600, 1, '2026-06-22 10:15:00'),
-(2, 2, 2, 120, 0, NULL),
-(3, 3, 1, 450, 0, NULL);
+INSERT INTO `lesson_progress` (`id`, `user_id`, `course_id`, `lesson_id`, `last_position_seconds`, `watched_seconds`, `duration_seconds`, `progress_percent`, `is_completed`, `completed_at`, `last_watched_at`) VALUES
+(1, 2, 1, 1, 600, 600, 600, 100, 1, '2026-06-22 10:15:00', '2026-06-22 10:15:00'),
+(2, 2, 1, 2, 120, 120, 700, 17, 0, NULL, '2026-06-22 10:20:00'),
+(3, 3, 1, 1, 450, 450, 600, 75, 0, NULL, '2026-06-21 14:20:00');
 
 
 -- --------------------------------------------------------

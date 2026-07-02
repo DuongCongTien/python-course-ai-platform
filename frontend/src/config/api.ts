@@ -3,18 +3,22 @@ export const API_BASE_URL = (
   "https://cobweb-lunchbox-upcoming.ngrok-free.dev/api/v1"
 ).replace(/\/+$/, "");
 
+const TOKEN_STORAGE_KEY = "python_ai_learning_token";
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: "application/json",
       "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.headers ?? {}),
     },

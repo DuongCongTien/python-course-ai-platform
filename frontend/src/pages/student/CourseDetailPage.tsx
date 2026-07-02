@@ -9,6 +9,11 @@ import CourseSidebar from "../../components/course/CourseSidebar";
 import { type CourseDetail, type CourseLesson } from "../../components/course/courseDetailTypes";
 import { useAuth } from "../../context/AuthContext";
 import { extractCourseLessons, getCourseById, getCourseLessons, mapCourseDetail, mapCourseLesson } from "../../services/course.service";
+import {
+  getCourseProgress,
+  type CourseProgressData,
+  unwrapProgressData,
+} from "../../services/progress.service";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
@@ -21,6 +26,7 @@ function CourseDetailPage() {
   const { isAuthenticated } = useAuth();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [lessons, setLessons] = useState<CourseLesson[]>([]);
+  const [courseProgress, setCourseProgress] = useState<CourseProgressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -37,9 +43,19 @@ function CourseDetailPage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const [courseResponse, lessonsResponse] = await Promise.all([
+      const progressPromise = isAuthenticated
+        ? getCourseProgress(courseId)
+            .then((response) => unwrapProgressData<CourseProgressData>(response))
+            .catch((error) => {
+              console.warn("Khong the tai tien do khoa hoc:", error);
+              return null;
+            })
+        : Promise.resolve(null);
+
+      const [courseResponse, lessonsResponse, progressResponse] = await Promise.all([
         getCourseById(courseId),
         getCourseLessons(courseId),
+        progressPromise,
       ]);
 
       if (!courseResponse.data) {
@@ -52,15 +68,17 @@ function CourseDetailPage() {
 
       setCourse(mappedCourse);
       setLessons(mappedLessons);
+      setCourseProgress(progressResponse);
     } catch (error) {
       console.error("Load course detail failed:", error);
       setErrorMessage(error instanceof Error ? error.message : "Khong the tai chi tiet khoa hoc.");
       setCourse(null);
       setLessons([]);
+      setCourseProgress(null);
     } finally {
       setIsLoading(false);
     }
-  }, [courseId]);
+  }, [courseId, isAuthenticated]);
 
   useEffect(() => {
     loadCourseDetail();
@@ -118,7 +136,12 @@ function CourseDetailPage() {
             <CourseAIFeatures features={course.aiFeatures} />
           </div>
 
-          <CourseSidebar course={course} lessons={lessons} isAuthenticated={isAuthenticated} />
+          <CourseSidebar
+            course={course}
+            lessons={lessons}
+            isAuthenticated={isAuthenticated}
+            courseProgress={courseProgress}
+          />
         </section>
       </main>
 

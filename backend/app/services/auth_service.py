@@ -83,7 +83,7 @@ class AuthService:
     @staticmethod
     def authenticate_user(username, password, db: Session) -> dict | None:
         """Xử lý logic xác thực đăng nhập và trả về token cùng thông tin cơ bản"""
-        user = db.query(User).filter((User.username == username)).first()
+        user = db.query(User).filter((User.username == username) | (User.email == username)).first()
         if not user:
             return None   
         if not AuthService.verify_password(password, user.password_hash):

@@ -72,6 +72,9 @@ def login(login_input: UserLoginInput, db = Depends(get_db)):
         "user": {
             "id": result["user"].id,
             "username": result["user"].username,
+            "email": result["user"].email,
+            "fullName": result["user"].full_name,
+            "avatarUrl": result["user"].avatar_url,
             "role": result["user"].role.value
         }
     }

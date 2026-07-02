@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, ForeignKey, BigInteger, Integer, String, Enum, Boolean, DateTime, Text, text
+from sqlalchemy import Column, ForeignKey, BigInteger, Integer, String, Enum, Boolean, DateTime, Text, UniqueConstraint, text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -15,11 +15,18 @@ class ContactStatus(str, enum.Enum):
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
+    __table_args__ = (
+        UniqueConstraint("user_id", "course_id", name="uq_user_course"),
+    )
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     course_id = Column(BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     status = Column(Enum(EnrollmentStatus), default=EnrollmentStatus.active, nullable=False)
+    current_lesson_id = Column(BigInteger, ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True)
+    progress_percent = Column(Integer, default=0)
+    completed_lessons_count = Column(Integer, default=0)
+    last_accessed_at = Column(DateTime, nullable=True)
     enrolled_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     completed_at = Column(DateTime, nullable=True)
 
@@ -28,14 +35,23 @@ class Enrollment(Base):
 
 class LessonProgress(Base):
     __tablename__ = "lesson_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="unique_user_lesson"),
+    )
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    course_id = Column(BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     lesson_id = Column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
+    last_position_seconds = Column(Integer, default=0)
     watched_seconds = Column(Integer, default=0)
+    duration_seconds = Column(Integer, default=0)
+    progress_percent = Column(Integer, default=0)
     is_completed = Column(Boolean, default=False)
     completed_at = Column(DateTime, nullable=True)
-    last_accessed_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+    last_watched_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
     user = relationship("User", back_populates="progress_records")
     lesson = relationship("Lesson", back_populates="progress_records")
