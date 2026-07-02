@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Braces, Download, Menu, Share2, X } from "lucide-react";
 import { Link, NavLink, useParams } from "react-router-dom";
 import AISummaryContent from "../../components/lesson/AISummaryContent";
@@ -11,65 +11,7 @@ import {
   type TranscriptSegment,
   type TranscriptTab,
 } from "../../components/lesson/lessonTypes";
-
-const lessonInfo: LessonInfo = {
-  courseName: "Python cơ bản",
-  lessonName: "Vòng lặp trong Python",
-  duration: "15 phút",
-  aiStatus: "processed",
-};
-
-const transcriptSegments: TranscriptSegment[] = [
-  {
-    id: "intro",
-    time: "00:00",
-    title: "Giới thiệu bài học",
-    content:
-      "Chào mừng các bạn đã quay trở lại với khóa học Python AI Learning. Trong bài học ngày hôm nay, chúng ta sẽ cùng nhau tìm hiểu về một khái niệm cực kỳ quan trọng trong lập trình: Vòng lặp. Vòng lặp giúp chúng ta thực thi một đoạn mã nhiều lần mà không cần viết lại.",
-  },
-  {
-    id: "for-loop",
-    time: "02:15",
-    title: "Khái niệm vòng lặp for",
-    content:
-      "Vòng lặp for trong Python thường được sử dụng để duyệt qua các phần tử của một tập hợp như list, tuple, string hoặc sử dụng hàm range(). Cấu trúc của nó rất tinh gọn và dễ hiểu, đúng theo triết lý của Python.",
-  },
-  {
-    id: "while-loop",
-    time: "05:40",
-    title: "Vòng lặp while",
-    content:
-      "Khác với for, vòng lặp while sẽ tiếp tục chạy chừng nào điều kiện logic còn đúng. Đây là loại vòng lặp linh hoạt nhưng cần cẩn thận để tránh lỗi vòng lặp vô tận.",
-  },
-  {
-    id: "compare",
-    time: "09:20",
-    title: "So sánh for và while",
-    content:
-      "Cuối cùng, chúng ta sẽ đặt lên bàn cân khi nào nên dùng for và khi nào nên dùng while. Đa số trường hợp trong Python, for được ưu tiên vì tính an toàn và minh bạch.",
-  },
-];
-
-const summaryData: SummaryData = {
-  keyPoints: [
-    "Vòng lặp giúp lặp lại các tác vụ tự động, tiết kiệm công sức viết code.",
-    "Vòng lặp for tối ưu cho việc duyệt qua các chuỗi hoặc danh sách.",
-    "Vòng lặp while hoạt động dựa trên điều kiện Boolean cụ thể.",
-  ],
-  concepts: ["Iterables", "range() function", "Infinite Loop", "Break & Continue"],
-  codeExample: `# Ví dụ vòng lặp for
-for i in range(5):
-    print(f"Số hiện tại là: {i}")
-
-# Ví dụ vòng lặp while
-count = 0
-
-while count < 5:
-    print("Đang đếm...")
-    count += 1`,
-  reviewSuggestion:
-    "Hãy thử viết một vòng lặp for in ra các số chẵn từ 1 đến 100 để kiểm tra khả năng sử dụng hàm range() của bạn.",
-};
+import { getLessonById, getLessonSummary, getLessonTranscript } from "../../services/lesson.service";
 
 const navigation = [
   { label: "Trang chủ", to: "/" },
@@ -77,10 +19,83 @@ const navigation = [
   { label: "AI Assistant", to: "/ai-assistant" },
 ];
 
+const emptySummary: SummaryData = {
+  keyPoints: [],
+  concepts: [],
+  codeExample: "",
+  reviewSuggestion: "",
+};
+
 function LessonTranscriptPage() {
-  const { courseId = "python-cho-nguoi-moi-bat-dau", lessonId = "lesson-4" } = useParams();
+  const { courseId, lessonId } = useParams();
   const [activeTab, setActiveTab] = useState<TranscriptTab>("transcript");
   const [searchTerm, setSearchTerm] = useState("");
+  const [lessonInfo, setLessonInfo] = useState<LessonInfo>({
+    courseName: "",
+    lessonName: "",
+    duration: "",
+    aiStatus: "processing",
+  });
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
+  const [summaryData, setSummaryData] = useState<SummaryData>(emptySummary);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const loadLessonContent = useCallback(async () => {
+    if (!lessonId) {
+      setErrorMessage("Không tìm thấy bài học.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const [lessonResponse, transcriptResponse, summaryResponse] = await Promise.allSettled([
+        getLessonById(lessonId),
+        getLessonTranscript(lessonId),
+        getLessonSummary(lessonId),
+      ]);
+
+      if (lessonResponse.status === "fulfilled") {
+        setLessonInfo(mapLessonInfo(unwrapApiData(lessonResponse.value), courseId ?? ""));
+      } else {
+        throw lessonResponse.reason;
+      }
+
+      if (transcriptResponse.status === "fulfilled") {
+        setTranscriptSegments(mapTranscriptSegments(unwrapApiData(transcriptResponse.value)));
+      } else {
+        setTranscriptSegments([]);
+        console.warn("Transcript API chưa sẵn sàng:", transcriptResponse.reason);
+      }
+
+      if (summaryResponse.status === "fulfilled") {
+        setSummaryData(mapSummaryData(unwrapApiData(summaryResponse.value)));
+      } else {
+        setSummaryData(emptySummary);
+        console.warn("Summary API chưa sẵn sàng:", summaryResponse.reason);
+      }
+    } catch (error) {
+      console.error("Load lesson transcript failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Không thể tải dữ liệu bài học.");
+      setTranscriptSegments([]);
+      setSummaryData(emptySummary);
+      setLessonInfo({
+        courseName: courseId ? "Khóa học" : "",
+        lessonName: "",
+        duration: "",
+        aiStatus: "failed",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [courseId, lessonId]);
+
+  useEffect(() => {
+    loadLessonContent();
+  }, [loadLessonContent]);
 
   const filteredTranscripts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -91,7 +106,7 @@ function LessonTranscriptPage() {
         segment.title.toLowerCase().includes(normalizedSearch) ||
         segment.content.toLowerCase().includes(normalizedSearch),
     );
-  }, [searchTerm]);
+  }, [searchTerm, transcriptSegments]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -100,7 +115,7 @@ function LessonTranscriptPage() {
           <div className="page-container flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-indigo-600">
-                KHÓA HỌC &gt; PYTHON CƠ BẢN
+                KHÓA HỌC &gt; {lessonInfo.courseName || "BÀI HỌC"}
               </p>
               <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
                 Transcript & Tóm tắt bài học
@@ -128,27 +143,151 @@ function LessonTranscriptPage() {
         </section>
 
         <section className="page-container grid gap-7 py-10 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <LessonInfoSidebar lessonInfo={lessonInfo} courseId={courseId} lessonId={lessonId} />
+          <LessonInfoSidebar lessonInfo={lessonInfo} courseId={courseId ?? ""} lessonId={lessonId ?? ""} />
 
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card">
             <TranscriptTabs activeTab={activeTab} onChange={setActiveTab} />
             <div className="p-5 sm:p-7">
-              {activeTab === "transcript" ? (
+              {isLoading ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">
+                  Đang tải transcript và tóm tắt bài học...
+                </div>
+              ) : errorMessage ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm font-semibold text-red-600">
+                  {errorMessage}
+                </div>
+              ) : activeTab === "transcript" ? (
                 <TranscriptList
                   searchTerm={searchTerm}
                   segments={filteredTranscripts}
                   onSearchChange={setSearchTerm}
                 />
               ) : (
-                <AISummaryContent summary={summaryData} courseId={courseId} lessonId={lessonId} />
+                <AISummaryContent summary={summaryData} courseId={courseId ?? ""} lessonId={lessonId ?? ""} />
               )}
             </div>
           </div>
         </section>
       </main>
-
     </div>
   );
+}
+
+function mapLessonInfo(lessonData: unknown, courseId: string): LessonInfo {
+  const data = asRecord(lessonData);
+  const durationSeconds = Number(getValue(data.durationSeconds, data.duration_seconds, 0));
+
+  return {
+    courseName: getStringOrNull(data.courseName, data.course_name, courseId) ?? "Khóa học",
+    lessonName: getStringOrNull(data.title, data.lessonTitle, data.lesson_title) ?? "Bài học",
+    duration: durationSeconds > 0 ? formatDuration(durationSeconds) : "",
+    aiStatus: "processed",
+  };
+}
+
+function mapTranscriptSegments(payload: unknown): TranscriptSegment[] {
+  const data = asRecord(payload);
+  const transcript = asRecord(data.transcript);
+  const segments = getValue(data.transcriptSegments, data.transcript_segments, transcript.segments);
+
+  if (Array.isArray(segments)) {
+    return segments
+      .map((segment) => {
+        const item = asRecord(segment);
+        const time = getStringOrNull(item.time, item.timestamp, item.startTime, item.start_time) ?? "";
+        const title = getStringOrNull(item.title, item.text, item.content) ?? "";
+        const content = getStringOrNull(item.content, item.text, item.description) ?? "";
+
+        return time || title || content ? { id: String(item.id ?? `${time}-${title}`), time, title, content } : null;
+      })
+      .filter((segment): segment is TranscriptSegment => Boolean(segment));
+  }
+
+  const text = getStringOrNull(
+    data.text,
+    data.transcriptText,
+    data.transcript_text,
+    transcript.text,
+    transcript.transcriptText,
+    transcript.transcript_text,
+  );
+
+  return text ? [{ id: "transcript", time: "", title: "Transcript", content: text }] : [];
+}
+
+function mapSummaryData(payload: unknown): SummaryData {
+  const data = asRecord(payload);
+  const summary = asRecord(data.summary);
+
+  return {
+    keyPoints: extractStringArray(
+      data.keyPoints,
+      data.key_points,
+      summary.keyPoints,
+      summary.key_points,
+      summary.points,
+      data.points,
+    ),
+    concepts: extractStringArray(
+      data.concepts,
+      data.concepts,
+      summary.concepts,
+      summary.concept,
+      summary.keyConcepts,
+    ),
+    codeExample: getStringOrNull(
+      data.codeExample,
+      data.code_example,
+      summary.codeExample,
+      summary.code_example,
+      data.code,
+      summary.code,
+    ) ?? "",
+    reviewSuggestion: getStringOrNull(
+      data.reviewSuggestion,
+      data.review_suggestion,
+      summary.reviewSuggestion,
+      summary.review_suggestion,
+    ) ?? "",
+  };
+}
+
+function extractStringArray(...sources: unknown[]): string[] {
+  for (const source of sources) {
+    if (Array.isArray(source)) {
+      return source.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    }
+  }
+
+  return [];
+}
+
+function formatDuration(durationSeconds: number) {
+  const totalSeconds = Math.max(Math.round(durationSeconds), 0);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes} phút${seconds ? ` ${seconds} giây` : ""}`;
+}
+
+function unwrapApiData(payload: unknown): unknown {
+  const record = asRecord(payload);
+  if ("data" in record) return record.data;
+  if ("items" in record) return record.items;
+  return payload;
+}
+
+function getStringOrNull(...values: unknown[]) {
+  const value = values.find((item) => typeof item === "string" && item.trim().length > 0);
+  return typeof value === "string" ? value : null;
+}
+
+function getValue<T>(...values: Array<T | null | undefined>): T {
+  const value = values.find((item) => item !== null && item !== undefined);
+  return value as T;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
 }
 
 function TranscriptNavbar() {

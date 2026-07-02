@@ -3,8 +3,8 @@ import { apiFetch } from "../config/api";
 import { type Course } from "../components/course/CourseCard";
 import {
   type AIFeature,
-  type CourseChapter,
   type CourseDetail,
+  type CourseLesson,
   type CourseObjective,
 } from "../components/course/courseDetailTypes";
 
@@ -65,7 +65,12 @@ interface BackendCourse {
 
 interface BackendLesson {
   id: number | string;
+  courseId?: number | string | null;
+  course_id?: number | string | null;
+  sectionId?: number | string | null;
+  section_id?: number | string | null;
   title?: string | null;
+  description?: string | null;
   duration_seconds?: number | null;
   durationSeconds?: number | null;
   duration?: string | null;
@@ -162,7 +167,7 @@ export async function getCourseById(courseId: string) {
 }
 
 export async function getCourseLessons(courseId: string) {
-  return requestApi<BackendChapter[]>(
+  return requestApi<BackendLesson[] | BackendChapter[]>(
     `/courses/${encodeURIComponent(courseId)}/lessons`,
     "Khong the tai noi dung khoa hoc.",
   );
@@ -194,9 +199,10 @@ export function mapCourseListItem(course: BackendCourse, index = 0): Course {
   };
 }
 
-export function mapCourseDetail(course: BackendCourse, chapters: BackendChapter[] = []): CourseDetail {
-  const mappedChapters = mapChapters(chapters);
-  const firstLessonId = findFirstLessonId(mappedChapters);
+export function mapCourseDetail(course: BackendCourse, lessonsData: Array<BackendLesson | BackendChapter> = []): CourseDetail {
+  const lessons = extractCourseLessons(lessonsData);
+  const mappedLessons = lessons.map(mapCourseLesson);
+  const firstLessonId = mappedLessons[0]?.id ?? null;
   const backendFirstLessonIdValue = getValue(course.firstLessonId, course.first_lesson_id, null);
   const currentLessonIdValue = getValue(course.currentLessonId, course.current_lesson_id, null);
   const backendFirstLessonId = backendFirstLessonIdValue ? String(backendFirstLessonIdValue) : null;
@@ -204,7 +210,7 @@ export function mapCourseDetail(course: BackendCourse, chapters: BackendChapter[
   const durationSeconds = Number(getValue(course.durationSeconds, course.duration_seconds, 0));
   const lessonsCount =
     Number(getValue(course.lessonsCount, course.lessons_count, course.totalLessons, course.total_lessons, 0)) ||
-    mappedChapters.reduce((total, chapter) => total + (chapter.lessons?.length ?? 0), 0);
+    mappedLessons.length;
 
   return {
     id: String(course.slug || course.id),
@@ -217,27 +223,67 @@ export function mapCourseDetail(course: BackendCourse, chapters: BackendChapter[
     duration: formatDuration(durationSeconds),
     hasAI: Boolean(getValue(course.hasAI, course.has_ai, false)),
     studentsThisMonth: getValue(course.studentsThisMonth, course.students_this_month, ""),
-    chapters: mappedChapters,
     objectives: mapObjectives(course.objectives),
     aiFeatures: mapAIFeatures(getValue(course.aiFeatures, course.ai_features, null)),
   };
 }
 
-function mapChapters(chapters: BackendChapter[]): CourseChapter[] {
-  return chapters.map((chapter) => ({
-    id: String(chapter.id),
-    title: chapter.title || "Chuong hoc",
-    meta: chapter.meta || "",
-    lessons: (chapter.lessons ?? []).map((lesson) => ({
-      id: String(lesson.id),
-      title: lesson.title || "Bai hoc",
-      duration: lesson.duration || formatLessonDuration(Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0))),
-      durationSeconds: Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0)),
-      status: mapLessonStatus(lesson.status),
-      isFree: Boolean(getValue(lesson.isFree, lesson.is_free, false)),
-      sortOrder: Number(getValue(lesson.sortOrder, lesson.sort_order, 0)),
-    })),
-  }));
+export function extractCourseLessons(response: unknown): BackendLesson[] {
+  const data = unwrapApiData(response);
+
+  if (Array.isArray(data)) {
+    const isFlatLessonArray = data.every((item) => {
+      const record = asRecord(item);
+      return !Array.isArray(record.lessons);
+    });
+
+    if (isFlatLessonArray) {
+      return data.map((item) => item as BackendLesson);
+    }
+
+    return data.flatMap((chapter) => {
+      const record = asRecord(chapter);
+      return Array.isArray(record.lessons) ? record.lessons.map((item) => item as BackendLesson) : [];
+    });
+  }
+
+  const record = asRecord(data);
+  if (Array.isArray(record.items)) {
+    return record.items.map((item) => item as BackendLesson);
+  }
+
+  return [];
+}
+
+export function mapCourseLesson(lesson: BackendLesson): CourseLesson {
+  return {
+    id: String(lesson.id),
+    courseId: getOptionalString(lesson.courseId, lesson.course_id),
+    sectionId: getOptionalString(lesson.sectionId, lesson.section_id),
+    title: lesson.title || "Bai hoc",
+    description: lesson.description || "",
+    duration: lesson.duration || formatLessonDuration(Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0))),
+    durationSeconds: Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0)),
+    status: mapLessonStatus(lesson.status),
+    isFree: Boolean(getValue(lesson.isFree, lesson.is_free, false)),
+    sortOrder: Number(getValue(lesson.sortOrder, lesson.sort_order, 0)),
+  };
+}
+
+function unwrapApiData(payload: unknown): unknown {
+  const record = asRecord(payload);
+  if ("data" in record) return record.data;
+  if ("items" in record) return record.items;
+  return payload;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function getOptionalString(...values: Array<number | string | null | undefined>) {
+  const value = values.find((item) => item !== null && item !== undefined);
+  return value === null || value === undefined ? undefined : String(value);
 }
 
 function mapObjectives(objectives: BackendCourse["objectives"]): CourseObjective[] {
@@ -289,15 +335,6 @@ function formatLessonDuration(durationSeconds: number) {
   const minutes = Math.floor(Math.max(durationSeconds, 0) / 60);
   const seconds = Math.max(durationSeconds, 0) % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function findFirstLessonId(chapters: CourseChapter[]) {
-  for (const chapter of chapters) {
-    const lesson = chapter.lessons?.[0];
-    if (lesson) return lesson.id;
-  }
-
-  return null;
 }
 
 function getValue<T>(...values: Array<T | null | undefined>): T {
