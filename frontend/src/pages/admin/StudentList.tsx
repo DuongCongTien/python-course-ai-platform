@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import AdminHeader from "../../components/admin/AdminHeader";
 
 // Dữ liệu mẫu (Mock data)
 const mockStudents = [
@@ -78,6 +77,8 @@ const mockStudents = [
   },
 ];
 
+type Student = (typeof mockStudents)[number];
+
 // Hàm hỗ trợ chuẩn hóa chuỗi (loại bỏ dấu tiếng Việt và chuyển thành chữ thường)
 const removeAccents = (str: string) => {
   if (!str) return "";
@@ -133,7 +134,9 @@ export default function StudentManagementPage() {
     return filteredStudents.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredStudents, currentPage]);
 
-  const [selectedStudent, setSelectedStudent] = useState(paginatedStudents[0] || null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(
+    paginatedStudents[0] || null,
+  );
 
   // Cập nhật lại Sidebar nếu data bị lọc khiến người đang chọn biến mất
   useEffect(() => {
@@ -184,8 +187,6 @@ export default function StudentManagementPage() {
 
   return (
     <AdminLayout>
-      <AdminHeader title="Quản lý học viên" />
-      
       <div className="p-8 min-h-screen">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>

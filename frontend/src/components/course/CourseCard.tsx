@@ -132,9 +132,9 @@ function CourseCard({ course }: CourseCardProps) {
           <ArrowRight size={17} aria-hidden={true} />
         </Link>
 
-        {isAuthenticated && course.isLearning && (
+        {isAuthenticated && course.isLearning && course.lessonId && (
           <Link
-            to={`/learning/${course.id}/${course.lessonId ?? "lesson-1"}`}
+            to={`/learning/${course.id}/${course.lessonId}`}
             className="focus-ring mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
           >
             Tiếp tục học

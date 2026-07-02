@@ -1,26 +1,26 @@
+import { Play } from "lucide-react";
+
 interface VideoPlayerSectionProps {
-  videoUrl?: string;
+  videoUrl: string | null;
+  title: string;
 }
 
-function VideoPlayerSection({ videoUrl }: VideoPlayerSectionProps) {
+function VideoPlayerSection({ videoUrl, title }: VideoPlayerSectionProps) {
   return (
-    <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-black shadow-card">
-      {videoUrl ? (
-        <div className="aspect-video w-full">
-          <iframe
-            src={videoUrl}
-            title="Video bài học"
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      ) : (
-        <div className="flex aspect-video items-center justify-center bg-slate-900 text-slate-400">
-          Chưa có video
-        </div>
-      )}
-    </div>
+    <section className="overflow-hidden rounded-[28px] bg-slate-950 shadow-2xl shadow-slate-200">
+      <div className="relative aspect-video bg-slate-950">
+        {videoUrl ? (
+          <video className="h-full w-full bg-black" controls preload="metadata" src={videoUrl} title={title} />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center px-6 text-center text-white">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
+              <Play size={28} className="ml-1" />
+            </span>
+            <h2 className="text-lg font-extrabold">Bài học này chưa có video.</h2>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

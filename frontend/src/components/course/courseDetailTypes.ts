@@ -2,18 +2,18 @@ import { type LucideIcon } from "lucide-react";
 
 export interface LessonItem {
   id: string;
+  courseId?: string;
+  sectionId?: string | null;
   title: string;
+  description?: string;
   duration: string;
+  durationSeconds?: number;
   status: "completed" | "available" | "locked";
+  isFree?: boolean;
+  sortOrder?: number;
 }
 
-export interface CourseChapter {
-  id: string;
-  title: string;
-  meta: string;
-  lessons?: LessonItem[];
-  placeholder?: string;
-}
+export type CourseLesson = LessonItem;
 
 export interface CourseObjective {
   id: string;
@@ -38,7 +38,6 @@ export interface CourseDetail {
   duration: string;
   hasAI: boolean;
   studentsThisMonth: string;
-  chapters: CourseChapter[];
   objectives: CourseObjective[];
   aiFeatures: AIFeature[];
 }

@@ -8,6 +8,8 @@ interface CourseHeroProps {
 }
 
 function CourseHero({ course }: CourseHeroProps) {
+  const nextLessonId = course.currentLessonId ?? course.firstLessonId;
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50 to-indigo-50">
       <div className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-indigo-200/50 blur-3xl" />
@@ -25,13 +27,23 @@ function CourseHero({ course }: CourseHeroProps) {
           <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">{course.description}</p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              to={`/learning/${course.id}/${course.firstLessonId}`}
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700"
-            >
-              Bắt đầu học ngay
-              <ArrowRight size={18} />
-            </Link>
+            {nextLessonId ? (
+              <Link
+                to={`/learning/${course.id}/${nextLessonId}`}
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:from-indigo-700 hover:to-blue-700"
+              >
+                Bắt đầu học ngay
+                <ArrowRight size={18} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center justify-center rounded-2xl bg-slate-300 px-6 py-3.5 text-sm font-bold text-white"
+              >
+                Khóa học chưa có bài học
+              </button>
+            )}
             <a
               href="#course-content"
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-700"
@@ -63,9 +75,9 @@ function CourseHero({ course }: CourseHeroProps) {
                 <div className="rounded-3xl bg-slate-950/70 p-5 font-mono text-xs leading-6 shadow-inner">
                   <div className="mb-3 flex items-center gap-2 text-slate-400">
                     <Code2 size={15} />
-                    basics.py
+                    lesson.py
                   </div>
-                  <p><span className="text-fuchsia-300">name</span> = <span className="text-emerald-300">"Python"</span></p>
+                  <p><span className="text-fuchsia-300">topic</span> = <span className="text-emerald-300">course.title</span></p>
                   <p><span className="text-blue-300">for</span> lesson <span className="text-blue-300">in</span> course:</p>
                   <p className="pl-5">ai_mentor.explain(lesson)</p>
                   <p className="pl-5 text-blue-300">practice()</p>
@@ -74,7 +86,7 @@ function CourseHero({ course }: CourseHeroProps) {
                   <div className="rounded-3xl bg-white p-5 text-slate-950">
                     <p className="text-sm font-extrabold">AI Robot</p>
                     <p className="mt-2 text-xs leading-5 text-slate-600">
-                      Mình sẽ giúp bạn hiểu từng khái niệm Python bằng ví dụ trực quan.
+                      Mình sẽ giúp bạn hiểu từng khái niệm trong khóa học bằng ví dụ trực quan.
                     </p>
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur">
@@ -90,17 +102,19 @@ function CourseHero({ course }: CourseHeroProps) {
             </div>
           </div>
 
-          <div className="absolute -bottom-6 left-6 max-w-[260px] rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                <TrendingUp size={22} />
-              </span>
-              <div>
-                <p className="font-extrabold text-slate-950">{course.studentsThisMonth}</p>
-                <p className="text-xs font-medium text-slate-500">Tham gia trong tháng này</p>
+          {course.studentsThisMonth && (
+            <div className="absolute -bottom-6 left-6 max-w-[260px] rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <TrendingUp size={22} />
+                </span>
+                <div>
+                  <p className="font-extrabold text-slate-950">{course.studentsThisMonth}</p>
+                  <p className="text-xs font-medium text-slate-500">Tham gia trong tháng này</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>

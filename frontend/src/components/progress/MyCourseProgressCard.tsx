@@ -43,7 +43,7 @@ function MyCourseProgressCard({ course }: MyCourseProgressCardProps) {
 
           <button
             type="button"
-            onClick={() => navigate("/learning/python-basic/lesson-4")}
+            onClick={() => navigate(`/courses/${course.id}`)}
             className="focus-ring mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700"
           >
             Tiếp tục học
