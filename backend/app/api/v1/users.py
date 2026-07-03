@@ -38,7 +38,7 @@ def get_user_by_name(name: str = Query(None), db = Depends(get_db)):
 
 # vd: GET: /api/v1/users/1
 @router.get("/{id}")
-def get_user_by_id(id : int, db = Depends(get_db)):
+def get_user_by_id(id: int, db = Depends(get_db)):
     return success_response(UserService.get_user_by_id(id = id, db = db))
 
 # vd: PATCH: /api/v1/users/1
