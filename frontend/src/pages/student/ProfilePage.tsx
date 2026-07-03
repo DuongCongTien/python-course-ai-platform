@@ -83,10 +83,10 @@ function ProfilePage() {
     setProfileMessage(null);
 
     try {
-      await profileService.updateProfile(user.id, token, {
+      await profileService.updateProfile(user.id, {
         full_name: profileForm.fullName,
         email: profileForm.email,
-        phone_number: profileForm.phone,
+        phone: profileForm.phone,
       });
       await refreshUser(); // load lại thông tin mới nhất, đồng bộ với Header
       setProfileMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
@@ -97,7 +97,7 @@ function ProfilePage() {
     }
   };
 
-  const handleSecuritySubmit = () => {
+  const handleSecuritySubmit = async () => {
     const nextErrors: PasswordFormErrors = {};
     const hasNewPassword = Boolean(passwordForm.newPassword || passwordForm.confirmPassword);
 
@@ -115,11 +115,25 @@ function ProfilePage() {
 
     setPasswordErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length === 0) {
-      // TODO: chưa có endpoint đổi mật khẩu trong Swagger hiện tại -> hỏi lại backend khi cần làm phần này
-      console.log("Security update data:", passwordForm);
+    if (Object.keys(nextErrors).length === 0 && hasNewPassword) {
+      try {
+        if (!user) return;
+
+        await profileService.updatePassword(user.id, {
+            old_password: passwordForm.currentPassword,
+            new_password: passwordForm.newPassword,
+        });
+        alert("Đổi mật khẩu thành công!");
+      
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        
+      } catch (error) {
+        // Hứng lỗi từ Backend trả về (Ví dụ: 400 Mật khẩu cũ không đúng)
+        console.error("Lỗi từ server:", error);
+        alert("Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.");
+      }
     }
-  };
+};
 
   if (!user) return null; // ProtectedRoute đảm bảo có user, phòng hờ render trước khi hydrate xong
 

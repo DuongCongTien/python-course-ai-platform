@@ -17,6 +17,7 @@ function SecurityForm({ data, errors, onChange, onSubmit }: SecurityFormProps) {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log("🚀 Form đã được submit, chuẩn bị gọi onSubmit của thẻ cha!");
     onSubmit();
   };
 

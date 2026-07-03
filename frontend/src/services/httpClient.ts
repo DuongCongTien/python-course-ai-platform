@@ -17,4 +17,19 @@ const httpClient = axios.create({
   timeout: 15000,
 });
 
+// thêm interceptors: chặn api trước khi gửi đến BE
+// nhiện vụ: thêm access token (xác thực user) từ localStorage
+httpClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("pyai_token"); 
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default httpClient;

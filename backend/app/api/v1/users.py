@@ -2,7 +2,6 @@
 from fastapi import APIRouter, status, Query, Depends, HTTPException
 from app.services.user_service import UserService
 from app.schemas.user import UserUpdateInput, UserUpdatePassword
-from sqlalchemy.orm import Session
 from app.models.users_model import User
 
 
@@ -30,10 +29,11 @@ def get_total_users(db = Depends(get_db)):
 @router.get("")
 def get_user_by_name(name: str = Query(None), db = Depends(get_db)):
     user_list = UserService.get_user_by_name(name = name, db = db)
+    safe_user_list = [UserService.serialize_user(user) for user in user_list]
     return {
         "success": True,
-        "count" : len(user_list),
-        "user_list": user_list
+        "count": len(safe_user_list),
+        "user_list": safe_user_list
     }
 
 # vd: GET: /api/v1/users/1

@@ -1,9 +1,10 @@
 # backend/app/services/auth_service.py
 import os
+import uuid
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
+from jose import jwt
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 from sqlalchemy.orm import Session
@@ -113,11 +114,16 @@ class AuthService:
         email = idinfo['email']
         name = idinfo.get('name', '')
         
+        # tạo mk giả, vì login = gg ko cần mk
+        random_password = str(uuid.uuid4())
+        dummy_password_hash = AuthService.hash_password(random_password)
+        
         user = db.query(User).filter(User.email == email).first()
         if not user:
             user = User(
                 email=email, 
-                username=email, 
+                username=email,
+                password_hash = dummy_password_hash,
                 full_name=name, 
                 role=UserRole.student
             )

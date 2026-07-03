@@ -36,10 +36,12 @@ export const authService = {
 
   async getMe(token: string): Promise<ApiUser> {
     const { data } = await httpClient.get("/users/me", {
-      params: { token },
+      // Sửa params thành headers
+      headers: { 
+        Authorization: `Bearer ${token}` 
+      },
     });
-    // Response thật có dạng { status: "success", user: {...} }, không phải user trực tiếp
-    return (data?.user ?? data) as ApiUser;
+    return (data?.data ?? data) as ApiUser;
   },
 };
 
