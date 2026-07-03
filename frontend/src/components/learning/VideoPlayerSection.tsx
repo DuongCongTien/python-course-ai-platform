@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Play } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Play } from "lucide-react";
 import {
-  completeLesson,
   updateLessonProgress,
   type LessonProgressData,
 } from "../../services/progress.service";
@@ -21,7 +20,14 @@ interface VideoPlayerSectionProps {
   durationSeconds: number;
   lessonProgress: LessonProgressData | null;
   onProgressChange: (progress: LessonProgressData) => void;
-  onCompleted: () => void;
+  onEnded: (durationSeconds: number) => void;
+}
+
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
 }
 
 function VideoPlayerSection({
@@ -34,13 +40,13 @@ function VideoPlayerSection({
   durationSeconds,
   lessonProgress,
   onProgressChange,
-  onCompleted,
+  onEnded,
 }: VideoPlayerSectionProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hasRestoredRef = useRef(false);
   const lastSavedAtRef = useRef(0);
   const saveInFlightRef = useRef(false);
-  const [isCompleting, setIsCompleting] = useState(false);
 
   const finalEmbedUrl = useMemo(() => {
     if (embedUrl) return embedUrl;
@@ -52,10 +58,65 @@ function VideoPlayerSection({
     return null;
   }, [embedUrl, provider, videoUrl]);
 
+  const isYoutube = Boolean(finalEmbedUrl);
+  const youtubeSrc = useMemo(() => {
+    if (!finalEmbedUrl || typeof window === "undefined") return finalEmbedUrl;
+
+    const separator = finalEmbedUrl.includes("?") ? "&" : "?";
+    return `${finalEmbedUrl}${separator}enablejsapi=1&origin=${window.location.origin}`;
+  }, [finalEmbedUrl]);
+
   useEffect(() => {
     hasRestoredRef.current = false;
     lastSavedAtRef.current = 0;
   }, [lessonId, videoUrl, finalEmbedUrl]);
+
+  useEffect(() => {
+    if (!isYoutube || !iframeRef.current) return;
+
+    let player: any;
+    let isDisposed = false;
+    const previousReady = window.onYouTubeIframeAPIReady;
+
+    const setupPlayer = () => {
+      if (isDisposed || !window.YT?.Player || !iframeRef.current) return;
+
+      player = new window.YT.Player(iframeRef.current, {
+        events: {
+          onStateChange: (event: any) => {
+            if (event.data === window.YT?.PlayerState?.ENDED) {
+              const duration = Math.floor(player?.getDuration?.() || durationSeconds || 0);
+              onEnded(duration);
+            }
+          },
+        },
+      });
+    };
+
+    if (!window.YT?.Player) {
+      const existingScript = document.querySelector<HTMLScriptElement>('script[src="https://www.youtube.com/iframe_api"]');
+      if (!existingScript) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+      }
+
+      window.onYouTubeIframeAPIReady = () => {
+        previousReady?.();
+        setupPlayer();
+      };
+    } else {
+      setupPlayer();
+    }
+
+    return () => {
+      isDisposed = true;
+      player?.destroy?.();
+      if (window.onYouTubeIframeAPIReady !== previousReady) {
+        window.onYouTubeIframeAPIReady = previousReady;
+      }
+    };
+  }, [durationSeconds, isYoutube, onEnded, youtubeSrc]);
 
   const saveProgress = useCallback(async () => {
     const video = videoRef.current;
@@ -128,26 +189,10 @@ function VideoPlayerSection({
     });
   };
 
-  const handleCompleteLesson = async () => {
-    if (!courseId || !lessonId || isCompleting) return;
-
+  const handleEnded = () => {
     const video = videoRef.current;
     const duration = Math.floor(video?.duration || durationSeconds || lessonProgress?.durationSeconds || 0);
-
-    try {
-      setIsCompleting(true);
-      const response = await completeLesson(lessonId, {
-        courseId,
-        durationSeconds: duration,
-      });
-      const data = "data" in response && response.data ? response.data : response;
-      onProgressChange(data as LessonProgressData);
-      onCompleted();
-    } catch (error) {
-      console.error("Khong the danh dau hoan thanh bai hoc:", error);
-    } finally {
-      setIsCompleting(false);
-    }
+    onEnded(duration);
   };
 
   return (
@@ -155,8 +200,9 @@ function VideoPlayerSection({
       <div className="relative aspect-video bg-slate-950">
         {finalEmbedUrl ? (
           <iframe
+            ref={iframeRef}
             className="h-full w-full bg-black"
-            src={finalEmbedUrl}
+            src={youtubeSrc ?? finalEmbedUrl}
             title={title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
@@ -172,7 +218,7 @@ function VideoPlayerSection({
             onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
             onPause={handlePause}
-            onEnded={handleCompleteLesson}
+            onEnded={handleEnded}
           />
         ) : videoUrl ? (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center text-white">
@@ -190,22 +236,6 @@ function VideoPlayerSection({
           </div>
         )}
       </div>
-      {finalEmbedUrl ? (
-        <div className="flex flex-col gap-3 border-t border-white/10 bg-slate-950 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-300">
-            Video YouTube không tự đồng bộ thời lượng xem từng giây.
-          </p>
-          <button
-            type="button"
-            onClick={handleCompleteLesson}
-            disabled={isCompleting || Boolean(lessonProgress?.isCompleted)}
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-emerald-500/50"
-          >
-            <CheckCircle2 size={17} aria-hidden={true} />
-            {lessonProgress?.isCompleted ? "Đã hoàn thành" : isCompleting ? "Đang lưu..." : "Đánh dấu hoàn thành"}
-          </button>
-        </div>
-      ) : null}
     </section>
   );
 }
