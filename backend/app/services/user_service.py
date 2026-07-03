@@ -30,7 +30,7 @@ class UserService:
     
     @staticmethod
     def get_total_users(db: Session) : 
-        return db.query(User).Count()
+        return db.query(User).count()
     
     @staticmethod
     def get_user_by_name(name: str, db: Session) : 
@@ -39,8 +39,9 @@ class UserService:
         search_keyword = f"%{name}%"    
         users = db.query(User).filter(
             or_(
-                User.username.like(search_keyword),
-                User.full_name.like(search_keyword)
+                # .ilike ko phân biệt chữ hoa-thường (.like thì có)
+                User.username.ilike(search_keyword),
+                User.full_name.ilike(search_keyword)
             )
         ).all()
         return users
@@ -55,6 +56,7 @@ class UserService:
             )
         return user
     
+    @staticmethod
     def get_current_user(
         authorization: str = Header(...), # Bắt buộc phải có Header Authorization
         db: Session = Depends(get_db)      
@@ -78,7 +80,8 @@ class UserService:
             
         return user
     
-    def update_user(id=id, user_input=UserUpdateInput, db=Session):
+    @staticmethod
+    def update_user(id: int, user_input: UserUpdateInput, db: Session):
         user = UserService.get_user_by_id(id=id, db=db)
         update_data = user_input.model_dump(exclude_unset=True)
         for key, value in update_data.items():
@@ -87,10 +90,10 @@ class UserService:
         db.refresh(user)
         return user
     
+    @staticmethod
     def update_user_password(id: int, user_password: UserUpdatePassword, db: Session):
         user = UserService.get_user_by_id(id=id, db=db)
-        if not user:
-            raise HTTPException(status_code=404, detail="không tìm thấy người dùng!")
+        # tự quăng raise 404 nếu k tìm thấy!
         
         old_password = user_password.old_password
         new_password = user_password.new_password
@@ -102,8 +105,11 @@ class UserService:
             user.password = new_valid_password 
             db.commit()
             db.refresh(user)
+            
+            return user
         else:
             raise HTTPException(status_code=400, detail="Mật khẩu cũ không chính xác!")
+            
         
 
         

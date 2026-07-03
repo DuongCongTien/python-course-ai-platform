@@ -1,4 +1,4 @@
-# backend/app/api/v1/courses.py
+# backend/app/api/v1/users.py
 from fastapi import APIRouter, status, Query, Depends, HTTPException
 from app.services.user_service import UserService
 from app.schemas.user import UserUpdateInput, UserUpdatePassword
@@ -10,41 +10,39 @@ from app.core.database import get_db
 
 router = APIRouter()
 
-@router.get("/me")
-def get_current_user_profile(token: str = Query(..., description="Truyền Access Token vào đây để lấy profile"),db = Depends(get_db)):
-    user_profile = UserService.verify_current_user(token, db=db)
+def success_response(data, message: str = "OK"):
     return {
-        "status": "success",
-        "user": user_profile
+        "success": True,
+        "message": message,
+        "data": data,
     }
+
+@router.get("/me")
+def get_current_user_profile(current_user: User = Depends(UserService.get_current_user)):
+    return success_response(current_user)
     
-# chỉ trả về số lượng users
 @router.get("/total_users")
 def get_total_users(db = Depends(get_db)):
     total_users = UserService.get_total_users(db = db)
-    return {
-        "status": "success",
-        "total_users" : len(total_users),
-    }
-    
-@router.get("/find/{name}")
-def get_user_by_name(name : str, db = Depends(get_db)):
+    return success_response(total_users)
+
+# vd: GET: /api/v1/users?name=qhuy
+@router.get("")
+def get_user_by_name(name: str = Query(None), db = Depends(get_db)):
     user_list = UserService.get_user_by_name(name = name, db = db)
     return {
-        "status": "success",
+        "success": True,
         "count" : len(user_list),
         "user_list": user_list
     }
-    
-@router.get("/find/{id}")
-def get_user_by_id(id : int, db = Depends(get_db)):
-    user = UserService.get_user_by_id(id = id, db = db)
-    return {
-        "status": "success",
-        "user": user
-    }
 
-@router.patch("/update/{id}")
+# vd: GET: /api/v1/users/1
+@router.get("/{id}")
+def get_user_by_id(id : int, db = Depends(get_db)):
+    return success_response(UserService.get_user_by_id(id = id, db = db))
+
+# vd: PATCH: /api/v1/users/1
+@router.patch("/{id}")
 def update_user_by_id(
     id: int, 
     user_input: UserUpdateInput, 
@@ -59,14 +57,11 @@ def update_user_by_id(
 
     updated_user = UserService.update_user(id=id, user_input=user_input, db=db)
     
-    return {
-        "status": "success",
-        "message": "Cập nhật thành công",
-        "user": updated_user
-    } 
-    
-@router.post("/update/password/{id}")
-def update_user_by_id(
+    return success_response(updated_user, "cập nhật thông tin thành công!")
+
+# vd: PATCH: /api/v1/users/1/password
+@router.patch("/{id}/password")
+def update_user_password(
     id: int, 
     user_password: UserUpdatePassword, 
     current_user: User = Depends(UserService.get_current_user), 
@@ -77,12 +72,7 @@ def update_user_by_id(
             status_code=403, 
             detail="Bạn không có quyền sửa thông tin của người khác!"
         )
-
-    UserService.update_user_password(id=id, user_password=user_password, db=db)
-    
-    return {
-        "status": "success",
-        "message": "Cập nhật mật khẩu thành công",
-    }   
+    user = UserService.update_user_password(id=id, user_password=user_password, db=db)
+    return success_response(user, "cập nhật mật khẩu thành công!!")  
 
     
