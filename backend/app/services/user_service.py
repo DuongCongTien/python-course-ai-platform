@@ -15,6 +15,22 @@ ALGORITHM = os.getenv("JWT_ALGORITHM")
 class UserService:
     
     @staticmethod
+    def serialize_user(user: User):
+        if not user:
+            return None
+        return {
+            "id": int(user.id),
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "phone": user.phone,
+            "avatar_url": user.avatar_url,
+            "role": user.role.value if hasattr(user.role, 'value') else user.role,
+            "status": user.status.value if hasattr(user.status, 'value') else user.status,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        }
+    
+    @staticmethod
     def verify_current_user(token: str, db: Session):
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -100,9 +116,9 @@ class UserService:
         if (old_password == new_password):
             raise HTTPException(status_code=400, detail="Yêu cầu mật khẩu khác!")
 
-        if(AuthService.verify_password(old_password, user.password)):
+        if(AuthService.verify_password(old_password, user.password_hash)):
             new_valid_password = AuthService.hash_password(new_password)
-            user.password = new_valid_password 
+            user.password_hash = new_valid_password 
             db.commit()
             db.refresh(user)
             
