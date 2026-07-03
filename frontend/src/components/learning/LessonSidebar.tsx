@@ -60,7 +60,7 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
                           : "bg-slate-200 text-slate-500"
                     }`}
                   >
-                    {isLocked ? <Lock size={17} /> : isCompleted && !isCurrent ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />}
+                    {isLocked ? <Lock size={17} /> : isCompleted ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-extrabold leading-5">{lesson.title}</span>
@@ -77,10 +77,10 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
                                 : "bg-slate-100 text-slate-500"
                         }`}
                       >
-                        {isCurrent
-                          ? "Dang hoc"
-                          : isCompleted
+                        {isCompleted
                             ? "Da hoan thanh"
+                            : isCurrent
+                              ? "Dang hoc"
                             : isInProgress
                               ? `Dang hoc - ${lesson.progressPercent}%`
                               : "Chua hoc"}
