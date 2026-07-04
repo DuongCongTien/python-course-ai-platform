@@ -396,7 +396,7 @@ function RegisterForm() {
           <span className="h-px flex-1 bg-slate-200" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm active:scale-[0.98]"
@@ -413,7 +413,7 @@ function RegisterForm() {
             </span>
             Facebook
           </button>
-        </div>
+        </div> */}
 
         <p className="mt-7 text-center text-sm text-slate-500">
           Đã có tài khoản?{" "}

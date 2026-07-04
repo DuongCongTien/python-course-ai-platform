@@ -233,3 +233,126 @@ class CoursesService:
     @staticmethod
     def _enum_value(value):
         return getattr(value, "value", value)
+    # ==== DÁN TOÀN BỘ PHẦN DƯỚI ĐÂY VÀO CUỐI CLASS CoursesService ====
+# (thụt lề 4 space giống các @staticmethod khác trong class, đặt trước dòng cuối cùng của file)
+# Cần import thêm ở đầu file course_service.py:
+#   from app.models.courses_model import Course, ContentStatus, Lesson  <- (Course phải có trong dòng import sẵn)
+# Nếu file gốc chỉ có "from app.models.courses_model import ContentStatus, Course, Lesson" là đủ, không cần sửa gì thêm.
+
+    @staticmethod
+    def get_all_courses_admin(
+        db: Session,
+        keyword: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ):
+        page = max(page, 1)
+        page_size = min(max(page_size, 1), 100)
+
+        query = db.query(Course)
+
+        if keyword:
+            keyword_like = f"%{keyword.strip()}%"
+            query = query.filter(
+                (Course.title.ilike(keyword_like)) | (Course.slug.ilike(keyword_like))
+            )
+
+        total_items = query.count()
+        courses = (
+            query.options(selectinload(Course.lessons))
+            .order_by(Course.created_at.desc(), Course.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        return {
+            "items": [CoursesService.serialize_course_admin_item(course) for course in courses],
+            "pagination": {
+                "page": page,
+                "pageSize": page_size,
+                "totalItems": total_items,
+                "totalPages": math.ceil(total_items / page_size) if total_items else 0,
+            },
+        }
+
+    @staticmethod
+    def serialize_course_admin_item(course: Course):
+        item = CoursesService.serialize_course_list_item(course)
+        # TODO: chưa có bảng enrollment liên kết sẵn ở đây -> studentsCount tạm để 0.
+        # Nếu muốn số liệu thật, query thêm: db.query(func.count(Enrollment.id)).filter(Enrollment.course_id == course.id)
+        item["studentsCount"] = 0
+        item["createdAt"] = course.created_at.isoformat() if course.created_at else None
+        item["updatedAt"] = course.updated_at.isoformat() if course.updated_at else None
+        return item
+
+    @staticmethod
+    def get_course_by_id_admin(course_id: int, db: Session) -> Course:
+        course = db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "success": False,
+                    "message": "Không tìm thấy khóa học.",
+                    "errorCode": "COURSE_NOT_FOUND",
+                    "details": None,
+                },
+            )
+        return course
+
+    @staticmethod
+    def create_course_admin(payload, admin_id: int, db: Session) -> Course:
+        existing = db.query(Course).filter(Course.slug == payload.slug).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Slug đã tồn tại, vui lòng chọn slug khác.",
+            )
+
+        course = Course(
+            title=payload.title,
+            slug=payload.slug,
+            description=payload.description,
+            thumbnail_url=payload.thumbnail_url,
+            level=payload.level,
+            price=payload.price,
+            status=payload.status,
+            created_by=admin_id,
+        )
+        db.add(course)
+        db.commit()
+        db.refresh(course)
+        return course
+
+    @staticmethod
+    def update_course_admin(course_id: int, payload, db: Session) -> Course:
+        course = CoursesService.get_course_by_id_admin(course_id, db)
+        update_data = payload.model_dump(exclude_unset=True)
+
+        new_slug = update_data.get("slug")
+        if new_slug and new_slug != course.slug:
+            existing = (
+                db.query(Course)
+                .filter(Course.slug == new_slug, Course.id != course_id)
+                .first()
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Slug đã tồn tại, vui lòng chọn slug khác.",
+                )
+
+        for key, value in update_data.items():
+            setattr(course, key, value)
+
+        db.commit()
+        db.refresh(course)
+        return course
+
+    @staticmethod
+    def delete_course_admin(course_id: int, db: Session):
+        course = CoursesService.get_course_by_id_admin(course_id, db)
+        db.delete(course)
+        db.commit()
+        return {"id": course_id, "deleted": True}
