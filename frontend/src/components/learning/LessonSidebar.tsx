@@ -1,24 +1,29 @@
 import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import { type Lesson } from "./learningTypes";
+import { type CourseProgressData } from "../../services/progress.service";
 
 interface LessonSidebarProps {
   lessons: Lesson[];
   selectedLessonId: string;
+  courseProgress: CourseProgressData | null;
   onSelectLesson: (lessonId: string) => void;
 }
 
-function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSidebarProps) {
-  const completedCount = lessons.filter((lesson) => lesson.status === "completed").length;
-  const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
+function LessonSidebar({ lessons, selectedLessonId, courseProgress, onSelectLesson }: LessonSidebarProps) {
+  const progressMap = new Map((courseProgress?.lessons ?? []).map((progress) => [String(progress.lessonId), progress]));
+  const completedCount = courseProgress?.completedLessons ?? lessons.filter((lesson) => lesson.status === "completed").length;
+  const totalLessons = courseProgress?.totalLessons ?? lessons.length;
+  const progressPercent =
+    courseProgress?.progressPercent ?? (totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0);
 
   return (
     <aside className="rounded-[26px] border border-slate-200 bg-white shadow-card lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] lg:overflow-y-auto">
       <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-5 backdrop-blur">
-        <h2 className="text-lg font-extrabold text-slate-950">Noi dung khoa hoc</h2>
+        <h2 className="text-lg font-extrabold text-slate-950">Nội dung khóa học</h2>
         <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="font-semibold text-slate-600">Hoan thanh: {progressPercent}%</span>
+          <span className="font-semibold text-slate-600">Hoàn thành: {progressPercent}%</span>
           <span className="font-extrabold text-indigo-600">
-            {completedCount}/{lessons.length}
+            {completedCount}/{totalLessons}
           </span>
         </div>
         <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -28,13 +33,22 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
 
       <div className="space-y-2 p-3">
         {lessons.length === 0 ? (
-          <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">Khoa hoc nay chua co bai hoc.</p>
+          <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">Khóa học này chưa có bài học.</p>
         ) : (
           lessons.map((lesson) => {
             const isLocked = lesson.status === "locked";
             const isCurrent = lesson.id === selectedLessonId;
-            const isCompleted = lesson.status === "completed";
-            const isInProgress = !isCompleted && (lesson.progressPercent ?? 0) > 0;
+            const progressItem = progressMap.get(String(lesson.id));
+            const progressValue = progressItem?.progressPercent ?? lesson.progressPercent ?? 0;
+            const isCompleted = progressItem?.isCompleted === true || lesson.status === "completed";
+            const isInProgress = !isCompleted && progressValue > 0;
+            const statusLabel = isCompleted
+              ? "Đã hoàn thành"
+              : isCurrent
+                ? "Đang học"
+                : isInProgress
+                  ? `Đang học • ${progressValue}%`
+                  : "Chưa học";
 
             return (
               <button
@@ -77,13 +91,7 @@ function LessonSidebar({ lessons, selectedLessonId, onSelectLesson }: LessonSide
                                 : "bg-slate-100 text-slate-500"
                         }`}
                       >
-                        {isCompleted
-                            ? "Da hoan thanh"
-                            : isCurrent
-                              ? "Dang hoc"
-                            : isInProgress
-                              ? `Dang hoc - ${lesson.progressPercent}%`
-                              : "Chua hoc"}
+                        {statusLabel}
                       </span>
                     </span>
                   </span>

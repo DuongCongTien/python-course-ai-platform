@@ -54,7 +54,7 @@ function CourseHighlightSection() {
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : "Khong the tai khoa hoc noi bat.");
+          setErrorMessage(error instanceof Error ? error.message : "Không thể tải khóa học nổi bật.");
           setCourses([]);
         }
       } finally {
@@ -90,7 +90,7 @@ function CourseHighlightSection() {
 
         {isLoading ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm font-bold text-slate-600">
-            Dang tai khoa hoc noi bat...
+            Đang tải khóa học nổi bật...
           </div>
         ) : errorMessage ? (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center text-sm font-bold text-red-600">
@@ -104,7 +104,7 @@ function CourseHighlightSection() {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-bold text-slate-500">
-            Chua co khoa hoc noi bat.
+            Chưa có khóa học nổi bật.
           </div>
         )}
       </div>

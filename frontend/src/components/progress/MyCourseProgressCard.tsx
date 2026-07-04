@@ -16,7 +16,7 @@ function MyCourseProgressCard({ course }: MyCourseProgressCardProps) {
       const continueData = unwrapProgressData(response);
       navigate(`/learning/${course.id}/${continueData.lessonId}`);
     } catch (error) {
-      console.warn("Khong the lay bai hoc tiep tuc:", error);
+      console.warn("Không thể lấy bài học tiếp tục:", error);
       navigate(`/courses/${course.id}`);
     }
   };

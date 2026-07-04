@@ -34,7 +34,7 @@ function CourseDetailPage() {
     if (!courseId) {
       setCourse(null);
       setLessons([]);
-      setErrorMessage("Khong tim thay khoa hoc.");
+      setErrorMessage("Không tìm thấy khóa học.");
       setIsLoading(false);
       return;
     }
@@ -47,7 +47,7 @@ function CourseDetailPage() {
         ? getCourseProgress(courseId)
             .then((response) => unwrapProgressData<CourseProgressData>(response))
             .catch((error) => {
-              console.warn("Khong the tai tien do khoa hoc:", error);
+              console.warn("Không thể tải tiến độ khóa học:", error);
               return null;
             })
         : Promise.resolve(null);
@@ -59,7 +59,7 @@ function CourseDetailPage() {
       ]);
 
       if (!courseResponse.data) {
-        throw new Error("Khong tim thay khoa hoc.");
+        throw new Error("Không tìm thấy khóa học.");
       }
 
       const lessonItems = extractCourseLessons(lessonsResponse);
@@ -71,7 +71,7 @@ function CourseDetailPage() {
       setCourseProgress(progressResponse);
     } catch (error) {
       console.error("Load course detail failed:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Khong the tai chi tiet khoa hoc.");
+      setErrorMessage(error instanceof Error ? error.message : "Không thể tải chi tiết khóa học.");
       setCourse(null);
       setLessons([]);
       setCourseProgress(null);
@@ -89,7 +89,7 @@ function CourseDetailPage() {
       <div className="min-h-screen bg-slate-50">
         <main className="page-container py-16">
           <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center shadow-card">
-            <p className="text-sm font-bold text-slate-600">Dang tai chi tiet khoa hoc...</p>
+            <p className="text-sm font-bold text-slate-600">Đang tải chi tiết khóa học...</p>
           </div>
         </main>
       </div>
@@ -101,22 +101,22 @@ function CourseDetailPage() {
       <div className="min-h-screen bg-slate-50">
         <main className="page-container py-16">
           <div className="rounded-[28px] border border-red-100 bg-red-50 p-10 text-center">
-            <h1 className="text-xl font-extrabold text-red-700">Khong tim thay khoa hoc.</h1>
-            <p className="mt-2 text-sm text-red-600">{errorMessage || "Khoa hoc khong ton tai hoac chua duoc xuat ban."}</p>
+            <h1 className="text-xl font-extrabold text-red-700">Không tìm thấy khóa học.</h1>
+            <p className="mt-2 text-sm text-red-600">{errorMessage || "Khóa học không tồn tại hoặc chưa được xuất bản."}</p>
             {courseId && (
               <button
                 type="button"
                 onClick={loadCourseDetail}
                 className="focus-ring mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
               >
-                Thu lai
+                Thử lại
               </button>
             )}
             <Link
               to="/courses"
               className="focus-ring mt-5 inline-flex rounded-2xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-50"
             >
-              Quay lai danh sach khoa hoc
+              Quay lại danh sách khóa học
             </Link>
           </div>
         </main>

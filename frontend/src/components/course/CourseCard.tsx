@@ -7,8 +7,9 @@ import {
   PlayCircle,
   Sparkles,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getCourseContinue, unwrapProgressData } from "../../services/progress.service";
 
 export type CourseLevel = "Cơ bản" | "Trung cấp" | "Nâng cao";
 
@@ -40,11 +41,37 @@ const levelClassName: Record<CourseLevel, string> = {
 
 function CourseCard({ course }: CourseCardProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const statusLabel = course.isLearning
     ? "Đang học"
     : course.progress === 100
       ? "Đã hoàn thành"
       : "Chưa đăng ký";
+
+  const handlePrimaryAction = async () => {
+    if (!isAuthenticated || !course.isLearning) {
+      navigate(`/courses/${course.id}`);
+      return;
+    }
+
+    try {
+      const response = await getCourseContinue(course.id);
+      const continueData = unwrapProgressData(response);
+      if (continueData.lessonId) {
+        navigate(`/learning/${course.id}/${continueData.lessonId}`);
+        return;
+      }
+    } catch (error) {
+      console.warn("Không thể lấy bài học tiếp tục:", error);
+    }
+
+    if (course.lessonId) {
+      navigate(`/learning/${course.id}/${course.lessonId}`);
+      return;
+    }
+
+    navigate(`/courses/${course.id}`);
+  };
 
   return (
     <article className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-soft">
@@ -124,23 +151,18 @@ function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
 
-        <Link
-          to={`/courses/${course.id}`}
+        <button
+          type="button"
+          onClick={handlePrimaryAction}
           className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700 group-hover:shadow-md"
         >
-          Xem chi tiết
-          <ArrowRight size={17} aria-hidden={true} />
-        </Link>
-
-        {isAuthenticated && course.isLearning && course.lessonId && (
-          <Link
-            to={`/learning/${course.id}/${course.lessonId}`}
-            className="focus-ring mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
-          >
-            Tiếp tục học
+          {isAuthenticated && course.isLearning ? "Học tiếp" : "Xem chi tiết"}
+          {isAuthenticated && course.isLearning ? (
             <PlayCircle size={17} aria-hidden={true} />
-          </Link>
-        )}
+          ) : (
+            <ArrowRight size={17} aria-hidden={true} />
+          )}
+        </button>
       </div>
     </article>
   );

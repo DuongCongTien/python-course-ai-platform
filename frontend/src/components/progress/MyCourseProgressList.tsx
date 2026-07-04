@@ -18,12 +18,10 @@ function MyCourseProgressList({ courses }: MyCourseProgressListProps) {
       <div className="space-y-5">
         {courses.length === 0 ? (
           <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">
-            Chua co tien do hoc tap nao.
+            Bạn chưa tham gia khóa học nào.
           </p>
         ) : (
-          courses.map((course) => (
-            <MyCourseProgressCard key={course.id} course={course} />
-          ))
+          courses.map((course) => <MyCourseProgressCard key={course.id} course={course} />)
         )}
       </div>
     </section>

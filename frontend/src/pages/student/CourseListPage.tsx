@@ -6,7 +6,9 @@ import CourseFilterChips, { type CourseChip } from "../../components/course/Cour
 import CourseFilterSidebar, { type DurationFilter } from "../../components/course/CourseFilterSidebar";
 import CoursePagination from "../../components/course/CoursePagination";
 import CourseSearchBar from "../../components/course/CourseSearchBar";
+import { useAuth } from "../../context/AuthContext";
 import { getCourses, mapCourseListItem } from "../../services/course.service";
+import { getCourseProgress, type CourseProgressData, unwrapProgressData } from "../../services/progress.service";
 
 type CourseApiItem = Parameters<typeof mapCourseListItem>[0];
 
@@ -19,6 +21,7 @@ const navigation = [
 ];
 
 function CourseListPage() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -35,19 +38,23 @@ function CourseListPage() {
       const response = await getCourses({ page: 1, pageSize: 20 });
       const items = extractCourseItems(response);
       const mappedCourses = items.map((item, index) => mapCourseListItem(item, index));
+      const coursesWithProgress =
+        isAuthenticated && !isAuthLoading
+          ? await loadCourseCardsProgress(mappedCourses)
+          : mappedCourses;
 
-      setCourses(mappedCourses);
+      setCourses(coursesWithProgress);
     } catch (error) {
       console.error("Load courses failed:", error);
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Khong the tai danh sach khoa hoc.",
+        error instanceof Error ? error.message : "Không thể tải danh sách khóa học.",
       );
       setCourses([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, isAuthLoading]);
 
   useEffect(() => {
     loadCourses();
@@ -143,24 +150,24 @@ function CourseListPage() {
 
               {isLoading ? (
                 <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center shadow-card">
-                  <p className="text-sm font-bold text-slate-600">Dang tai danh sach khoa hoc...</p>
+                  <p className="text-sm font-bold text-slate-600">Đang tải danh sách khóa học...</p>
                 </div>
               ) : errorMessage ? (
                 <div className="rounded-[28px] border border-red-100 bg-red-50 p-10 text-center">
-                  <h3 className="text-lg font-extrabold text-red-700">Khong the tai danh sach khoa hoc</h3>
+                  <h3 className="text-lg font-extrabold text-red-700">Không thể tải danh sách khóa học</h3>
                   <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
                   <button
                     type="button"
                     onClick={loadCourses}
                     className="focus-ring mt-5 rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
                   >
-                    Thu lai
+                    Thử lại
                   </button>
                 </div>
               ) : courses.length === 0 ? (
                 <div className="rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center">
-                  <h3 className="text-lg font-extrabold text-slate-950">Chua co khoa hoc nao</h3>
-                  <p className="mt-2 text-sm text-slate-500">Danh sach khoa hoc se hien thi khi backend co du lieu published.</p>
+                  <h3 className="text-lg font-extrabold text-slate-950">Chưa có khóa học nào</h3>
+                  <p className="mt-2 text-sm text-slate-500">Danh sách khóa học sẽ hiển thị khi backend có dữ liệu published.</p>
                 </div>
               ) : filteredCourses.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2">
@@ -204,6 +211,45 @@ function extractCourseItems(response: unknown): CourseApiItem[] {
   if (Array.isArray(payload.items)) return payload.items;
 
   return [];
+}
+
+async function loadCourseCardsProgress(courses: Course[]): Promise<Course[]> {
+  const progressItems = await Promise.all(
+    courses.map(async (course) => {
+      try {
+        const response = await getCourseProgress(course.id);
+        return {
+          courseId: course.id,
+          progress: unwrapProgressData<CourseProgressData>(response),
+        };
+      } catch (error) {
+        console.warn(`Không thể tải tiến độ khóa học ${course.id}:`, error);
+        return {
+          courseId: course.id,
+          progress: null,
+        };
+      }
+    }),
+  );
+
+  const progressByCourse = new Map(progressItems.map((item) => [item.courseId, item.progress]));
+
+  return courses.map((course) => {
+    const progress = progressByCourse.get(course.id);
+    if (!progress) return course;
+
+    const hasLessonProgress =
+      progress.completedLessons > 0 ||
+      progress.progressPercent > 0 ||
+      progress.lessons.some((lesson) => lesson.isCompleted || lesson.progressPercent > 0 || lesson.lastPositionSeconds > 0);
+
+    return {
+      ...course,
+      isLearning: hasLessonProgress,
+      progress: progress.progressPercent,
+      lessonId: progress.currentLessonId ? String(progress.currentLessonId) : course.lessonId,
+    };
+  });
 }
 
 function CourseNavbar() {
