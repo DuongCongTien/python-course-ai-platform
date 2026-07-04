@@ -75,6 +75,8 @@ function LearningPage() {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setLesson(null);
+      setLessonProgress(null);
 
       const resourcesPromise = getLessonResources(lessonId)
         .then((resourcesResponse) => unwrapApiData(resourcesResponse))
@@ -278,7 +280,7 @@ function LearningPage() {
 
         <div className="min-w-0 space-y-6">
           <VideoPlayerSection
-            key={lesson.id}
+            key={`${lesson.id}-${lesson.videoUrl ?? lesson.embedUrl ?? "no-video"}`}
             videoUrl={lesson.videoUrl}
             embedUrl={lesson.embedUrl}
             provider={lesson.videoProvider}
