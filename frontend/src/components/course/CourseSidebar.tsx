@@ -16,18 +16,19 @@ interface CourseSidebarProps {
 }
 
 const extras = [
-  { label: "Tai lieu PDF va ma nguon mau", icon: FileText },
-  { label: "Chung nhan hoan thanh", icon: Award },
-  { label: "Cong dong hoc vien ho tro 24/7", icon: Users },
-  { label: "Cap nhat noi dung tron doi", icon: RefreshCw },
+  { label: "Tài liệu PDF và mã nguồn mẫu", icon: FileText },
+  { label: "Chứng nhận hoàn thành", icon: Award },
+  { label: "Cộng đồng học viên hỗ trợ 24/7", icon: Users },
+  { label: "Cập nhật nội dung trọn đời", icon: RefreshCw },
 ];
 
 function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }: CourseSidebarProps) {
   const navigate = useNavigate();
-  const fallbackLessonId = course.currentLessonId || course.firstLessonId || lessons[0]?.id;
+  const fallbackLessonId = courseProgress?.currentLessonId || course.currentLessonId || course.firstLessonId || lessons[0]?.id;
   const progressPercent = courseProgress?.progressPercent ?? 0;
   const completedLessons = courseProgress?.completedLessons ?? 0;
   const totalLessons = courseProgress?.totalLessons ?? lessons.length;
+  const primaryActionLabel = progressPercent > 0 ? "Học tiếp" : "Bắt đầu học";
 
   const handleContinueLearning = async () => {
     if (!isAuthenticated) {
@@ -40,9 +41,10 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
     try {
       const response = await getCourseContinue(course.id);
       const continueData = unwrapProgressData(response);
+      if (!continueData.lessonId) return;
       navigate(`/learning/${course.id}/${continueData.lessonId}`);
     } catch (error) {
-      console.warn("Khong the lay bai hoc tiep tuc:", error);
+      console.warn("Không thể lấy bài học tiếp tục:", error);
       if (fallbackLessonId) {
         navigate(`/learning/${course.id}/${fallbackLessonId}`);
       }
@@ -54,14 +56,14 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
       {isAuthenticated ? (
         <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-card">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-slate-950">Tien do cua ban</h2>
+            <h2 className="text-lg font-extrabold text-slate-950">Tiến độ của bạn</h2>
             <span className="text-2xl font-extrabold text-indigo-600">{progressPercent}%</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-blue-500" style={{ width: `${progressPercent}%` }} />
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Da hoan thanh {completedLessons}/{totalLessons} bai hoc.
+            Đã hoàn thành {completedLessons}/{totalLessons} bài học.
           </p>
           {fallbackLessonId ? (
             <button
@@ -69,7 +71,7 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
               onClick={handleContinueLearning}
               className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
             >
-              Hoc tiep
+              {primaryActionLabel}
             </button>
           ) : (
             <button
@@ -77,22 +79,22 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
               disabled
               className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center rounded-2xl bg-slate-300 px-4 py-3 text-sm font-bold text-white"
             >
-              Khoa hoc chua co bai hoc
+              Khóa học chưa có bài học
             </button>
           )}
         </div>
       ) : (
         <div className="rounded-[26px] border border-indigo-100 bg-indigo-50/70 p-5 shadow-card">
-          <h2 className="text-lg font-extrabold text-slate-950">Theo doi tien do hoc tap</h2>
+          <h2 className="text-lg font-extrabold text-slate-950">Theo dõi tiến độ học tập</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Dang nhap de xem tien do hoc tap cua ban.
+            Đăng nhập để xem tiến độ học tập của bạn.
           </p>
           <Link
             to="/login"
             state={{ from: { pathname: `/courses/${course.id}` } }}
             className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700"
           >
-            Dang nhap ngay
+            Đăng nhập ngay
           </Link>
         </div>
       )}
@@ -100,7 +102,7 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
       <InstructorCard />
 
       <div className="rounded-[26px] bg-slate-950 p-5 text-white shadow-soft">
-        <h2 className="text-lg font-extrabold">Bao gom trong khoa hoc</h2>
+        <h2 className="text-lg font-extrabold">Bao gồm trong khóa học</h2>
         <ul className="mt-5 space-y-4">
           {extras.map((extra) => {
             const Icon = extra.icon;
@@ -117,7 +119,7 @@ function CourseSidebar({ course, lessons = [], isAuthenticated, courseProgress }
         </ul>
         <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white/10 p-3 text-sm font-semibold text-emerald-300">
           <CheckCircle2 size={17} />
-          Truy cap ngay sau khi dang ky
+          Truy cập ngay sau khi đăng ký
         </div>
       </div>
     </aside>

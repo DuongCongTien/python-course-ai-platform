@@ -44,9 +44,30 @@ function VideoPlayerSection({
 }: VideoPlayerSectionProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const playerRef = useRef<any>(null);
+  const progressTimerRef = useRef<number | null>(null);
   const hasRestoredRef = useRef(false);
   const lastSavedAtRef = useRef(0);
   const saveInFlightRef = useRef(false);
+  const runtimeRef = useRef({
+    courseId,
+    durationSeconds,
+    lessonId,
+    lessonProgress,
+    onEnded,
+    onProgressChange,
+  });
+
+  useEffect(() => {
+    runtimeRef.current = {
+      courseId,
+      durationSeconds,
+      lessonId,
+      lessonProgress,
+      onEnded,
+      onProgressChange,
+    };
+  }, [courseId, durationSeconds, lessonId, lessonProgress, onEnded, onProgressChange]);
 
   const finalEmbedUrl = useMemo(() => {
     if (embedUrl) return embedUrl;
@@ -58,7 +79,9 @@ function VideoPlayerSection({
     return null;
   }, [embedUrl, provider, videoUrl]);
 
-  const isYoutube = Boolean(finalEmbedUrl);
+  const isYoutube = Boolean(
+    finalEmbedUrl && (provider?.toLowerCase() === "youtube" || isYouTubeUrl(videoUrl) || isYouTubeUrl(finalEmbedUrl)),
+  );
   const youtubeSrc = useMemo(() => {
     if (!finalEmbedUrl || typeof window === "undefined") return finalEmbedUrl;
 
@@ -69,24 +92,90 @@ function VideoPlayerSection({
   useEffect(() => {
     hasRestoredRef.current = false;
     lastSavedAtRef.current = 0;
+    if (progressTimerRef.current) {
+      window.clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    playerRef.current?.destroy?.();
+    playerRef.current = null;
   }, [lessonId, videoUrl, finalEmbedUrl]);
+
+  const saveYoutubeProgress = useCallback(async () => {
+    const player = playerRef.current;
+    const current = runtimeRef.current;
+    if (!player || !current.courseId || !current.lessonId || saveInFlightRef.current || current.lessonProgress?.isCompleted) {
+      return;
+    }
+
+    const currentTime = Math.floor(player.getCurrentTime?.() || 0);
+    const duration = Math.floor(
+      player.getDuration?.() || current.durationSeconds || current.lessonProgress?.durationSeconds || 0,
+    );
+    if (duration <= 0) return;
+
+    const progressPercent = Math.min(99, Math.round((currentTime / duration) * 100));
+    saveInFlightRef.current = true;
+
+    try {
+      const response = await updateLessonProgress(current.lessonId, {
+        courseId: current.courseId,
+        lastPositionSeconds: currentTime,
+        watchedSeconds: currentTime,
+        durationSeconds: duration,
+        progressPercent,
+      });
+      const data = "data" in response && response.data ? response.data : response;
+      current.onProgressChange(data as LessonProgressData);
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, []);
+
+  const stopProgressTimer = useCallback(() => {
+    if (!progressTimerRef.current) return;
+
+    window.clearInterval(progressTimerRef.current);
+    progressTimerRef.current = null;
+  }, []);
+
+  const startProgressTimer = useCallback(() => {
+    if (progressTimerRef.current || runtimeRef.current.lessonProgress?.isCompleted) return;
+
+    progressTimerRef.current = window.setInterval(() => {
+      saveYoutubeProgress().catch((error) => {
+        console.warn("Không thể lưu tiến độ video YouTube:", error);
+      });
+    }, 10000);
+  }, [saveYoutubeProgress]);
 
   useEffect(() => {
     if (!isYoutube || !iframeRef.current) return;
 
-    let player: any;
     let isDisposed = false;
     const previousReady = window.onYouTubeIframeAPIReady;
 
     const setupPlayer = () => {
       if (isDisposed || !window.YT?.Player || !iframeRef.current) return;
 
-      player = new window.YT.Player(iframeRef.current, {
+      playerRef.current?.destroy?.();
+      playerRef.current = new window.YT.Player(iframeRef.current, {
         events: {
           onStateChange: (event: any) => {
+            if (event.data === window.YT?.PlayerState?.PLAYING) {
+              startProgressTimer();
+            }
+
+            if (event.data === window.YT?.PlayerState?.PAUSED) {
+              stopProgressTimer();
+              saveYoutubeProgress().catch((error) => {
+                console.warn("Không thể lưu tiến độ khi pause:", error);
+              });
+            }
+
             if (event.data === window.YT?.PlayerState?.ENDED) {
-              const duration = Math.floor(player?.getDuration?.() || durationSeconds || 0);
-              onEnded(duration);
+              stopProgressTimer();
+              const duration = Math.floor(playerRef.current?.getDuration?.() || runtimeRef.current.durationSeconds || 0);
+              runtimeRef.current.onEnded(duration);
             }
           },
         },
@@ -111,12 +200,15 @@ function VideoPlayerSection({
 
     return () => {
       isDisposed = true;
-      player?.destroy?.();
+      stopProgressTimer();
+      saveYoutubeProgress().catch(() => {});
+      playerRef.current?.destroy?.();
+      playerRef.current = null;
       if (window.onYouTubeIframeAPIReady !== previousReady) {
         window.onYouTubeIframeAPIReady = previousReady;
       }
     };
-  }, [durationSeconds, isYoutube, onEnded, youtubeSrc]);
+  }, [isYoutube, lessonId, saveYoutubeProgress, startProgressTimer, stopProgressTimer, youtubeSrc]);
 
   const saveProgress = useCallback(async () => {
     const video = videoRef.current;
@@ -146,6 +238,11 @@ function VideoPlayerSection({
 
   useEffect(() => {
     const handlePageHide = () => {
+      if (isYoutube) {
+        saveYoutubeProgress().catch(() => {});
+        return;
+      }
+
       saveProgress().catch(() => {});
     };
 
@@ -155,9 +252,13 @@ function VideoPlayerSection({
     return () => {
       window.removeEventListener("pagehide", handlePageHide);
       document.removeEventListener("visibilitychange", handlePageHide);
-      saveProgress().catch(() => {});
+      if (isYoutube) {
+        saveYoutubeProgress().catch(() => {});
+      } else {
+        saveProgress().catch(() => {});
+      }
     };
-  }, [saveProgress]);
+  }, [isYoutube, saveProgress, saveYoutubeProgress]);
 
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
@@ -179,13 +280,13 @@ function VideoPlayerSection({
 
     lastSavedAtRef.current = now;
     saveProgress().catch((error) => {
-      console.warn("Khong the luu tien do video:", error);
+      console.warn("Không thể lưu tiến độ video:", error);
     });
   };
 
   const handlePause = () => {
     saveProgress().catch((error) => {
-      console.warn("Khong the luu tien do khi pause:", error);
+      console.warn("Không thể lưu tiến độ khi pause:", error);
     });
   };
 
@@ -200,6 +301,7 @@ function VideoPlayerSection({
       <div className="relative aspect-video bg-slate-950">
         {finalEmbedUrl ? (
           <iframe
+            key={`${lessonId}-${youtubeSrc ?? finalEmbedUrl}`}
             ref={iframeRef}
             className="h-full w-full bg-black"
             src={youtubeSrc ?? finalEmbedUrl}
@@ -209,6 +311,7 @@ function VideoPlayerSection({
           />
         ) : videoUrl && isDirectVideoUrl(videoUrl) ? (
           <video
+            key={`${lessonId}-${videoUrl}`}
             ref={videoRef}
             className="h-full w-full bg-black"
             controls

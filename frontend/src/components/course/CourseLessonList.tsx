@@ -14,7 +14,7 @@ function CourseLessonList({ courseId, lessons, isAuthenticated }: CourseLessonLi
   if (lessons.length === 0) {
     return (
       <section className="rounded-[26px] border border-slate-200 bg-white p-6 text-center text-sm font-medium text-slate-500 shadow-card">
-        Khoa hoc nay chua co bai hoc.
+        Khóa học này chưa có bài học.
       </section>
     );
   }
@@ -37,8 +37,8 @@ function CourseLessonList({ courseId, lessons, isAuthenticated }: CourseLessonLi
   return (
     <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-card sm:p-6">
       <div className="mb-5">
-        <h2 className="text-xl font-extrabold text-slate-950">Danh sach bai hoc</h2>
-        <p className="mt-1 text-sm text-slate-500">{lessons.length} bai hoc trong khoa hoc nay.</p>
+        <h2 className="text-xl font-extrabold text-slate-950">Danh sách bài học</h2>
+        <p className="mt-1 text-sm text-slate-500">{lessons.length} bài học trong khóa học này.</p>
       </div>
 
       <div className="space-y-3">
@@ -56,7 +56,7 @@ function CourseLessonList({ courseId, lessons, isAuthenticated }: CourseLessonLi
 
               <span className="min-w-0">
                 <span className="block font-semibold text-slate-900">
-                  Bai {index + 1}: {lesson.title}
+                  Bài {index + 1}: {lesson.title}
                 </span>
 
                 {lesson.description && (

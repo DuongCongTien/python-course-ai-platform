@@ -151,25 +151,25 @@ export async function getCourses(params?: {
   const query = searchParams.toString();
   return requestApi<CoursesResponseData>(
     `/courses/${query ? `?${query}` : ""}`,
-    "Khong the tai danh sach khoa hoc.",
+    "Không thể tải danh sách khóa học.",
   );
 }
 
 export async function getFeaturedCourses() {
-  return requestApi<BackendCourse[]>("/courses/featured", "Khong the tai khoa hoc noi bat.");
+  return requestApi<BackendCourse[]>("/courses/featured", "Không thể tải khóa học nổi bật.");
 }
 
 export async function getCourseById(courseId: string) {
   return requestApi<BackendCourse>(
     `/courses/${encodeURIComponent(courseId)}`,
-    "Khong the tai chi tiet khoa hoc.",
+    "Không thể tải chi tiết khóa học.",
   );
 }
 
 export async function getCourseLessons(courseId: string) {
   return requestApi<BackendLesson[] | BackendChapter[]>(
     `/courses/${encodeURIComponent(courseId)}/lessons`,
-    "Khong the tai noi dung khoa hoc.",
+    "Không thể tải nội dung khóa học.",
   );
 }
 
@@ -184,7 +184,7 @@ export function mapCourseListItem(course: BackendCourse, index = 0): Course {
 
   return {
     id,
-    title: course.title || "Chua co tieu de",
+    title: course.title || "Chưa có tiêu đề",
     level: mapLevel(course.level),
     lessons: lessonsCount,
     duration: formatDuration(durationSeconds),
@@ -216,7 +216,7 @@ export function mapCourseDetail(course: BackendCourse, lessonsData: Array<Backen
     id: String(course.slug || course.id),
     firstLessonId: backendFirstLessonId ?? firstLessonId ?? "",
     currentLessonId: currentLessonId ?? undefined,
-    title: course.title || "Chua co tieu de",
+    title: course.title || "Chưa có tiêu đề",
     description: course.description || "",
     level: mapLevel(course.level),
     lessonsCount,
@@ -260,7 +260,7 @@ export function mapCourseLesson(lesson: BackendLesson): CourseLesson {
     id: String(lesson.id),
     courseId: getOptionalString(lesson.courseId, lesson.course_id),
     sectionId: getOptionalString(lesson.sectionId, lesson.section_id),
-    title: lesson.title || "Bai hoc",
+    title: lesson.title || "Bài học",
     description: lesson.description || "",
     duration: lesson.duration || formatLessonDuration(Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0))),
     durationSeconds: Number(getValue(lesson.durationSeconds, lesson.duration_seconds, 0)),

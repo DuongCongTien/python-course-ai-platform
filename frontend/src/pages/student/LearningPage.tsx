@@ -20,6 +20,7 @@ import {
   getCourseProgress,
   getLessonProgress,
   type CourseProgressData,
+  type LessonCompleteData,
   type LessonProgressData,
   unwrapProgressData,
 } from "../../services/progress.service";
@@ -58,7 +59,7 @@ function LearningPage() {
       setCourseProgress(progress);
       return progress;
     } catch (error) {
-      console.warn("Khong the tai tien do khoa hoc:", error);
+      console.warn("Không thể tải tiến độ khóa học:", error);
       return null;
     }
   }, [courseId]);
@@ -84,13 +85,13 @@ function LearningPage() {
       const progressPromise = getLessonProgress(lessonId)
         .then((progressResponse) => unwrapProgressData<LessonProgressData>(progressResponse))
         .catch((error) => {
-          console.warn("Khong the tai tien do bai hoc:", error);
+          console.warn("Không thể tải tiến độ bài học:", error);
           return null;
         });
       const courseProgressPromise = getCourseProgress(courseId)
         .then((progressResponse) => unwrapProgressData<CourseProgressData>(progressResponse))
         .catch((error) => {
-          console.warn("Khong the tai tien do khoa hoc:", error);
+          console.warn("Không thể tải tiến độ khóa học:", error);
           return null;
         });
       const [lessonResponse, resourcesData, lessonsResponse, progressData, courseProgressData] = await Promise.all([
@@ -165,7 +166,8 @@ function LearningPage() {
           courseId,
           durationSeconds: finalDuration,
         });
-        const nextProgress = unwrapProgressData<LessonProgressData>(response);
+        const completeData = unwrapProgressData<LessonCompleteData>(response);
+        const nextProgress = completeData.lessonProgress;
         const completedProgress: LessonProgressData = {
           ...nextProgress,
           lessonId,
@@ -177,9 +179,22 @@ function LearningPage() {
         };
 
         handleVideoProgressChange(completedProgress);
+        if (completeData.courseProgress) {
+          setCourseProgress(completeData.courseProgress);
+          setLessons((current) => applyCourseProgress(current, completeData.courseProgress));
+        } else {
+          setCourseProgress((current) => mergeCompletedLessonProgress(current, completedProgress));
+          setLessons((current) =>
+            current.map((item) =>
+              item.id === String(lessonId)
+                ? { ...item, status: "completed", progressPercent: 100, lastPositionSeconds: completedProgress.lastPositionSeconds }
+                : item,
+            ),
+          );
+        }
         await reloadCourseProgress();
       } catch (error) {
-        console.error("Khong the danh dau hoan thanh bai hoc:", error);
+        console.error("Không thể đánh dấu hoàn thành bài học:", error);
       } finally {
         isCompletingRef.current = false;
         setIsCompleting(false);
@@ -254,10 +269,16 @@ function LearningPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="grid gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)_360px] lg:px-8">
-        <LessonSidebar lessons={lessons} selectedLessonId={lesson.id} onSelectLesson={handleSelectLesson} />
+        <LessonSidebar
+          lessons={lessons}
+          selectedLessonId={lesson.id}
+          courseProgress={courseProgress}
+          onSelectLesson={handleSelectLesson}
+        />
 
         <div className="min-w-0 space-y-6">
           <VideoPlayerSection
+            key={lesson.id}
             videoUrl={lesson.videoUrl}
             embedUrl={lesson.embedUrl}
             provider={lesson.videoProvider}
@@ -470,6 +491,32 @@ function applyCourseProgress(lessons: Lesson[], courseProgress: CourseProgressDa
       lastPositionSeconds: progress.lastPositionSeconds,
     };
   });
+}
+
+function mergeCompletedLessonProgress(
+  courseProgress: CourseProgressData | null,
+  lessonProgress: LessonProgressData,
+): CourseProgressData | null {
+  if (!courseProgress) return null;
+
+  const lessonId = String(lessonProgress.lessonId);
+  const wasCompleted =
+    courseProgress.lessons?.some((progress) => String(progress.lessonId) === lessonId && progress.isCompleted) ?? false;
+  const completedLessons = wasCompleted
+    ? courseProgress.completedLessons
+    : Math.min(courseProgress.completedLessons + 1, courseProgress.totalLessons);
+
+  return {
+    ...courseProgress,
+    completedLessons,
+    currentLessonId: lessonProgress.lessonId,
+    progressPercent:
+      courseProgress.totalLessons > 0 ? Math.round((completedLessons / courseProgress.totalLessons) * 100) : 0,
+    lessons: [
+      ...(courseProgress.lessons ?? []).filter((progress) => String(progress.lessonId) !== lessonId),
+      lessonProgress,
+    ],
+  };
 }
 
 function extractTranscriptSegments(...sources: unknown[]): TranscriptSegment[] {
