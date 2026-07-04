@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import AIAssistantPanel from "../../components/learning/AIAssistantPanel";
@@ -16,6 +16,7 @@ import {
 import { getCourseLessons } from "../../services/course.service";
 import { getLessonById, getLessonResources } from "../../services/lesson.service";
 import {
+  completeLesson,
   getCourseProgress,
   getLessonProgress,
   type CourseProgressData,
@@ -44,6 +45,8 @@ function LearningPage() {
   const [lessonProgress, setLessonProgress] = useState<LessonProgressData | null>(null);
   const [courseProgress, setCourseProgress] = useState<CourseProgressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const isCompletingRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadCourseProgress = useCallback(async () => {
@@ -138,12 +141,59 @@ function LearningPage() {
     );
   };
 
-  const handleLessonCompleted = async () => {
+  const reloadCourseProgress = useCallback(async () => {
     const nextCourseProgress = await loadCourseProgress();
     if (nextCourseProgress) {
       setLessons((current) => applyCourseProgress(current, nextCourseProgress));
     }
-  };
+
+    return nextCourseProgress;
+  }, [loadCourseProgress]);
+
+  const handleCompleteLesson = useCallback(
+    async (completedDurationSeconds?: number) => {
+      if (!courseId || !lessonId || isCompletingRef.current || lessonProgress?.isCompleted) return;
+
+      const finalDuration = Math.floor(
+        completedDurationSeconds ?? lesson?.durationSeconds ?? lessonProgress?.durationSeconds ?? 0,
+      );
+
+      try {
+        isCompletingRef.current = true;
+        setIsCompleting(true);
+        const response = await completeLesson(lessonId, {
+          courseId,
+          durationSeconds: finalDuration,
+        });
+        const nextProgress = unwrapProgressData<LessonProgressData>(response);
+        const completedProgress: LessonProgressData = {
+          ...nextProgress,
+          lessonId,
+          isCompleted: true,
+          progressPercent: 100,
+          lastPositionSeconds: nextProgress.lastPositionSeconds ?? finalDuration,
+          watchedSeconds: nextProgress.watchedSeconds ?? finalDuration,
+          durationSeconds: nextProgress.durationSeconds ?? finalDuration,
+        };
+
+        handleVideoProgressChange(completedProgress);
+        await reloadCourseProgress();
+      } catch (error) {
+        console.error("Khong the danh dau hoan thanh bai hoc:", error);
+      } finally {
+        isCompletingRef.current = false;
+        setIsCompleting(false);
+      }
+    },
+    [
+      courseId,
+      lesson?.durationSeconds,
+      lessonId,
+      lessonProgress?.durationSeconds,
+      lessonProgress?.isCompleted,
+      reloadCourseProgress,
+    ],
+  );
 
   const handleSendMessage = () => {
     const trimmedInput = chatInput.trim();
@@ -217,10 +267,16 @@ function LearningPage() {
             durationSeconds={lesson.durationSeconds}
             lessonProgress={lessonProgress}
             onProgressChange={handleVideoProgressChange}
-            onCompleted={handleLessonCompleted}
+            onEnded={handleCompleteLesson}
           />
           <LessonSlideCard slideFile={lesson.slideFile} />
-          <LessonInfoSection title={lesson.title} description={lesson.description} />
+          <LessonInfoSection
+            title={lesson.title}
+            description={lesson.description}
+            isCompleted={Boolean(lessonProgress?.isCompleted)}
+            isCompleting={isCompleting}
+            onComplete={() => handleCompleteLesson()}
+          />
           <LessonTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
