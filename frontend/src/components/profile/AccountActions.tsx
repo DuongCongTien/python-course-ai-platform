@@ -17,14 +17,6 @@ function AccountActions() {
     <section className="grid gap-3 rounded-[28px] border border-slate-200 bg-white p-5 shadow-card">
       <button
         type="button"
-        onClick={() => navigate("/profile/settings")}
-        className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-      >
-        <Settings size={17} />
-        Cài đặt tài khoản
-      </button>
-      <button
-        type="button"
         onClick={handleLogout}
         className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
       >

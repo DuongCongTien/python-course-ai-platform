@@ -369,7 +369,7 @@ function TranscriptFooter() {
       <div className="page-container grid gap-8 py-10 sm:grid-cols-3">
         <div>
           <p className="font-extrabold text-slate-950">Python AI Learning</p>
-          <p className="mt-2 text-sm text-slate-500">© 2024 Python AI Learning. Nâng tầm tri thức công nghệ Việt.</p>
+          <p className="mt-2 text-sm text-slate-500">© 2026 Python AI Learning. Nâng tầm tri thức công nghệ Việt.</p>
         </div>
         <FooterGroup title="Học tập" links={["Về chúng tôi", "Hướng dẫn"]} />
         <FooterGroup title="Pháp lý & Liên hệ" links={["Điều khoản dịch vụ", "Chính sách bảo mật", "Liên hệ"]} />
