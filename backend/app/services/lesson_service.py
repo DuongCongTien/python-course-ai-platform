@@ -24,7 +24,7 @@ class LessonService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
                     "success": False,
-                    "message": "Khong tim thay bai hoc.",
+                    "message": "Không tìm thấy bài học.",
                     "errorCode": "LESSON_NOT_FOUND",
                     "details": None,
                 },

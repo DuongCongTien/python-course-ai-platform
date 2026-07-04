@@ -10,31 +10,31 @@ from app.models.courses_model import ContentStatus, Course, Lesson
 DEFAULT_AI_FEATURES = [
     {
         "id": "transcript",
-        "title": "Transcript tu dong",
-        "description": "AI chuyen noi dung video thanh van ban.",
+        "title": "Transcript tự động",
+        "description": "AI chuyển nội dung video thành văn bản.",
     },
     {
         "id": "summary",
-        "title": "Tom tat bai hoc",
-        "description": "AI rut ra cac y chinh trong bai hoc.",
+        "title": "Tóm tắt bài học",
+        "description": "AI rút ra các ý chính trong bài học.",
     },
     {
         "id": "qa",
-        "title": "Hoi dap theo bai hoc",
-        "description": "Chatbot tra loi dua tren noi dung bai hoc.",
+        "title": "Hỏi đáp theo bài học",
+        "description": "Chatbot trả lời dựa trên nội dung bài học.",
     },
 ]
 
 COURSE_OBJECTIVES = {
     "python-co-ban-tich-hop-ai": [
-        "Nam duoc cu phap Python co ban.",
-        "Hieu bien, kieu du lieu, dieu kien va vong lap.",
-        "Biet ung dung AI Assistant de tang hieu suat viet code.",
+        "Nắm được cú pháp Python cơ bản.",
+        "Hiểu biến, kiểu dữ liệu, điều kiện và vòng lặp.",
+        "Biết ứng dụng AI Assistant để tăng hiệu suất viết code.",
     ],
     "rag-fastapi-advanced": [
-        "Nam kien truc tong quan cua he thong RAG.",
-        "Biet cach ket hop vector database voi FastAPI.",
-        "Xay dung API tro ly thong minh dua tren noi dung bai hoc.",
+        "Nắm kiến trúc tổng quan của hệ thống RAG.",
+        "Biết cách kết hợp vector database với FastAPI.",
+        "Xây dựng API trợ lý thông minh dựa trên nội dung bài học.",
     ],
 }
 
@@ -113,7 +113,7 @@ class CoursesService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
                     "success": False,
-                    "message": "Khong tim thay khoa hoc.",
+                    "message": "Không tìm thấy khóa học.",
                     "errorCode": "COURSE_NOT_FOUND",
                     "details": None,
                 },
@@ -144,7 +144,7 @@ class CoursesService:
             "lessonsCount": lessons_count,
             "durationSeconds": duration_seconds,
             "hasAI": True,
-            "studentsThisMonth": "+1,200 hoc vien",
+            "studentsThisMonth": "+1,200 học viên",
             "firstLessonId": int(first_lesson.id) if first_lesson else None,
             "currentLessonId": int(first_lesson.id) if first_lesson else None,
             "objectives": COURSE_OBJECTIVES.get(course.slug, []),
@@ -228,7 +228,7 @@ class CoursesService:
     @staticmethod
     def _format_minutes(duration_seconds: int):
         minutes = max(1, math.ceil(max(duration_seconds, 0) / 60)) if duration_seconds else 0
-        return f"{minutes} phut"
+        return f"{minutes} phút"
 
     @staticmethod
     def _enum_value(value):
