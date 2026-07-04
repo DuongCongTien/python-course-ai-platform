@@ -103,12 +103,16 @@ class LessonService:
         netloc = parsed.netloc.lower()
 
         if "youtu.be" in netloc:
-            video_id = parsed.path.strip("/")
+            video_id = parsed.path.strip("/").split("/")[0]
             return f"https://www.youtube.com/embed/{video_id}" if video_id else None
 
-        if "youtube.com" in netloc:
+        if "youtube.com" in netloc or "youtube-nocookie.com" in netloc:
             if parsed.path.startswith("/embed/"):
                 return url
+
+            if parsed.path.startswith("/shorts/"):
+                video_id = parsed.path.replace("/shorts/", "", 1).split("/")[0]
+                return f"https://www.youtube.com/embed/{video_id}" if video_id else None
 
             video_id = parse_qs(parsed.query).get("v", [None])[0]
             if video_id:
