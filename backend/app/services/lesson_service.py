@@ -1,3 +1,5 @@
+import json
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 from urllib.parse import parse_qs, urlparse
@@ -124,13 +126,40 @@ class LessonService:
     def serialize_transcript(transcript: LessonTranscript):
         return {
             "text": transcript.transcript_text,
+            "transcriptText": transcript.transcript_text,
             "language": transcript.language,
             "status": transcript.status,
+            "generatedBy": transcript.generated_by,
+            "errorMessage": transcript.error_message,
+            "createdAt": transcript.created_at.isoformat() if transcript.created_at else None,
         }
 
     @staticmethod
     def serialize_summary(summary: LessonSummary):
         return {
+            "id": int(summary.id),
+            "lessonId": int(summary.lesson_id),
             "summaryText": summary.summary_text,
-            "keyPoints": summary.key_points,
+            "keyPoints": LessonService.normalize_key_points(summary.key_points),
+            "generatedBy": summary.generated_by,
+            "createdAt": summary.created_at.isoformat() if summary.created_at else None,
         }
+
+    @staticmethod
+    def normalize_key_points(value):
+        if not value:
+            return []
+
+        if isinstance(value, list):
+            return [str(item) for item in value if item]
+
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+
+            if isinstance(parsed, list):
+                return [str(item) for item in parsed if item]
+
+        return []

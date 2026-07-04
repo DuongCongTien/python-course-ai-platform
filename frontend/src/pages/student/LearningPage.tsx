@@ -10,6 +10,7 @@ import {
   type ChatMessage,
   type Lesson,
   type LessonDetail,
+  type LessonSummary,
   type LessonTab,
   type TranscriptSegment,
 } from "../../components/learning/learningTypes";
@@ -305,6 +306,8 @@ function LearningPage() {
             onTabChange={setActiveTab}
             lessonId={lesson.id}
             transcript={lesson.transcript}
+            transcriptStatus={lesson.transcriptStatus}
+            transcriptErrorMessage={lesson.transcriptErrorMessage}
             summary={lesson.summary}
             transcriptSegments={lesson.transcriptSegments}
           />
@@ -376,6 +379,7 @@ function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDe
   const data = asRecord(lessonData);
   const resources = asRecord(resourcesData);
   const video = asRecord(getValue(resources.video, data.video, null));
+  const transcriptResource = asRecord(getValue(resources.transcript, data.transcript, null));
 
   return {
     id: String(getValue(data.id, "")),
@@ -412,29 +416,60 @@ function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDe
     ),
     slideFile: mapSlideFile(getValue(resources.slideFile, resources.slide_file, data.slideFile, data.slide_file)),
     transcript: getStringOrNull(
-      getNested(resources, "transcript", "text"),
-      getNested(resources, "transcript", "transcriptText"),
-      getNested(resources, "transcript", "transcript_text"),
-      getNested(data, "transcript", "text"),
-      getNested(data, "transcript", "transcriptText"),
-      getNested(data, "transcript", "transcript_text"),
+      transcriptResource.text,
+      transcriptResource.transcriptText,
+      transcriptResource.transcript_text,
       resources.transcriptText,
       resources.transcript_text,
       data.transcriptText,
       data.transcript_text,
     ),
-    summary: getStringOrNull(
-      getNested(resources, "summary", "summaryText"),
-      getNested(resources, "summary", "summary_text"),
-      getNested(data, "summary", "summaryText"),
-      getNested(data, "summary", "summary_text"),
-      resources.summaryText,
-      resources.summary_text,
-      data.summaryText,
-      data.summary_text,
+    transcriptStatus: mapTranscriptStatus(
+      getStringOrNull(
+        transcriptResource.status,
+        resources.transcriptStatus,
+        resources.transcript_status,
+        data.transcriptStatus,
+        data.transcript_status,
+      ),
     ),
+    transcriptErrorMessage: getStringOrNull(
+      transcriptResource.errorMessage,
+      transcriptResource.error_message,
+      resources.transcriptErrorMessage,
+      resources.transcript_error_message,
+      data.transcriptErrorMessage,
+      data.transcript_error_message,
+    ),
+    summary: mapLessonSummary(resources, data),
     transcriptSegments: extractTranscriptSegments(resources, data),
   };
+}
+
+function mapLessonSummary(...sources: unknown[]): LessonSummary | null {
+  for (const source of sources) {
+    const record = asRecord(source);
+    const summary = asRecord(record.summary);
+    const summaryText = getStringOrNull(
+      summary.summaryText,
+      summary.summary_text,
+      record.summaryText,
+      record.summary_text,
+    );
+
+    if (summaryText) {
+      return {
+        id: getStringOrNull(summary.id) ?? undefined,
+        lessonId: getStringOrNull(summary.lessonId, summary.lesson_id) ?? undefined,
+        summaryText,
+        keyPoints: extractStringList(summary.keyPoints, summary.key_points),
+        generatedBy: getStringOrNull(summary.generatedBy, summary.generated_by),
+        createdAt: getStringOrNull(summary.createdAt, summary.created_at),
+      };
+    }
+  }
+
+  return null;
 }
 
 function mapSlideFile(slideFile: unknown): Lesson["slideFile"] | null {
@@ -542,6 +577,27 @@ function extractTranscriptSegments(...sources: unknown[]): TranscriptSegment[] {
   return [];
 }
 
+function extractStringList(...values: unknown[]): string[] {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    }
+
+    if (typeof value === "string" && value.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+        }
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  return [];
+}
+
 function unwrapApiData(payload: unknown): unknown {
   const record = asRecord(payload);
   if ("data" in record) return record.data;
@@ -552,6 +608,11 @@ function unwrapApiData(payload: unknown): unknown {
 function mapLessonStatus(status: string | null): Lesson["status"] {
   if (status === "completed" || status === "locked") return status;
   return "available";
+}
+
+function mapTranscriptStatus(status: string | null): LessonDetail["transcriptStatus"] {
+  if (status === "processing" || status === "completed" || status === "failed") return status;
+  return "pending";
 }
 
 function formatLessonDuration(durationSeconds: number) {

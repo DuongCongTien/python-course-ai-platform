@@ -20,6 +20,12 @@ export function getLessonTranscript(lessonId: string) {
   return apiFetch(`/lessons/${encodeURIComponent(lessonId)}/transcript`);
 }
 
+export function generateLessonTranscript(lessonId: string | number) {
+  return apiFetch(`/admin/lessons/${encodeURIComponent(String(lessonId))}/generate-transcript`, {
+    method: "POST",
+  });
+}
+
 export function getLessonSummary(lessonId: string) {
   return apiFetch(`/lessons/${encodeURIComponent(lessonId)}/summary`);
 }

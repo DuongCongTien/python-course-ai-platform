@@ -1,5 +1,8 @@
 import { useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
+import { generateLessonTranscript } from "../../services/lesson.service";
+
+type TranscriptStatus = "pending" | "processing" | "completed" | "failed";
 
 interface Lesson {
   id: number;
@@ -9,6 +12,7 @@ interface Lesson {
   hasVideo: boolean;
   hasSlide: boolean;
   hasQuiz: boolean;
+  transcriptStatus: TranscriptStatus;
   status: "published" | "draft";
   course: string;
 }
@@ -29,6 +33,7 @@ const mockLessons: Lesson[] = [
     hasVideo: true,
     hasSlide: false,
     hasQuiz: true,
+    transcriptStatus: "pending",
     status: "published",
     course: "Python cơ bản",
   },
@@ -40,6 +45,7 @@ const mockLessons: Lesson[] = [
     hasVideo: true,
     hasSlide: true,
     hasQuiz: true,
+    transcriptStatus: "pending",
     status: "published",
     course: "Python cơ bản",
   },
@@ -51,6 +57,7 @@ const mockLessons: Lesson[] = [
     hasVideo: false,
     hasSlide: false,
     hasQuiz: false,
+    transcriptStatus: "pending",
     status: "draft",
     course: "Python cơ bản",
   },
@@ -62,6 +69,7 @@ const mockLessons: Lesson[] = [
     hasVideo: true,
     hasSlide: true,
     hasQuiz: true,
+    transcriptStatus: "pending",
     status: "published",
     course: "Python cho AI nâng cao",
   },
@@ -73,6 +81,7 @@ const mockLessons: Lesson[] = [
     hasVideo: false,
     hasSlide: false,
     hasQuiz: false,
+    transcriptStatus: "pending",
     status: "draft",
     course: "Xử lý dữ liệu với Pandas",
   },
@@ -82,6 +91,9 @@ function LessonManagementPage() {
   const [selectedCourse, setSelectedCourse] = useState("");
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [transcriptStatuses, setTranscriptStatuses] = useState<Record<number, TranscriptStatus>>({});
+  const [generatingLessonIds, setGeneratingLessonIds] = useState<Record<number, boolean>>({});
+  const [transcriptMessage, setTranscriptMessage] = useState("");
 
   const filteredLessons = mockLessons.filter(
     (lesson) => selectedCourse === "" || lesson.course === selectedCourse,
@@ -99,6 +111,27 @@ function LessonManagementPage() {
 
   const handleClosePanel = () => {
     setIsPanelOpen(false);
+  };
+
+  const getTranscriptStatus = (lesson: Lesson): TranscriptStatus =>
+    transcriptStatuses[lesson.id] ?? lesson.transcriptStatus;
+
+  const handleGenerateTranscript = async (lesson: Lesson) => {
+    setGeneratingLessonIds((current) => ({ ...current, [lesson.id]: true }));
+    setTranscriptMessage("");
+
+    try {
+      const response = await generateLessonTranscript(lesson.id);
+      const data = asRecord(asRecord(response).data);
+      const status = mapTranscriptStatus(data.status);
+      setTranscriptStatuses((current) => ({ ...current, [lesson.id]: status }));
+      setTranscriptMessage(`Da bat dau tao transcript cho lesson #${lesson.id}.`);
+    } catch (error) {
+      setTranscriptStatuses((current) => ({ ...current, [lesson.id]: "failed" }));
+      setTranscriptMessage(error instanceof Error ? error.message : "Khong the tao transcript.");
+    } finally {
+      setGeneratingLessonIds((current) => ({ ...current, [lesson.id]: false }));
+    }
   };
 
   return (
@@ -169,6 +202,7 @@ function LessonManagementPage() {
                         "Video",
                         "Slide",
                         "Quiz",
+                        "Transcript",
                         "Trạng thái",
                         "Hành động",
                       ].map((heading) => (
@@ -267,6 +301,10 @@ function LessonManagementPage() {
                         </td>
 
                         <td className="px-5 py-4">
+                          <TranscriptStatusBadge status={getTranscriptStatus(lesson)} />
+                        </td>
+
+                        <td className="px-5 py-4">
                           {lesson.status === "published" ? (
                             <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
                               Đã xuất bản
@@ -280,6 +318,25 @@ function LessonManagementPage() {
 
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              disabled={generatingLessonIds[lesson.id] || getTranscriptStatus(lesson) === "processing"}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleGenerateTranscript(lesson);
+                              }}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`Tao transcript ${lesson.title}`}
+                              title="Tao transcript"
+                            >
+                              <span
+                                className={`material-symbols-outlined text-[18px] ${generatingLessonIds[lesson.id] ? "animate-spin" : ""}`}
+                                aria-hidden={true}
+                              >
+                                auto_awesome
+                              </span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={(event) => event.stopPropagation()}
@@ -558,6 +615,31 @@ function LessonManagementPage() {
       </div>
     </AdminLayout>
   );
+}
+
+function TranscriptStatusBadge({ status }: { status: TranscriptStatus }) {
+  const config: Record<TranscriptStatus, { label: string; className: string }> = {
+    pending: { label: "Chua tao transcript", className: "bg-slate-100 text-slate-600" },
+    processing: { label: "Dang tao transcript", className: "bg-indigo-100 text-indigo-700" },
+    completed: { label: "Da co transcript", className: "bg-green-100 text-green-700" },
+    failed: { label: "Tao transcript loi", className: "bg-red-100 text-red-700" },
+  };
+  const selected = config[status];
+
+  return (
+    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${selected.className}`}>
+      {selected.label}
+    </span>
+  );
+}
+
+function mapTranscriptStatus(value: unknown): TranscriptStatus {
+  if (value === "processing" || value === "completed" || value === "failed") return value;
+  return "pending";
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 export default LessonManagementPage;

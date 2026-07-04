@@ -241,6 +241,17 @@ INSERT INTO `lesson_videos` (`id`, `lesson_id`, `video_url`, `storage_provider`,
 (77, 77, 'https://www.youtube.com/watch?v=OZnssR3TqIg&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=18', 'YouTube', NULL, NULL, 653, 'completed'),
 (78, 78, 'https://www.youtube.com/watch?v=rlJh36N_IYU&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=19', 'YouTube', NULL, NULL, 1643, 'completed');
 
+-- Chèn tóm tắt bài học từ bảng lesson_summaries
+INSERT INTO `lesson_summaries` (`lesson_id`, `summary_text`, `key_points`, `generated_by`) VALUES
+(60,
+ 'Bài học giới thiệu tổng quan về Django, vai trò của Django trong lập trình website bằng Python, cách tổ chức project và định hướng các nội dung sẽ học trong khóa.',
+ JSON_ARRAY(
+   'Django là framework web mạnh mẽ của Python.',
+   'Django hỗ trợ xây dựng website nhanh với cấu trúc rõ ràng.',
+   'Bài học giúp người học nắm được mục tiêu và lộ trình học Django.'
+ ),
+ 'manual');
+
 -- --------------------------------------------------------
 -- NHÓM 4: AI ASSISTANT VÀ LỊCH SỬ CHAT
 -- --------------------------------------------------------
