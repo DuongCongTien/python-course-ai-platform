@@ -1,6 +1,1 @@
-{
-  "dependencies": {
-    "@emailjs/browser": "^4.4.1",
-    "axios": "^1.18.1"
-  }
-}
+
