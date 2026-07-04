@@ -38,10 +38,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Chèn dữ liệu bảng users (Password giả lập đã được băm mã hóa)
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `phone`, `full_name`, `avatar_url`, `role`, `status`) VALUES
-(1, 'admin_system', 'admin@pythonailearning.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905111222', 'Nguyễn Quản Trị', 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin', 'admin', 'active'),
-(2, 'thinh_tran', 'thinhnguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905333444', 'Trần Kim Thịnh', 'https://api.dicebear.com/7.x/adventurer/svg?seed=thinh', 'student', 'active'),
-(3, 'huydz252', '252quanghuy@gmail.com', '$2a$10$dE4mjbVp6aBiT7eBeWXA/ehS3dKvCkOJ0LsFzj3WhwmOxF80.i0p.', '0813118974', 'Trần Quang Huy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=huy', 'student', 'active'),
-(4, 'tien_nguyen', 'tiennguyen@student.edu.vn', '$2b$12$K399E9m77pG/gO2p2H4EKe7rL7WjFz5O7U8eR3Y9gB.yR2J2gGzG.', '0905777888', 'Tiến Nguyễn', 'https://api.dicebear.com/7.x/adventurer/svg?seed=nguyen', 'student', 'active');
+(1, 'admin_system', 'admin@pythonailearning.edu.vn', '$2b$12$hFRC27ygA5jLG9GID8V5QOjVz6oSieLyFlPe9aC4WwDh2Y0jjV/ea', '0905111222', 'ADMIN', 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin', 'admin', 'active'),
+(2, 'thinh_tran', 'thinhnguyen@student.edu.vn', '$2b$12$hFRC27ygA5jLG9GID8V5QOjVz6oSieLyFlPe9aC4WwDh2Y0jjV/ea', '0905333444', 'Trần Kim Thịnh', 'https://api.dicebear.com/7.x/adventurer/svg?seed=thinh', 'student', 'active'),
+(3, 'huydz252', '252quanghuy@gmail.com', '$2b$12$hFRC27ygA5jLG9GID8V5QOjVz6oSieLyFlPe9aC4WwDh2Y0jjV/ea', '0813118974', 'Trần Quang Huy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=huy', 'student', 'active'),
+(4, 'tien_nguyen', 'tiennguyen@student.edu.vn', '$2b$12$hFRC27ygA5jLG9GID8V5QOjVz6oSieLyFlPe9aC4WwDh2Y0jjV/ea', '0905777888', 'Tiến Nguyễn', 'https://api.dicebear.com/7.x/adventurer/svg?seed=nguyen', 'student', 'active');
 
 -- Chèn dữ liệu cấu hình mặc định user_settings
 INSERT INTO `user_settings` (`id`, `user_id`, `two_factor_enabled`, `save_ai_history`, `learning_reminder_enabled`, `theme`) VALUES
@@ -241,7 +241,455 @@ INSERT INTO `lesson_videos` (`id`, `lesson_id`, `video_url`, `storage_provider`,
 (77, 77, 'https://www.youtube.com/watch?v=OZnssR3TqIg&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=18', 'YouTube', NULL, NULL, 653, 'completed'),
 (78, 78, 'https://www.youtube.com/watch?v=rlJh36N_IYU&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=19', 'YouTube', NULL, NULL, 1643, 'completed');
 
--- --------------------------------------------------------
+-- chèn tổng quan nội dung video - lesson_summaries:
+
+INSERT INTO lesson_summaries
+(
+    lesson_id,
+    summary_text,
+    key_points,
+    generated_by
+)
+VALUES
+(
+    60,
+    'Bài 1: Generic View trong Django
+
+1. Giới thiệu Generic View.
+Tìm hiểu cách sử dụng Class-based View để thay thế Function-based View nhằm giảm số lượng mã nguồn phải viết và tăng khả năng tái sử dụng.
+
+2. Thực hành với ListView.
+Khai báo lớp kế thừa từ ListView để tự động lấy danh sách bài viết từ model Post và hiển thị ra giao diện.
+
+3. Tùy chỉnh thuộc tính của ListView.
+Cấu hình model, template_name, context_object_name và queryset để kiểm soát dữ liệu hiển thị.
+
+4. Phân trang dữ liệu.
+Sử dụng thuộc tính paginate_by để giới hạn số lượng bài viết trên mỗi trang.
+
+5. Thực hành với DetailView.
+Hiển thị nội dung chi tiết của một bài viết dựa trên khóa chính (pk).
+
+6. Tối ưu mã nguồn.
+Áp dụng kỹ thuật refactor bằng cách truyền tham số trực tiếp vào as_view() trong urls.py để giảm code trong views.py.',
+    '["Generic View","Class-based View","ListView","DetailView","Pagination","paginate_by","queryset","as_view"]',
+    'AI Assistant'
+),
+
+(
+    61,
+    'Bài 2: Khởi tạo Project Django
+
+1. Tạo project mới.
+Sử dụng lệnh django-admin startproject để khởi tạo một dự án Django và lựa chọn tên project phù hợp.
+
+2. Thiết lập môi trường phát triển.
+Mở project bằng Visual Studio Code và cài đặt các extension hỗ trợ Django.
+
+3. Tìm hiểu cấu trúc thư mục.
+Làm quen với các file quan trọng như manage.py, settings.py, urls.py và wsgi.py.
+
+4. Vai trò của manage.py.
+Sử dụng file này để thực hiện các tác vụ quản trị như chạy server, migrate database và tạo tài khoản quản trị.
+
+5. Chạy server phát triển.
+Khởi động website bằng lệnh python manage.py runserver và truy cập địa chỉ localhost.
+
+6. Thay đổi cổng chạy.
+Cấu hình port khác khi cổng mặc định 8000 đang được sử dụng.',
+    '["startproject","manage.py","settings.py","urls.py","wsgi.py","VS Code","runserver","localhost"]',
+    'AI Assistant'
+),
+
+(
+    62,
+    'Bài 3: Tạo App đầu tiên trong Django
+
+1. Tạo ứng dụng mới.
+Sử dụng lệnh startapp để tạo app home bên trong project Django.
+
+2. Đăng ký App.
+Thêm app vào danh sách INSTALLED_APPS trong file settings.py để Django nhận diện.
+
+3. Thực hiện migrate.
+Chạy migrate để cập nhật cơ sở dữ liệu với các cấu hình mặc định.
+
+4. Tạo View đầu tiên.
+Xây dựng hàm index sử dụng HttpResponse để trả về nội dung HTML đơn giản.
+
+5. Cấu hình URL.
+Tạo file urls.py cho app và liên kết với urls.py của project bằng include().
+
+6. Kiểm tra hoạt động.
+Truy cập đường dẫn /home để xác nhận View hoạt động chính xác.
+
+7. Viết Test cơ bản.
+Tạo SimpleTestCase để kiểm tra mã phản hồi HTTP của ứng dụng.',
+    '["startapp","INSTALLED_APPS","HttpResponse","views.py","urls.py","include","migrate","SimpleTestCase"]',
+    'AI Assistant'
+),
+
+(
+    63,
+    'Bài 4: Template và Template Inheritance
+
+1. Tìm hiểu Template.
+Sử dụng Template để tách phần giao diện HTML khỏi logic xử lý dữ liệu.
+
+2. Tạo Base Template.
+Xây dựng file base.html chứa cấu trúc giao diện dùng chung cho toàn bộ website.
+
+3. Định nghĩa các block.
+Sử dụng block title và block content để tạo các vùng nội dung có thể ghi đè.
+
+4. Kế thừa giao diện.
+Dùng extends để các trang khác tái sử dụng khung giao diện từ base.html.
+
+5. Hiển thị Template bằng View.
+Thay thế HttpResponse bằng hàm render để trả về giao diện HTML hoàn chỉnh.
+
+6. Tăng khả năng bảo trì.
+Giảm việc lặp lại mã HTML và giúp quản lý giao diện dễ dàng hơn.',
+    '["Template","base.html","extends","block","render","Template Inheritance","HTML"]',
+    'AI Assistant'
+),
+
+(
+    64,
+    'Bài 5: Static Files và Bootstrap
+
+1. Tìm hiểu Static Files.
+Quản lý các tài nguyên tĩnh như CSS, JavaScript và hình ảnh trong Django.
+
+2. Giới thiệu Bootstrap.
+Sử dụng framework Bootstrap để xây dựng giao diện responsive nhanh chóng.
+
+3. Tạo thư mục static.
+Lưu trữ các file CSS, JS và hình ảnh phục vụ giao diện website.
+
+4. Load static trong Template.
+Sử dụng thẻ load static và hàm static để nhúng tài nguyên vào HTML.
+
+5. Thiết kế bố cục bằng Grid System.
+Áp dụng container-fluid, row và col để chia bố cục trang web thành nhiều cột.
+
+6. Hiển thị hình ảnh.
+Sử dụng thẻ img kết hợp đường dẫn static để hiển thị logo hoặc ảnh minh họa.
+
+7. Kiểm tra giao diện.
+Khởi động lại server và xác nhận Bootstrap cùng các file tĩnh đã hoạt động đúng.',
+    '["Static Files","Bootstrap","CSS","JavaScript","load static","Grid System","container-fluid","img"]',
+    'AI Assistant'
+),
+
+(
+    65,
+    'Bài 6: Hoàn thiện giao diện Blog
+
+1. Xây dựng khu vực Avatar và Menu.
+Tạo cột bên trái để hiển thị ảnh đại diện và các liên kết điều hướng như Trang chủ, Bài viết và Liên hệ.
+
+2. Tạo vùng nội dung chính.
+Sử dụng block content để các trang khác nhau có thể chèn nội dung riêng vào giao diện chung.
+
+3. Thiết kế Footer.
+Xây dựng khu vực chân trang chứa các liên kết mạng xã hội và thông tin bổ sung.
+
+4. Tùy chỉnh giao diện bằng CSS.
+Thiết lập màu nền, khoảng cách và chiều cao tối thiểu giúp giao diện cân đối hơn.
+
+5. Tạo trang Liên hệ.
+Xây dựng contact.html, tạo view tương ứng và khai báo URL để người dùng truy cập.',
+    '["Avatar","Menu","Footer","CSS","Contact Page","Bootstrap","Layout","block content"]',
+    'AI Assistant'
+),
+
+(
+    66,
+    'Bài 7: Tạo Model và Database
+
+1. Xây dựng Model Post.
+Tạo lớp Post kế thừa từ models.Model để quản lý dữ liệu bài viết.
+
+2. Khai báo các trường dữ liệu.
+Bao gồm tiêu đề, nội dung và ngày tạo bài viết.
+
+3. Thực hiện Migration.
+Sử dụng makemigrations và migrate để tạo bảng trong cơ sở dữ liệu.
+
+4. Tìm hiểu khóa chính.
+Django tự động tạo trường id giúp định danh duy nhất mỗi bản ghi.
+
+5. Kiểm tra dữ liệu.
+Sử dụng DB Browser for SQLite để quan sát cấu trúc bảng vừa được tạo.',
+    '["Model","Post","CharField","TextField","DateTimeField","Migration","SQLite","Database"]',
+    'AI Assistant'
+),
+
+(
+    67,
+    'Bài 8: Thao tác dữ liệu với Django ORM
+
+1. Sử dụng Django Shell.
+Khởi động môi trường shell để thao tác trực tiếp với model và database.
+
+2. Thêm dữ liệu.
+Tạo mới các đối tượng Post và lưu xuống cơ sở dữ liệu bằng save().
+
+3. Truy vấn dữ liệu.
+Sử dụng objects.all() để lấy toàn bộ bản ghi và objects.get() để lấy dữ liệu cụ thể.
+
+4. Hiển thị dữ liệu dễ đọc hơn.
+Ghi đè phương thức __str__ để hiển thị tiêu đề bài viết thay vì Post object.
+
+5. Cấu hình múi giờ.
+Thiết lập TIME_ZONE nhằm hiển thị đúng thời gian theo giờ Việt Nam.',
+    '["Django Shell","ORM","save","objects.all","objects.get","__str__","TIME_ZONE","CRUD"]',
+    'AI Assistant'
+),
+
+(
+    68,
+    'Bài 9: Trang quản trị Django Admin
+
+1. Tạo tài khoản quản trị.
+Sử dụng createsuperuser để tạo tài khoản Superuser.
+
+2. Đăng nhập Admin.
+Truy cập đường dẫn /admin và đăng nhập bằng tài khoản vừa tạo.
+
+3. Đăng ký Model.
+Khai báo model Post trong admin.py để quản lý dữ liệu qua giao diện.
+
+4. Tùy biến danh sách hiển thị.
+Sử dụng list_display để bổ sung các cột cần thiết.
+
+5. Tạo bộ lọc và tìm kiếm.
+Áp dụng list_filter và search_fields giúp quản lý dữ liệu thuận tiện hơn.',
+    '["Admin","Superuser","admin.py","list_display","list_filter","search_fields","PostAdmin"]',
+    'AI Assistant'
+),
+
+(
+    69,
+    'Bài 10: Hiển thị danh sách bài viết
+
+1. Lấy dữ liệu từ Database.
+Sử dụng Post.objects.all() để truy xuất toàn bộ bài viết.
+
+2. Sắp xếp dữ liệu.
+Áp dụng order_by("-date") để hiển thị bài viết mới nhất trước.
+
+3. Truyền dữ liệu ra Template.
+Đưa danh sách bài viết vào context và render ra giao diện.
+
+4. Hiển thị bằng vòng lặp.
+Sử dụng cú pháp for của Django Template để duyệt danh sách bài viết.
+
+5. Tạo liên kết bài viết.
+Gắn đường dẫn cho từng tiêu đề để chuẩn bị cho trang chi tiết.',
+    '["Post.objects.all","order_by","Template","Context","for loop","Blog List","Render"]',
+    'AI Assistant'
+),
+
+(
+    70,
+    'Bài 11: Trang chi tiết bài viết
+
+1. Tạo URL động.
+Sử dụng tham số id trong URL để xác định bài viết cần hiển thị.
+
+2. Truy xuất dữ liệu.
+Lấy một bài viết cụ thể bằng Post.objects.get(id=id).
+
+3. Thiết kế giao diện chi tiết.
+Hiển thị tiêu đề, ngày đăng và nội dung bài viết.
+
+4. Xử lý xuống dòng.
+Áp dụng bộ lọc linebreaks để giữ nguyên định dạng nội dung.
+
+5. Kiểm thử chức năng.
+Viết TestCase để xác nhận URL và dữ liệu hoạt động chính xác.',
+    '["Detail Page","URL Parameter","objects.get","linebreaks","Template","TestCase"]',
+    'AI Assistant'
+),
+
+(
+    71,
+    'Bài 12: Sử dụng Named URL
+
+1. Tìm hiểu hạn chế của Hardcode URL.
+Việc ghi trực tiếp đường dẫn gây khó khăn khi thay đổi cấu trúc website.
+
+2. Đặt tên cho URL.
+Sử dụng thuộc tính name trong urls.py để tạo định danh cho từng đường dẫn.
+
+3. Gọi URL trong Template.
+Sử dụng thẻ url để sinh đường dẫn tự động.
+
+4. Truyền tham số động.
+Kết hợp url với id bài viết để tạo liên kết chi tiết.
+
+5. Tăng khả năng bảo trì.
+Chỉ cần thay đổi tại urls.py thay vì sửa nhiều file HTML.',
+    '["Named URL","url tag","urls.py","Template","Dynamic URL","Maintainability"]',
+    'AI Assistant'
+),
+
+(
+    72,
+    'Bài 13: Tùy chỉnh trang lỗi
+
+1. Tìm hiểu lỗi HTTP.
+Làm quen với lỗi 404 và 500 thường gặp trên website.
+
+2. Tạo giao diện lỗi riêng.
+Thiết kế file error.html để thay thế trang lỗi mặc định.
+
+3. Khai báo Handler.
+Cấu hình handler404 và handler500 trong urls.py.
+
+4. Thiết lập môi trường Production.
+Tắt DEBUG và cấu hình ALLOWED_HOSTS.
+
+5. Nâng cao trải nghiệm người dùng.
+Hiển thị thông báo thân thiện thay vì lỗi mặc định của Django.',
+    '["404","500","handler404","handler500","DEBUG","ALLOWED_HOSTS","error.html"]',
+    'AI Assistant'
+),
+
+(
+    73,
+    'Bài 14: Kiến trúc MVC và MVT
+
+1. Tìm hiểu mô hình MVC.
+Bao gồm Model, View và Controller trong quá trình xây dựng ứng dụng.
+
+2. Luồng xử lý dữ liệu.
+Theo dõi quá trình Request, xử lý dữ liệu và trả về Response.
+
+3. MVC trong Django.
+Django sử dụng kiến trúc MVT thay vì MVC truyền thống.
+
+4. Vai trò của từng thành phần.
+Model quản lý dữ liệu, Template hiển thị giao diện và View xử lý logic.
+
+5. Hiểu cấu trúc framework.
+Nắm được cách Django tổ chức ứng dụng để phát triển hiệu quả hơn.',
+    '["MVC","MVT","Model","Template","View","Request","Response","Architecture"]',
+    'AI Assistant'
+),
+
+(
+    74,
+    'Bài 15: Upload file hình ảnh
+
+1. Cập nhật Model Post.
+Thêm trường ImageField để lưu trữ hình ảnh cho bài viết.
+
+2. Cấu hình Media.
+Thiết lập MEDIA_URL và MEDIA_ROOT trong settings.py.
+
+3. Hiển thị hình ảnh.
+Sử dụng post.image.url để hiển thị ảnh trên giao diện.
+
+4. Cấu hình URL Media.
+Cho phép Django phục vụ file media trong quá trình phát triển.
+
+5. Hoàn thiện bài viết.
+Kết hợp hình ảnh với nội dung giúp website trực quan hơn.',
+    '["ImageField","MEDIA_URL","MEDIA_ROOT","Media","Image Upload","post.image.url"]',
+    'AI Assistant'
+),
+
+(
+    75,
+    'Bài 16: Đăng ký tài khoản người dùng
+
+1. Tạo RegistrationForm.
+Xây dựng form chứa username, email và mật khẩu.
+
+2. Kiểm tra dữ liệu.
+Xác thực tên đăng nhập và kiểm tra mật khẩu nhập lại.
+
+3. Lưu người dùng.
+Tạo tài khoản mới bằng User.objects.create_user().
+
+4. Xử lý View.
+Tiếp nhận dữ liệu POST và kiểm tra tính hợp lệ của form.
+
+5. Xây dựng giao diện.
+Hiển thị form đăng ký và bảo vệ bằng CSRF Token.',
+    '["RegistrationForm","User","create_user","Validation","CSRF","Register"]',
+    'AI Assistant'
+),
+
+(
+    76,
+    'Bài 17: Đăng nhập và đăng xuất
+
+1. Sử dụng hệ thống Auth.
+Khai thác các chức năng xác thực được Django cung cấp sẵn.
+
+2. Cấu hình Login.
+Khai báo URL đăng nhập và chỉ định template hiển thị.
+
+3. Cấu hình Logout.
+Cho phép người dùng đăng xuất và chuyển hướng về trang chủ.
+
+4. Cập nhật giao diện.
+Hiển thị menu khác nhau tùy trạng thái đăng nhập.
+
+5. Hoàn thiện hệ thống tài khoản.
+Người dùng có thể đăng ký, đăng nhập và đăng xuất dễ dàng.',
+    '["Authentication","Login","Logout","auth_views","Template","User Session"]',
+    'AI Assistant'
+),
+
+(
+    77,
+    'Bài 18: Generic View nâng cao
+
+1. Ôn lại Generic View.
+Tiếp tục sử dụng các Class-based View có sẵn của Django.
+
+2. Cấu hình ListView.
+Tùy chỉnh model, template và dữ liệu hiển thị.
+
+3. Cấu hình DetailView.
+Hiển thị nội dung chi tiết dựa trên khóa chính.
+
+4. Áp dụng phân trang.
+Giới hạn số lượng dữ liệu hiển thị trên mỗi trang.
+
+5. Tối ưu mã nguồn.
+Giảm thiểu code lặp lại bằng cách tận dụng Generic View.',
+    '["Generic View","ListView","DetailView","Pagination","Class-based View","Refactor"]',
+    'AI Assistant'
+),
+
+(
+    78,
+    'Bài 19: Chức năng bình luận
+
+1. Tạo Model Comment.
+Xây dựng bảng lưu trữ bình luận và liên kết với bài viết bằng ForeignKey.
+
+2. Tạo CommentForm.
+Sử dụng ModelForm để xử lý dữ liệu bình luận từ người dùng.
+
+3. Cập nhật View.
+Tiếp nhận dữ liệu POST và lưu bình luận khi form hợp lệ.
+
+4. Hiển thị bình luận.
+Duyệt danh sách bình luận và hiển thị dưới mỗi bài viết.
+
+5. Kiểm tra đăng nhập.
+Chỉ cho phép người dùng đã đăng nhập gửi bình luận mới.',
+    '["Comment","ForeignKey","ModelForm","CommentForm","POST","Authentication","comments"]',
+    'AI Assistant'
+);
+----------------------------------------------------------
 -- NHÓM 4: AI ASSISTANT VÀ LỊCH SỬ CHAT
 -- --------------------------------------------------------
 
