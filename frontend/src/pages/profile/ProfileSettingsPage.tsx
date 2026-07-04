@@ -48,9 +48,6 @@ function ProfileSettingsPage() {
             <span aria-hidden={true}>/</span>
             <span className="text-indigo-600">Cài đặt tài khoản</span>
           </nav>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
-            Cài đặt tài khoản
-          </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
             Quản lý các tùy chọn tài khoản, bảo mật và dữ liệu học tập.
           </p>

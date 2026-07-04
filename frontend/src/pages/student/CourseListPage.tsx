@@ -308,7 +308,7 @@ function CourseFooter() {
               <span className="font-extrabold text-slate-950">Python AI Learning</span>
             </div>
             <p className="max-w-sm text-sm leading-6 text-slate-600">
-              © 2024 Python AI Learning. Nâng tầm tri thức công nghệ Việt.
+              © 2026 Python AI Learning. Nâng tầm tri thức công nghệ Việt.
             </p>
           </div>
 

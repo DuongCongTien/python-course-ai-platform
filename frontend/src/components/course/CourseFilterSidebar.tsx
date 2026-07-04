@@ -76,7 +76,7 @@ function CourseFilterSidebar({
         </button>
       </div>
 
-      <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-indigo-600 to-blue-600 p-5 text-white shadow-soft">
+      {/* <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-indigo-600 to-blue-600 p-5 text-white shadow-soft">
         <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 blur-2xl" />
         <div className="relative">
           <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
@@ -94,7 +94,7 @@ function CourseFilterSidebar({
             Tìm hiểu thêm
           </button>
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 }
