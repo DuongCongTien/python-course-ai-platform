@@ -61,6 +61,9 @@ interface BackendCourse {
   objectives?: Array<string | { id?: string | number; text?: string }> | null;
   ai_features?: Array<{ id?: string; title?: string; description?: string }> | null;
   aiFeatures?: Array<{ id?: string; title?: string; description?: string }> | null;
+  // Field bổ sung dùng cho trang Admin (không có ở API public /courses/)
+  createdAt?: string | null;
+  studentsCount?: number | null;
 }
 
 interface BackendLesson {
@@ -95,9 +98,13 @@ const gradients = [
   "from-purple-600 via-fuchsia-600 to-pink-500",
 ];
 
-async function requestApi<T>(path: string, fallbackErrorMessage: string): Promise<ApiResponse<T>> {
+async function requestApi<T>(
+  path: string,
+  fallbackErrorMessage: string,
+  options?: RequestInit,
+): Promise<ApiResponse<T>> {
   try {
-    const payload = await apiFetch<ApiResponse<T> | T>(path);
+    const payload = await apiFetch<ApiResponse<T> | T>(path, options);
 
     if (Array.isArray(payload)) {
       return {
@@ -172,6 +179,68 @@ export async function getCourseLessons(courseId: string) {
     "Không thể tải nội dung khóa học.",
   );
 }
+
+// ==================== ADMIN — Quản lý khóa học ====================
+
+export interface AdminCoursePayload {
+  title: string;
+  slug?: string;
+  description?: string;
+  level: "beginner" | "intermediate" | "advanced";
+  status: "draft" | "published" | "hidden";
+  price?: number;
+  thumbnail_url?: string;
+}
+
+export async function getCoursesAdmin(params?: { keyword?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params?.keyword) searchParams.set("keyword", params.keyword);
+  const query = searchParams.toString();
+
+  return requestApi<BackendCourse[]>(
+    `/admin/courses/${query ? `?${query}` : ""}`,
+    "Không thể tải danh sách khóa học (admin).",
+  );
+}
+
+export async function createCourseAdmin(payload: AdminCoursePayload) {
+  return requestApi<BackendCourse>("/admin/courses/", "Không thể tạo khóa học.", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCourseAdmin(courseId: string | number, payload: Partial<AdminCoursePayload>) {
+  return requestApi<BackendCourse>(`/admin/courses/${courseId}`, "Không thể cập nhật khóa học.", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteCourseAdmin(courseId: string | number) {
+  return requestApi<{ message: string }>(`/admin/courses/${courseId}`, "Không thể xóa khóa học.", {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Chuyển 1 khóa học admin (từ API) sang đúng shape `Course` mà CourseManagementPage.tsx dùng để hiển thị bảng.
+ * "students" tạm luôn = 0 vì backend hiện chưa có dữ liệu này (xem ghi chú course_admin_service_snippet.py).
+ */
+export function mapAdminCourseListItem(course: BackendCourse) {
+  return {
+    id: String(course.slug || course.id),
+    title: course.title || "Chưa có tiêu đề",
+    level: mapLevel(course.level),
+    lessons: Number(getValue(course.lessonsCount, course.lessons_count, 0)),
+    students: course.studentsCount ?? 0,
+    status: (course.status as "published" | "draft" | "hidden") ?? "draft",
+    createdAt: course.createdAt ?? "",
+    thumbnail: course.thumbnailUrl || course.thumbnail_url || "",
+  };
+}
+
+// ==================== Mapping cho phía học viên (giữ nguyên như cũ) ====================
 
 export function mapCourseListItem(course: BackendCourse, index = 0): Course {
   const durationSeconds = Number(getValue(course.durationSeconds, course.duration_seconds, 0));

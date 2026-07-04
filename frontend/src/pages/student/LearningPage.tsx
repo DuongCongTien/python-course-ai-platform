@@ -15,6 +15,7 @@ import {
 } from "../../components/learning/learningTypes";
 import { getCourseLessons } from "../../services/course.service";
 import { getLessonById, getLessonResources } from "../../services/lesson.service";
+import { askAI } from "../../services/chat.service";
 import {
   completeLesson,
   getCourseProgress,
@@ -25,22 +26,49 @@ import {
   unwrapProgressData,
 } from "../../services/progress.service";
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: "message-1",
-    role: "ai",
-    content: "Chào bạn! Tôi là AI Assistant. Bạn có câu hỏi nào về bài học này không?",
-  },
-];
-
 const suggestedQuestions = ["Tóm tắt bài học này", "Giải thích phần khó hiểu nhất", "Cho ví dụ dễ hiểu hơn"];
+
+// Lưu lịch sử chat AI riêng theo từng bài học (localStorage), vì backend chưa có API lưu lịch sử.
+const CHAT_HISTORY_PREFIX = "pyai_lesson_chat:";
+
+function getDefaultChatMessages(): ChatMessage[] {
+  return [
+    {
+      id: "message-welcome",
+      role: "ai",
+      content: "Chào bạn! Tôi là AI Assistant. Bạn có câu hỏi nào về bài học này không?",
+    },
+  ];
+}
+
+function loadChatHistory(lessonId: string): ChatMessage[] {
+  try {
+    const stored = window.localStorage.getItem(`${CHAT_HISTORY_PREFIX}${lessonId}`);
+    if (!stored) return getDefaultChatMessages();
+
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : getDefaultChatMessages();
+  } catch (error) {
+    console.warn("Không thể đọc lịch sử chat đã lưu:", error);
+    return getDefaultChatMessages();
+  }
+}
+
+function saveChatHistory(lessonId: string, messages: ChatMessage[]) {
+  try {
+    window.localStorage.setItem(`${CHAT_HISTORY_PREFIX}${lessonId}`, JSON.stringify(messages));
+  } catch (error) {
+    console.warn("Không thể lưu lịch sử chat:", error);
+  }
+}
 
 function LearningPage() {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<LessonTab>("overview");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialMessages);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [isAiReplying, setIsAiReplying] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [lessonProgress, setLessonProgress] = useState<LessonProgressData | null>(null);
@@ -122,6 +150,20 @@ function LearningPage() {
   useEffect(() => {
     loadLearningData();
   }, [loadLearningData]);
+
+  // Mỗi khi chuyển sang bài học khác, nạp lại lịch sử chat riêng của bài học đó
+  useEffect(() => {
+    if (!lessonId) return;
+    setChatMessages(loadChatHistory(lessonId));
+    setChatInput("");
+    setIsAiReplying(false);
+  }, [lessonId]);
+
+  // Lưu lại lịch sử chat mỗi khi có thay đổi
+  useEffect(() => {
+    if (!lessonId || chatMessages.length === 0) return;
+    saveChatHistory(lessonId, chatMessages);
+  }, [chatMessages, lessonId]);
 
   const handleSelectLesson = (nextLessonId: string) => {
     if (!courseId) return;
@@ -212,24 +254,37 @@ function LearningPage() {
     ],
   );
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const trimmedInput = chatInput.trim();
-    if (!trimmedInput) return;
+    if (!trimmedInput || isAiReplying) return;
 
-    setChatMessages((current) => [
-      ...current,
-      {
-        id: `message-${Date.now()}-user`,
-        role: "user",
-        content: trimmedInput,
-      },
-      {
-        id: `message-${Date.now()}-ai`,
-        role: "ai",
-        content: "AI đang dựa trên nội dung bài học để trả lời câu hỏi này.",
-      },
-    ]);
+    const userMessage: ChatMessage = {
+      id: `message-${Date.now()}-user`,
+      role: "user",
+      content: trimmedInput,
+    };
+
+    setChatMessages((current) => [...current, userMessage]);
     setChatInput("");
+    setIsAiReplying(true);
+
+    try {
+      // Dùng transcript/tóm tắt bài học làm ngữ cảnh để AI trả lời đúng nội dung đang học
+      const lessonContext = lesson?.transcript || lesson?.summary || lesson?.description || null;
+
+      const answer = await askAI({
+        question: trimmedInput,
+        lessonId: lesson?.id,
+        context: lessonContext,
+      });
+
+      setChatMessages((current) => [
+        ...current,
+        { id: `message-${Date.now()}-ai`, role: "ai", content: answer },
+      ]);
+    } finally {
+      setIsAiReplying(false);
+    }
   };
 
   const handleSelectSuggestedQuestion = (question: string) => {
@@ -314,6 +369,7 @@ function LearningPage() {
           messages={chatMessages}
           input={chatInput}
           suggestedQuestions={suggestedQuestions}
+          isSending={isAiReplying}
           onInputChange={setChatInput}
           onSend={handleSendMessage}
           onSelectSuggestedQuestion={handleSelectSuggestedQuestion}
