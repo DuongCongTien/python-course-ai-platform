@@ -30,8 +30,8 @@ function AppHeader() {
       : "border-transparent text-slate-600 hover:text-indigo-600"
     }`;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login", { replace: true });
   };
 

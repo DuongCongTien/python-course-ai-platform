@@ -21,7 +21,12 @@ const httpClient = axios.create({
 // nhiện vụ: thêm access token (xác thực user) từ localStorage
 httpClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("pyai_token"); 
+    const token =
+      localStorage.getItem("pyai_token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("python_ai_learning_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

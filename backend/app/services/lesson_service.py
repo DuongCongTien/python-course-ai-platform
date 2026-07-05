@@ -6,6 +6,7 @@ from urllib.parse import parse_qs, urlparse
 
 from app.models.ai_pipeline_model import LessonSummary, LessonTranscript
 from app.models.courses_model import ContentStatus, Lesson, LessonVideo
+from app.services.transcript_service import TranscriptService
 
 
 class LessonService:
@@ -75,7 +76,7 @@ class LessonService:
             "lessonId": int(lesson.id),
             "video": LessonService.serialize_video(video) if video else None,
             "slideFile": None,
-            "transcript": LessonService.serialize_transcript(transcript) if transcript else None,
+            "transcript": TranscriptService.serialize_transcript(transcript, int(lesson.id)),
             "summary": LessonService.serialize_summary(summary) if summary else None,
         }
 
@@ -121,18 +122,6 @@ class LessonService:
                 return f"https://www.youtube.com/embed/{video_id}"
 
         return None
-
-    @staticmethod
-    def serialize_transcript(transcript: LessonTranscript):
-        return {
-            "text": transcript.transcript_text,
-            "transcriptText": transcript.transcript_text,
-            "language": transcript.language,
-            "status": transcript.status,
-            "generatedBy": transcript.generated_by,
-            "errorMessage": transcript.error_message,
-            "createdAt": transcript.created_at.isoformat() if transcript.created_at else None,
-        }
 
     @staticmethod
     def serialize_summary(summary: LessonSummary):

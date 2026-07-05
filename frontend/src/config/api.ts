@@ -6,22 +6,32 @@ export const API_BASE_URL = (
 const TOKEN_STORAGE_KEY = "pyai_token";
 const LEGACY_TOKEN_STORAGE_KEY = "python_ai_learning_token";
 
+function getStoredToken() {
+  return (
+    localStorage.getItem(TOKEN_STORAGE_KEY) ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY)
+  );
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+  const token = getStoredToken();
 
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
       "ngrok-skip-browser-warning": "true",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 

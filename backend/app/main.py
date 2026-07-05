@@ -16,6 +16,14 @@ from app.api.v1.activities import router as activities_router
 
 app = FastAPI(title="Python Course AI Platform")
 
+
+@app.middleware("http")
+async def normalize_trailing_slash(request, call_next):
+    path = request.scope.get("path", "")
+    if path != "/" and path.endswith("/"):
+        request.scope["path"] = path.rstrip("/")
+    return await call_next(request)
+
 origins = [
     "http://localhost:5173",      # Port FE mặc định của Vite
     "http://127.0.0.1:5173",

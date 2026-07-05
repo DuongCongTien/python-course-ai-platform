@@ -49,6 +49,8 @@ function LearningPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const isCompletingRef = useRef(false);
+  const completedLessonRef = useRef<string | null>(null);
+  const requestIdRef = useRef(0);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadCourseProgress = useCallback(async () => {
@@ -67,11 +69,16 @@ function LearningPage() {
 
   const loadLearningData = useCallback(async () => {
     if (!courseId || !lessonId) {
+      requestIdRef.current += 1;
       setLesson(null);
       setLessons([]);
+      setLessonProgress(null);
       setErrorMessage("Không tìm thấy khóa học hoặc bài học.");
       return;
     }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
 
     try {
       setIsLoading(true);
@@ -104,6 +111,8 @@ function LearningPage() {
         progressPromise,
         courseProgressPromise,
       ]);
+      if (requestId !== requestIdRef.current) return;
+
       const mappedLesson = mapLessonDetail(unwrapApiData(lessonResponse), resourcesData);
 
       setLesson(mappedLesson);
@@ -111,18 +120,27 @@ function LearningPage() {
       setCourseProgress(courseProgressData);
       setLessons(applyCourseProgress(extractLessons(lessonsResponse), courseProgressData));
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Load learning data failed:", error);
       setLesson(null);
       setLessons([]);
       setErrorMessage(error instanceof Error ? error.message : "Không thể tải dữ liệu bài học.");
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [courseId, lessonId]);
 
   useEffect(() => {
     loadLearningData();
   }, [loadLearningData]);
+
+  useEffect(() => {
+    completedLessonRef.current = null;
+    isCompletingRef.current = false;
+    setIsCompleting(false);
+  }, [lessonId]);
 
   const handleSelectLesson = (nextLessonId: string) => {
     if (!courseId) return;
@@ -156,7 +174,15 @@ function LearningPage() {
 
   const handleCompleteLesson = useCallback(
     async (completedDurationSeconds?: number) => {
-      if (!courseId || !lessonId || isCompletingRef.current || lessonProgress?.isCompleted) return;
+      if (
+        !courseId ||
+        !lessonId ||
+        isCompletingRef.current ||
+        completedLessonRef.current === lessonId ||
+        lessonProgress?.isCompleted
+      ) {
+        return;
+      }
 
       const finalDuration = Math.floor(
         completedDurationSeconds ?? lesson?.durationSeconds ?? lessonProgress?.durationSeconds ?? 0,
@@ -164,6 +190,7 @@ function LearningPage() {
 
       try {
         isCompletingRef.current = true;
+        completedLessonRef.current = lessonId;
         setIsCompleting(true);
         const response = await completeLesson(lessonId, {
           courseId,
@@ -197,6 +224,7 @@ function LearningPage() {
         }
         await reloadCourseProgress();
       } catch (error) {
+        completedLessonRef.current = null;
         console.error("Không thể đánh dấu hoàn thành bài học:", error);
       } finally {
         isCompletingRef.current = false;
@@ -211,6 +239,14 @@ function LearningPage() {
       lessonProgress?.isCompleted,
       reloadCourseProgress,
     ],
+  );
+
+  const handleVideoEnded = useCallback(
+    async (completedDurationSeconds: number) => {
+      if (lessonProgress?.isCompleted) return;
+      await handleCompleteLesson(completedDurationSeconds);
+    },
+    [handleCompleteLesson, lessonProgress?.isCompleted],
   );
 
   const handleSendMessage = () => {
@@ -291,7 +327,7 @@ function LearningPage() {
             durationSeconds={lesson.durationSeconds}
             lessonProgress={lessonProgress}
             onProgressChange={handleVideoProgressChange}
-            onEnded={handleCompleteLesson}
+            onEnded={handleVideoEnded}
           />
           <LessonSlideCard slideFile={lesson.slideFile} />
           <LessonInfoSection

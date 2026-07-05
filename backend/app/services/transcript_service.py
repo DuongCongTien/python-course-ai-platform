@@ -23,6 +23,7 @@ class SpeechToTextProvider:
 
 class LocalWhisperProvider(SpeechToTextProvider):
     name = "local_whisper"
+    _models = {}
 
     def transcribe(self, audio_path: str, language: str = "vi") -> str:
         try:
@@ -31,7 +32,12 @@ class LocalWhisperProvider(SpeechToTextProvider):
             raise RuntimeError("Chua cai faster-whisper. Cai package hoac doi TRANSCRIPT_PROVIDER=openai.") from exc
 
         model_name = os.getenv("WHISPER_MODEL", "small")
-        model = WhisperModel(model_name, device=os.getenv("WHISPER_DEVICE", "cpu"), compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"))
+        device = os.getenv("WHISPER_DEVICE", "cpu")
+        compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+        model_key = (model_name, device, compute_type)
+        if model_key not in LocalWhisperProvider._models:
+            LocalWhisperProvider._models[model_key] = WhisperModel(model_name, device=device, compute_type=compute_type)
+        model = LocalWhisperProvider._models[model_key]
         segments, _ = model.transcribe(audio_path, language=language)
         text = " ".join(segment.text.strip() for segment in segments if segment.text and segment.text.strip())
         if not text:
@@ -129,23 +135,18 @@ class TranscriptService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
-        if not transcript:
-            return {
-                "lessonId": lesson_id,
-                "transcriptText": None,
-                "language": "vi",
-                "status": "pending",
-            }
-
-        return TranscriptService.serialize_transcript(transcript)
+        return TranscriptService.serialize_transcript(transcript, lesson_id)
 
     @staticmethod
-    def mark_processing(db: Session, lesson_id: int, language: str = "vi") -> LessonTranscript:
+    def mark_processing(db: Session, lesson_id: int, language: str = "vi", force: bool = False) -> LessonTranscript:
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
+        if transcript and transcript.status == "completed" and not force:
+            return transcript
+
         if not transcript:
             transcript = LessonTranscript(lesson_id=lesson_id, transcript_text="", language=language)
             db.add(transcript)
@@ -222,13 +223,27 @@ class TranscriptService:
             db.close()
 
     @staticmethod
-    def serialize_transcript(transcript: LessonTranscript) -> dict:
+    def serialize_transcript(transcript: LessonTranscript | None, lesson_id: int | None = None) -> dict:
+        if not transcript:
+            return {
+                "lessonId": int(lesson_id or 0),
+                "transcriptText": None,
+                "language": "vi",
+                "status": "pending",
+                "generatedBy": None,
+                "errorMessage": None,
+                "createdAt": None,
+                "updatedAt": None,
+            }
+
+        transcript_status = transcript.status or "completed"
         return {
             "lessonId": int(transcript.lesson_id),
-            "transcriptText": transcript.transcript_text if transcript.status == "completed" else None,
+            "transcriptText": transcript.transcript_text if transcript_status == "completed" else None,
             "language": transcript.language or "vi",
-            "status": transcript.status,
+            "status": transcript_status,
             "generatedBy": transcript.generated_by,
-            "errorMessage": transcript.error_message,
+            "errorMessage": transcript.error_message if transcript_status == "failed" else None,
             "createdAt": transcript.created_at.isoformat() if transcript.created_at else None,
+            "updatedAt": transcript.updated_at.isoformat() if getattr(transcript, "updated_at", None) else None,
         }

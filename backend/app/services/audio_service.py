@@ -14,6 +14,7 @@ SUPPORTED_VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"}
 class AudioService:
     @staticmethod
     def extract_audio_from_video(video_path: str, output_path: str) -> str:
+        AudioService.ensure_binary_available("ffmpeg", "ffmpeg chua duoc cai dat hoac chua co trong PATH.")
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         command = [
@@ -45,6 +46,7 @@ class AudioService:
         if provider == "youtube" or "youtube.com" in parsed.netloc.lower() or "youtu.be" in parsed.netloc.lower():
             if os.getenv("ALLOW_YOUTUBE_TRANSCRIPT", "false").lower() not in {"1", "true", "yes"}:
                 raise PermissionError("YouTube transcript bi tat. Chi bat khi he thong co quyen xu ly video nay.")
+            AudioService.ensure_binary_available("yt-dlp", "yt-dlp chua duoc cai dat hoac chua co trong PATH.")
             output_path = TEMP_STORAGE_DIR / f"lesson_{lesson_id}_youtube.%(ext)s"
             command = ["yt-dlp", "-f", "bestaudio/best", "-o", str(output_path), video_url]
             subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -99,3 +101,8 @@ class AudioService:
                 Path(path).unlink(missing_ok=True)
             except OSError:
                 pass
+
+    @staticmethod
+    def ensure_binary_available(binary_name: str, message: str) -> None:
+        if not shutil.which(binary_name):
+            raise RuntimeError(message)

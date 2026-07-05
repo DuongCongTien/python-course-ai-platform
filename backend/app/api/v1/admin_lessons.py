@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -20,11 +20,19 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 def generate_transcript(
     lesson_id: int,
     background_tasks: BackgroundTasks,
+    force: bool = Query(default=False),
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    TranscriptService.mark_processing(db, lesson_id)
+    transcript = TranscriptService.mark_processing(db, lesson_id, force=force)
     db.commit()
+    if transcript.status == "completed" and not force:
+        return {
+            "success": True,
+            "message": "Transcript da ton tai.",
+            "data": TranscriptService.serialize_transcript(transcript, lesson_id),
+        }
+
     background_tasks.add_task(TranscriptService.generate_transcript_task, lesson_id)
 
     return {
