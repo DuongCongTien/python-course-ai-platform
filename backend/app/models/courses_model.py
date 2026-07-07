@@ -12,6 +12,7 @@ class ContentStatus(str, enum.Enum):
     draft = "draft"
     published = "published"
     hidden = "hidden"
+    archived = "archived"
 
 class Course(Base):
     __tablename__ = "courses"
@@ -88,3 +89,16 @@ class LessonVideo(Base):
     uploaded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     lesson = relationship("Lesson", back_populates="videos")
+
+
+class LessonFile(Base):
+    __tablename__ = "lesson_files"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    lesson_id = Column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
+    file_type = Column(String(50), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    file_url = Column(String(500), nullable=False)
+    mime_type = Column(String(100), nullable=True)
+    file_size = Column(BigInteger, nullable=True)
+    uploaded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))

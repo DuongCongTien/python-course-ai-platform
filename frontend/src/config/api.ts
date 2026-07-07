@@ -23,12 +23,13 @@ export async function apiFetch<T>(
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
   const token = getStoredToken();
+  const isFormData = options.body instanceof FormData;
 
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(!isFormData && options.body ? { "Content-Type": "application/json" } : {}),
       "ngrok-skip-browser-warning": "true",
       ...(options.headers ?? {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

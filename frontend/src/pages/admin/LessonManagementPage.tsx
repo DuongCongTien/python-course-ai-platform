@@ -1,386 +1,180 @@
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { generateLessonTranscript } from "../../services/lesson.service";
+import {
+  createAdminLesson,
+  deleteAdminLesson,
+  generateLessonSummary,
+  generateLessonTranscript,
+  getAdminLessons,
+  updateAdminLesson,
+} from "../../services/adminLesson.service";
+import { getCoursesAdmin } from "../../services/course.service";
 
-type TranscriptStatus = "pending" | "processing" | "completed" | "failed";
-
-interface Lesson {
+interface CourseOption { id: number; title: string }
+interface LessonItem {
   id: number;
-  order: number;
+  courseId: number;
+  courseTitle: string;
   title: string;
-  duration: string;
-  hasVideo: boolean;
+  description: string;
+  durationSeconds: number;
+  sortOrder: number;
+  isFree: boolean;
+  status: string;
+  video: { id: number; provider: string; processingStatus: string } | null;
   hasSlide: boolean;
-  hasQuiz: boolean;
-  transcriptStatus: TranscriptStatus;
-  status: "published" | "draft";
-  course: string;
+  transcriptStatus: string;
+  summaryStatus: string;
 }
 
-const courses = [
-  "Python cơ bản",
-  "Python cho AI nâng cao",
-  "Xử lý dữ liệu với Pandas",
-  "Machine Learning căn bản",
-];
+const emptyForm = { courseId: "", title: "", description: "", durationSeconds: 0, sortOrder: 0, isFree: false, status: "draft" };
 
-const mockLessons: Lesson[] = [
-  {
-    id: 1,
-    order: 1,
-    title: "Bài 1: Giới thiệu Python",
-    duration: "08:15",
-    hasVideo: true,
-    hasSlide: false,
-    hasQuiz: true,
-    transcriptStatus: "pending",
-    status: "published",
-    course: "Python cơ bản",
-  },
-  {
-    id: 2,
-    order: 2,
-    title: "Bài 2: Biến và Kiểu dữ liệu",
-    duration: "15:40",
-    hasVideo: true,
-    hasSlide: true,
-    hasQuiz: true,
-    transcriptStatus: "pending",
-    status: "published",
-    course: "Python cơ bản",
-  },
-  {
-    id: 3,
-    order: 3,
-    title: "Bài 3: Cấu trúc điều kiện",
-    duration: "10:20",
-    hasVideo: false,
-    hasSlide: false,
-    hasQuiz: false,
-    transcriptStatus: "pending",
-    status: "draft",
-    course: "Python cơ bản",
-  },
-  {
-    id: 4,
-    order: 4,
-    title: "Bài 4: Vòng lặp for và while",
-    duration: "18:05",
-    hasVideo: true,
-    hasSlide: true,
-    hasQuiz: true,
-    transcriptStatus: "pending",
-    status: "published",
-    course: "Python cho AI nâng cao",
-  },
-  {
-    id: 5,
-    order: 5,
-    title: "Bài 5: Hàm và Module",
-    duration: "22:30",
-    hasVideo: false,
-    hasSlide: false,
-    hasQuiz: false,
-    transcriptStatus: "pending",
-    status: "draft",
-    course: "Xử lý dữ liệu với Pandas",
-  },
-];
+export default function LessonManagementPage() {
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [lessons, setLessons] = useState<LessonItem[]>([]);
+  const [courseId, setCourseId] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, totalItems: 0, totalPages: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [editing, setEditing] = useState<LessonItem | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
-function LessonManagementPage() {
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [transcriptStatuses, setTranscriptStatuses] = useState<Record<number, TranscriptStatus>>({});
-  const [generatingLessonIds, setGeneratingLessonIds] = useState<Record<number, boolean>>({});
-  const [transcriptMessage, setTranscriptMessage] = useState("");
+  useEffect(() => { void loadCourses(); }, []);
+  useEffect(() => { void loadLessons(); }, [page, courseId, status]);
 
-  const filteredLessons = mockLessons.filter(
-    (lesson) => selectedCourse === "" || lesson.course === selectedCourse,
-  );
+  async function loadCourses() {
+    const response = await getCoursesAdmin();
+    const data = unwrap(response);
+    setCourses((data.items ?? data ?? []).map((course: any) => ({ id: Number(course.id), title: course.title })));
+  }
 
-  const handleAddNew = () => {
-    setSelectedLesson(null);
-    setIsPanelOpen(true);
-  };
-
-  const handleEdit = (lesson: Lesson) => {
-    setSelectedLesson(lesson);
-    setIsPanelOpen(true);
-  };
-
-  const handleClosePanel = () => {
-    setIsPanelOpen(false);
-  };
-
-  const getTranscriptStatus = (lesson: Lesson): TranscriptStatus =>
-    transcriptStatuses[lesson.id] ?? lesson.transcriptStatus;
-
-  const handleGenerateTranscript = async (lesson: Lesson) => {
-    setGeneratingLessonIds((current) => ({ ...current, [lesson.id]: true }));
-    setTranscriptMessage("");
-
+  async function loadLessons(nextPage = page) {
+    setLoading(true);
+    setError("");
     try {
-      const response = await generateLessonTranscript(lesson.id);
-      const data = asRecord(asRecord(response).data);
-      const status = mapTranscriptStatus(data.status);
-      setTranscriptStatuses((current) => ({ ...current, [lesson.id]: status }));
-      setTranscriptMessage(`Da bat dau tao transcript cho lesson #${lesson.id}.`);
-    } catch (error) {
-      setTranscriptStatuses((current) => ({ ...current, [lesson.id]: "failed" }));
-      setTranscriptMessage(error instanceof Error ? error.message : "Khong the tao transcript.");
+      const response = await getAdminLessons({ courseId, keyword, status, page: nextPage, pageSize: 10 });
+      const data = unwrap(response);
+      setLessons(data.items ?? []);
+      setPagination(data.pagination ?? pagination);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Khong the tai bai hoc.");
+      setLessons([]);
     } finally {
-      setGeneratingLessonIds((current) => ({ ...current, [lesson.id]: false }));
+      setLoading(false);
     }
-  };
+  }
+
+  function startEdit(lesson: LessonItem) {
+    setEditing(lesson);
+    setForm({
+      courseId: String(lesson.courseId),
+      title: lesson.title,
+      description: lesson.description,
+      durationSeconds: lesson.durationSeconds,
+      sortOrder: lesson.sortOrder,
+      isFree: lesson.isFree,
+      status: lesson.status,
+    });
+  }
+
+  function resetForm() {
+    setEditing(null);
+    setForm(emptyForm);
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!form.courseId || !form.title.trim()) {
+      setError("Vui long chon khoa hoc va nhap ten bai hoc.");
+      return;
+    }
+    const payload = { ...form, courseId: Number(form.courseId), durationSeconds: Number(form.durationSeconds), sortOrder: Number(form.sortOrder) };
+    if (editing) await updateAdminLesson(String(editing.id), payload);
+    else await createAdminLesson(payload);
+    setMessage(editing ? "Da cap nhat bai hoc." : "Da tao bai hoc.");
+    resetForm();
+    await loadLessons();
+  }
+
+  async function handleArchive(lesson: LessonItem) {
+    await deleteAdminLesson(String(lesson.id));
+    setMessage("Da luu tru bai hoc.");
+    await loadLessons();
+  }
+
+  async function runAction(action: () => Promise<unknown>, done: string) {
+    try {
+      await action();
+      setMessage(done);
+      await loadLessons();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Thao tac that bai.");
+    }
+  }
 
   return (
     <AdminLayout>
-      <div className="relative flex flex-1 flex-col lg:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col transition-all duration-300">
-          <div className="space-y-5 p-6">
-            <div>
-              <h1 className="text-2xl font-bold text-on-surface">Quản lý bài học</h1>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Sắp xếp và cập nhật bài học theo từng khóa học.
-              </p>
-            </div>
+      <div className="min-h-screen p-6">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold">Quan ly bai hoc</h1>
+          <p className="text-sm text-on-surface-variant">CRUD bai hoc, tao transcript va summary tu du lieu backend.</p>
+        </div>
 
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-                <label className="whitespace-nowrap text-sm font-medium text-on-surface-variant">
-                  Chọn khóa học:
-                </label>
+        <div className="mb-5 grid gap-3 rounded-xl border bg-white p-4 lg:grid-cols-[1fr_220px_180px_auto]">
+          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Tim bai hoc" className="rounded-lg border px-3 py-2 text-sm" />
+          <select value={courseId} onChange={(e) => { setCourseId(e.target.value); setPage(1); }} className="rounded-lg border px-3 py-2 text-sm">
+            <option value="all">Tat ca khoa hoc</option>
+            {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+          </select>
+          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border px-3 py-2 text-sm">
+            <option value="all">Tat ca trang thai</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <button onClick={() => { setPage(1); void loadLessons(1); }} className="rounded-lg bg-primary px-5 py-2 text-white">Tim kiem</button>
+        </div>
 
-                <div className="relative w-full sm:w-72">
-                  <select
-                    value={selectedCourse}
-                    onChange={(event) => {
-                      setSelectedCourse(event.target.value);
-                      setIsPanelOpen(false);
-                    }}
-                    className="w-full cursor-pointer appearance-none rounded-xl border border-outline-variant/50 bg-white py-2.5 pl-4 pr-10 text-sm font-medium outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="">Tất cả khóa học</option>
-                    {courses.map((course) => (
-                      <option key={course} value={course}>
-                        {course}
-                      </option>
-                    ))}
-                  </select>
+        {(error || message) && <div className={`mb-4 rounded-lg p-3 text-sm ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>{error || message}</div>}
 
-                  <span
-                    className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-outline"
-                    aria-hidden={true}
-                  >
-                    expand_more
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddNew}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[20px]" aria-hidden={true}>
-                  add_circle
-                </span>
-                Thêm bài học mới
-              </button>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-outline-variant/30 bg-white shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
+          <div className="overflow-hidden rounded-xl border bg-white">
+            {loading ? <StateText text="Dang tai du lieu..." /> : lessons.length === 0 ? <StateText text="Chua co bai hoc nao." /> : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-outline-variant/30 bg-surface-container-low">
-                      {[
-                        "Thứ tự",
-                        "Tên bài học",
-                        "Thời lượng",
-                        "Video",
-                        "Slide",
-                        "Quiz",
-                        "Transcript",
-                        "Trạng thái",
-                        "Hành động",
-                      ].map((heading) => (
-                        <th
-                          key={heading}
-                          className={`px-5 py-4 text-[11px] font-bold uppercase tracking-wider text-outline ${
-                            heading === "Hành động" ? "text-right" : ""
-                          }`}
-                        >
-                          {heading}
-                        </th>
-                      ))}
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-surface-container-low text-xs uppercase text-on-surface-variant">
+                    <tr>
+                      <th className="px-4 py-3">Bai hoc</th>
+                      <th className="px-4 py-3">Khoa hoc</th>
+                      <th className="px-4 py-3">Thu tu</th>
+                      <th className="px-4 py-3">Video</th>
+                      <th className="px-4 py-3">Transcript</th>
+                      <th className="px-4 py-3">Summary</th>
+                      <th className="px-4 py-3">Trang thai</th>
+                      <th className="px-4 py-3 text-right">Thao tac</th>
                     </tr>
                   </thead>
-
-                  <tbody className="divide-y divide-outline-variant/20">
-                    {filteredLessons.map((lesson) => (
-                      <tr
-                        key={lesson.id}
-                        onClick={() => setSelectedLesson(lesson)}
-                        className={`group cursor-pointer transition-colors ${
-                          selectedLesson?.id === lesson.id
-                            ? "bg-primary/5"
-                            : "hover:bg-surface-bright"
-                        }`}
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="material-symbols-outlined cursor-move text-[18px] text-outline opacity-0 transition-opacity group-hover:opacity-100"
-                              aria-hidden={true}
-                            >
-                              drag_indicator
-                            </span>
-                            <span className="font-mono text-sm font-semibold text-on-surface-variant">
-                              {String(lesson.order).padStart(2, "0")}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4 text-sm font-semibold text-on-surface">
-                          {lesson.title}
-                        </td>
-
-                        <td className="px-5 py-4 font-mono text-sm text-on-surface-variant">
-                          {lesson.duration}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.hasVideo ? (
-                            <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                check_circle
-                              </span>
-                              Đã có
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-sm font-medium text-outline-variant">
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                error
-                              </span>
-                              Chưa có
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.hasSlide ? (
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
-                                Có PDF
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(event) => event.stopPropagation()}
-                                className="text-xs font-bold text-primary hover:underline"
-                              >
-                                Xem
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-sm font-medium text-outline-variant">
-                              Chưa có
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 text-sm font-medium text-on-surface-variant">
-                          {lesson.hasQuiz ? "Có" : <span className="opacity-50">Không</span>}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <TranscriptStatusBadge status={getTranscriptStatus(lesson)} />
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.status === "published" ? (
-                            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
-                              Đã xuất bản
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-surface-container-highest px-3 py-1 text-xs font-bold text-outline">
-                              Bản nháp
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              disabled={generatingLessonIds[lesson.id] || getTranscriptStatus(lesson) === "processing"}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleGenerateTranscript(lesson);
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`Tao transcript ${lesson.title}`}
-                              title="Tao transcript"
-                            >
-                              <span
-                                className={`material-symbols-outlined text-[18px] ${generatingLessonIds[lesson.id] ? "animate-spin" : ""}`}
-                                aria-hidden={true}
-                              >
-                                auto_awesome
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary"
-                              aria-label={`Xem ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                visibility
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleEdit(lesson);
-                              }}
-                              aria-label={`Chỉnh sửa ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                edit
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-error transition-colors hover:bg-error-container"
-                              aria-label={`Xóa ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                delete
-                              </span>
-                            </button>
+                  <tbody className="divide-y">
+                    {lessons.map((lesson) => (
+                      <tr key={lesson.id}>
+                        <td className="px-4 py-3"><p className="font-semibold">{lesson.title}</p><p className="text-xs text-on-surface-variant">{lesson.durationSeconds}s</p></td>
+                        <td className="px-4 py-3">{lesson.courseTitle}</td>
+                        <td className="px-4 py-3">{lesson.sortOrder}</td>
+                        <td className="px-4 py-3">{lesson.video ? `${lesson.video.provider}/${lesson.video.processingStatus}` : "Chua co"}</td>
+                        <td className="px-4 py-3"><Badge value={lesson.transcriptStatus} /></td>
+                        <td className="px-4 py-3"><Badge value={lesson.summaryStatus} /></td>
+                        <td className="px-4 py-3"><Badge value={lesson.status} /></td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => startEdit(lesson)} className="rounded border px-2 py-1">Sua</button>
+                            <button onClick={() => void handleArchive(lesson)} className="rounded border px-2 py-1 text-red-600">Xoa</button>
+                            <button onClick={() => void runAction(() => generateLessonTranscript(String(lesson.id)), "Da bat dau tao transcript.")} className="rounded border px-2 py-1 text-primary">Transcript</button>
+                            <button disabled={lesson.transcriptStatus !== "completed"} onClick={() => void runAction(() => generateLessonSummary(String(lesson.id)), "Da tao summary.")} className="rounded border px-2 py-1 text-primary disabled:opacity-40">Summary</button>
                           </div>
                         </td>
                       </tr>
@@ -388,258 +182,53 @@ function LessonManagementPage() {
                   </tbody>
                 </table>
               </div>
-
-              <div className="flex items-center justify-between border-t border-outline-variant/20 bg-surface-container-low/20 px-5 py-4">
-                <p className="text-sm text-on-surface-variant">
-                  Hiển thị <span className="font-bold">{filteredLessons.length}</span> bài học
-                </p>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled
-                    className="rounded-lg border border-outline-variant/30 p-2 transition-colors hover:bg-white disabled:opacity-40"
-                    aria-label="Trang trước"
-                  >
-                    <span className="material-symbols-outlined" aria-hidden={true}>
-                      chevron_left
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg border border-outline-variant/30 p-2 transition-colors hover:bg-white"
-                    aria-label="Trang sau"
-                  >
-                    <span className="material-symbols-outlined" aria-hidden={true}>
-                      chevron_right
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
+            <Pagination pagination={pagination} page={page} setPage={setPage} />
           </div>
+
+          <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-5">
+            <h2 className="mb-4 text-lg font-bold">{editing ? "Sua bai hoc" : "Tao bai hoc"}</h2>
+            <div className="space-y-3">
+              <select value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="">Chon khoa hoc</option>
+                {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+              </select>
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ten bai hoc" className="w-full rounded-lg border px-3 py-2 text-sm" />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Mo ta" rows={3} className="w-full rounded-lg border px-3 py-2 text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" value={form.durationSeconds} onChange={(e) => setForm({ ...form, durationSeconds: Number(e.target.value) })} placeholder="Thoi luong giay" className="rounded-lg border px-3 py-2 text-sm" />
+                <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} placeholder="Thu tu" className="rounded-lg border px-3 py-2 text-sm" />
+              </div>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isFree} onChange={(e) => setForm({ ...form, isFree: e.target.checked })} /> Bai mien phi</label>
+              <div className="flex gap-2">
+                <button className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-white">Luu</button>
+                <button type="button" onClick={resetForm} className="rounded-lg border px-4 py-2 text-sm">Huy</button>
+              </div>
+            </div>
+          </form>
         </div>
-
-        {isPanelOpen && (
-          <aside className="z-10 flex w-full shrink-0 flex-col border-t border-outline-variant/30 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-[400px] lg:border-l lg:border-t-0 lg:shadow-2xl">
-            <div className="flex items-center justify-between border-b border-outline-variant/30 bg-surface-bright p-5">
-              <div className="flex items-center gap-2 text-primary">
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                  aria-hidden={true}
-                >
-                  {selectedLesson ? "edit_note" : "add_box"}
-                </span>
-                <h2 className="text-lg font-bold tracking-tight">
-                  {selectedLesson ? "Chỉnh sửa bài học" : "Thêm bài học mới"}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleClosePanel}
-                className="rounded-md p-1 text-outline transition-colors hover:bg-error-container/50 hover:text-error"
-                aria-label="Đóng bảng chỉnh sửa bài học"
-              >
-                <span className="material-symbols-outlined" aria-hidden={true}>
-                  close
-                </span>
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-5 p-5 lg:overflow-y-auto">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Thuộc khóa học <span className="text-error">*</span>
-                </label>
-                <select
-                  value={selectedLesson?.course ?? (selectedCourse || courses[0])}
-                  onChange={() => {}}
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {courses.map((course) => (
-                    <option key={course} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Tên bài học <span className="text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={selectedLesson?.title ?? ""}
-                  onChange={() => {}}
-                  placeholder="Nhập tên bài học..."
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Thứ tự
-                </label>
-                <input
-                  type="number"
-                  value={selectedLesson?.order ?? filteredLessons.length + 1}
-                  onChange={() => {}}
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Nội dung chính
-                </label>
-                <div className="overflow-hidden rounded-xl border border-outline-variant/50">
-                  <div className="flex gap-1 border-b border-outline-variant/30 bg-surface-container-low p-2">
-                    {[
-                      "format_bold",
-                      "format_italic",
-                      "format_list_bulleted",
-                      "link",
-                      "code",
-                    ].map((icon) => (
-                      <button
-                        type="button"
-                        key={icon}
-                        className="flex h-8 w-8 items-center justify-center rounded text-outline-variant hover:bg-white"
-                      >
-                        <span
-                          className="material-symbols-outlined text-[18px]"
-                          aria-hidden={true}
-                        >
-                          {icon}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="min-h-[120px] bg-white p-4 text-sm italic text-on-surface-variant opacity-60">
-                    Nhập nội dung chi tiết bài học tại đây...
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Video bài học
-                </label>
-                <div className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 p-5 transition-colors hover:bg-surface-container-low">
-                  <span
-                    className="material-symbols-outlined text-3xl text-outline transition-colors group-hover:text-primary"
-                    aria-hidden={true}
-                  >
-                    cloud_upload
-                  </span>
-                  <p className="text-xs font-bold uppercase tracking-wider text-outline transition-colors group-hover:text-primary">
-                    Tải video lên hoặc chọn từ kho
-                  </p>
-                  <p className="text-[10px] text-outline-variant">MP4 · Tối đa 500MB</p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="lesson-slide-edit"
-                  className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant"
-                >
-                  Slide bài học
-                </label>
-                <label
-                  htmlFor="lesson-slide-edit"
-                  className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 p-5 transition-colors hover:bg-surface-container-low"
-                >
-                  <span
-                    className="material-symbols-outlined text-3xl text-error"
-                    aria-hidden={true}
-                  >
-                    picture_as_pdf
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                    Upload hoặc thay slide PDF
-                  </span>
-                  <span className="text-[10px] text-outline-variant">Chỉ hỗ trợ PDF</span>
-                </label>
-                <input
-                  id="lesson-slide-edit"
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  className="sr-only"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Trạng thái
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedLesson?.status ?? "draft"}
-                    onChange={() => {}}
-                    className="w-full appearance-none rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="published">Đã xuất bản</option>
-                    <option value="draft">Bản nháp</option>
-                  </select>
-                  <span
-                    className="material-symbols-outlined pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[20px] text-outline"
-                    aria-hidden={true}
-                  >
-                    expand_more
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-outline-variant/30 bg-surface-bright p-5">
-              <button
-                type="button"
-                onClick={handleClosePanel}
-                className="rounded-xl border border-outline-variant py-3 text-sm font-bold text-on-surface-variant transition-colors hover:bg-surface"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95"
-              >
-                Lưu thay đổi
-              </button>
-            </div>
-          </aside>
-        )}
       </div>
     </AdminLayout>
   );
 }
 
-function TranscriptStatusBadge({ status }: { status: TranscriptStatus }) {
-  const config: Record<TranscriptStatus, { label: string; className: string }> = {
-    pending: { label: "Chua tao transcript", className: "bg-slate-100 text-slate-600" },
-    processing: { label: "Dang tao transcript", className: "bg-indigo-100 text-indigo-700" },
-    completed: { label: "Da co transcript", className: "bg-green-100 text-green-700" },
-    failed: { label: "Tao transcript loi", className: "bg-red-100 text-red-700" },
-  };
-  const selected = config[status];
-
-  return (
-    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${selected.className}`}>
-      {selected.label}
-    </span>
-  );
+function StateText({ text }: { text: string }) {
+  return <div className="p-8 text-center text-on-surface-variant">{text}</div>;
 }
 
-function mapTranscriptStatus(value: unknown): TranscriptStatus {
-  if (value === "processing" || value === "completed" || value === "failed") return value;
-  return "pending";
+function Badge({ value }: { value: string }) {
+  return <span className="rounded-full bg-surface-container-low px-2 py-1 text-xs font-bold">{value}</span>;
 }
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+function Pagination({ pagination, page, setPage }: any) {
+  return <div className="flex justify-between border-t px-4 py-3 text-sm"><span>{pagination.totalItems} bai hoc</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded border px-3 py-1 disabled:opacity-40">Truoc</button><button disabled={page >= pagination.totalPages} onClick={() => setPage(page + 1)} className="rounded border px-3 py-1 disabled:opacity-40">Sau</button></div></div>;
 }
 
-export default LessonManagementPage;
+function unwrap(response: any) {
+  return response?.data ?? response;
+}
