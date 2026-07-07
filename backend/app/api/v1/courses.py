@@ -55,19 +55,30 @@ def get_published_courses_no_slash(
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-def get_published_courses(
+def get_all_published_courses(
     keyword: str | None = Query(default=None),
     level: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=12, alias="pageSize", ge=1, le=100),
     db: Session = Depends(get_db),
 ):
+<<<<<<< Updated upstream
     return _get_published_courses_response(
         keyword=keyword,
         level=level,
         page=page,
         page_size=page_size,
         db=db,
+=======
+    return success_response(
+        CoursesService.get_all_published_courses(
+            db=db,
+            keyword=keyword,
+            level=level,
+            page=page,
+            page_size=pageSize,
+        )
+>>>>>>> Stashed changes
     )
 
 
