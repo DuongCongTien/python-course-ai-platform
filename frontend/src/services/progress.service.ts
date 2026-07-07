@@ -109,12 +109,14 @@ export function updateLessonProgress(
     durationSeconds: number;
     progressPercent: number;
   },
+  options: { keepalive?: boolean } = {},
 ) {
   return apiFetch<{ success?: boolean; message?: string; data?: LessonProgressData } | LessonProgressData>(
     `/lessons/${encodeURIComponent(lessonId)}/progress`,
     {
       method: "PUT",
       body: JSON.stringify(payload),
+      keepalive: options.keepalive,
     },
   );
 }

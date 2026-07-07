@@ -8,6 +8,7 @@ from app.models.users_model import User
 from app.schemas.progress import LessonCompleteInput, LessonProgressUpdateInput
 from app.services.lesson_service import LessonService
 from app.services.progress_service import ProgressService
+from app.services.transcript_service import TranscriptService
 
 router = APIRouter()
 
@@ -53,6 +54,17 @@ def get_lesson_resources(lesson_id: int, db: Session = Depends(get_db)):
         return lesson_error_response(exc)
 
     return success_response(resources)
+
+
+@router.get("/{lesson_id}/transcript", status_code=status.HTTP_200_OK)
+def get_lesson_transcript(lesson_id: int, db: Session = Depends(get_db)):
+    try:
+        transcript = TranscriptService.get_transcript_response(db, lesson_id)
+    except HTTPException as exc:
+        return lesson_error_response(exc)
+
+    message = "Transcript chua duoc tao." if transcript["status"] == "pending" else "OK"
+    return success_response(transcript, message)
 
 
 @router.get("/{lesson_id}/progress", status_code=status.HTTP_200_OK)

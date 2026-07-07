@@ -1,9 +1,12 @@
+import json
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 from urllib.parse import parse_qs, urlparse
 
 from app.models.ai_pipeline_model import LessonSummary, LessonTranscript
 from app.models.courses_model import ContentStatus, Lesson, LessonVideo
+from app.services.transcript_service import TranscriptService
 
 
 class LessonService:
@@ -73,7 +76,7 @@ class LessonService:
             "lessonId": int(lesson.id),
             "video": LessonService.serialize_video(video) if video else None,
             "slideFile": None,
-            "transcript": LessonService.serialize_transcript(transcript) if transcript else None,
+            "transcript": TranscriptService.serialize_transcript(transcript, int(lesson.id)),
             "summary": LessonService.serialize_summary(summary) if summary else None,
         }
 
@@ -121,16 +124,31 @@ class LessonService:
         return None
 
     @staticmethod
-    def serialize_transcript(transcript: LessonTranscript):
+    def serialize_summary(summary: LessonSummary):
         return {
-            "text": transcript.transcript_text,
-            "language": transcript.language,
-            "status": transcript.status,
+            "id": int(summary.id),
+            "lessonId": int(summary.lesson_id),
+            "summaryText": summary.summary_text,
+            "keyPoints": LessonService.normalize_key_points(summary.key_points),
+            "generatedBy": summary.generated_by,
+            "createdAt": summary.created_at.isoformat() if summary.created_at else None,
         }
 
     @staticmethod
-    def serialize_summary(summary: LessonSummary):
-        return {
-            "summaryText": summary.summary_text,
-            "keyPoints": summary.key_points,
-        }
+    def normalize_key_points(value):
+        if not value:
+            return []
+
+        if isinstance(value, list):
+            return [str(item) for item in value if item]
+
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+
+            if isinstance(parsed, list):
+                return [str(item) for item in parsed if item]
+
+        return []
