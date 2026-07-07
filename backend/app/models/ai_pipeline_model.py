@@ -15,8 +15,9 @@ class LessonTranscript(Base):
     lesson_id = Column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
     transcript_text = Column(LONGTEXT, nullable=False)
     language = Column(String(20), default="vi")
-    generated_by = Column(String(100), default="Whisper")
-    status = Column(Enum("pending", "completed", "failed"), default="pending")
+    generated_by = Column(String(100), nullable=True)
+    status = Column(Enum("pending", "processing", "completed", "failed"), default="pending")
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 

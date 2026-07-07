@@ -1,13 +1,15 @@
 import { ClipboardList, FileText, ListChecks, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { type LessonTab, type TranscriptSegment } from "./learningTypes";
+import { type LessonSummary, type LessonTab, type TranscriptSegment } from "./learningTypes";
 
 interface LessonTabsProps {
   activeTab: LessonTab;
   onTabChange: (tab: LessonTab) => void;
   lessonId: string;
   transcript: string | null;
-  summary: string | null;
+  transcriptStatus: "pending" | "processing" | "completed" | "failed";
+  transcriptErrorMessage?: string | null;
+  summary: LessonSummary | null;
   transcriptSegments: TranscriptSegment[];
 }
 
@@ -23,6 +25,8 @@ function LessonTabs({
   onTabChange,
   lessonId,
   transcript,
+  transcriptStatus,
+  transcriptErrorMessage,
   summary,
   transcriptSegments,
 }: LessonTabsProps) {
@@ -51,7 +55,14 @@ function LessonTabs({
 
       <div className="p-5 sm:p-6">
         {activeTab === "overview" && <OverviewTab summary={summary} />}
-        {activeTab === "transcript" && <TranscriptTab transcript={transcript} segments={transcriptSegments} />}
+        {activeTab === "transcript" && (
+          <TranscriptTab
+            transcript={transcript}
+            status={transcriptStatus}
+            errorMessage={transcriptErrorMessage}
+            segments={transcriptSegments}
+          />
+        )}
         {activeTab === "summary" && <SummaryTab summary={summary} />}
         {activeTab === "quiz" && <QuizTab lessonId={lessonId} />}
       </div>
@@ -59,7 +70,7 @@ function LessonTabs({
   );
 }
 
-function OverviewTab({ summary }: { summary: string | null }) {
+function OverviewTab({ summary }: { summary: LessonSummary | null }) {
   return (
     <div className="rounded-2xl bg-indigo-50/70 p-5">
       <div className="mb-4 flex items-center gap-3">
@@ -69,7 +80,7 @@ function OverviewTab({ summary }: { summary: string | null }) {
         <h2 className="font-extrabold text-slate-950">Nội dung chính</h2>
       </div>
       {summary ? (
-        <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{summary}</p>
+        <SummaryContent summary={summary} />
       ) : (
         <p className="text-sm leading-6 text-slate-500">Tóm tắt bài học chưa có.</p>
       )}
@@ -77,7 +88,33 @@ function OverviewTab({ summary }: { summary: string | null }) {
   );
 }
 
-function TranscriptTab({ transcript, segments }: { transcript: string | null; segments: TranscriptSegment[] }) {
+function TranscriptTab({
+  transcript,
+  status,
+  errorMessage,
+  segments,
+}: {
+  transcript: string | null;
+  status: "pending" | "processing" | "completed" | "failed";
+  errorMessage?: string | null;
+  segments: TranscriptSegment[];
+}) {
+  if (status === "processing") {
+    return <p className="text-sm leading-6 text-slate-500">Transcript dang duoc tao, vui long quay lai sau.</p>;
+  }
+
+  if (status === "failed") {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
+        Tao transcript loi{errorMessage ? `: ${errorMessage}` : "."}
+      </div>
+    );
+  }
+
+  if (status === "pending" && !transcript && segments.length === 0) {
+    return <p className="text-sm leading-6 text-slate-500">Transcript chua duoc tao.</p>;
+  }
+
   if (!transcript && segments.length === 0) {
     return <p className="text-sm leading-6 text-slate-500">Transcript chưa được tạo.</p>;
   }
@@ -110,7 +147,7 @@ function TranscriptTab({ transcript, segments }: { transcript: string | null; se
   );
 }
 
-function SummaryTab({ summary }: { summary: string | null }) {
+function SummaryTab({ summary }: { summary: LessonSummary | null }) {
   if (!summary) {
     return <p className="text-sm leading-6 text-slate-500">Tóm tắt bài học chưa có.</p>;
   }
@@ -120,7 +157,29 @@ function SummaryTab({ summary }: { summary: string | null }) {
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
         <FileText size={18} />
       </span>
-      <p className="whitespace-pre-line text-sm font-medium leading-7 text-slate-700">{summary}</p>
+      <SummaryContent summary={summary} />
+    </div>
+  );
+}
+
+function SummaryContent({ summary }: { summary: LessonSummary }) {
+  return (
+    <div className="min-w-0 space-y-4 text-sm leading-7 text-slate-700">
+      <p className="whitespace-pre-line">{summary.summaryText}</p>
+
+      {summary.keyPoints.length > 0 && (
+        <div>
+          <h3 className="mb-2 font-extrabold text-slate-950">Ý chính cần nhớ</h3>
+          <ul className="space-y-2">
+            {summary.keyPoints.map((point, index) => (
+              <li key={`${point}-${index}`} className="flex gap-2">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-600" aria-hidden="true" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

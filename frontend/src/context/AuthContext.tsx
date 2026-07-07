@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
 import { mapApiUserToAuthUser, type AuthUser, type RegisterPayload } from "../services/auth.types";
+import { flushAllProgress } from "../stores/progressSyncStore";
 
-const TOKEN_STORAGE_KEY = "pyai_token";
+const TOKEN_STORAGE_KEY = "accessToken";
+const TOKEN_STORAGE_KEYS = [TOKEN_STORAGE_KEY, "pyai_token", "token", "authToken", "python_ai_learning_token"];
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -13,13 +15,13 @@ interface AuthContextValue {
   loginWithGoogle: (idToken: string) => Promise<AuthUser>;
   register: (payload: RegisterPayload) => Promise<void>;
   refreshUser: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
+  const [token, setToken] = useState<string | null>(() => getStoredToken());
   const [user, setUser] = useState<AuthUser | null>(null);
   // isLoading = true khi đang khôi phục phiên đăng nhập từ token đã lưu (lúc load lại trang)
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -37,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) setUser(mapApiUserToAuthUser(apiUser));
       } catch {
         // Token hết hạn hoặc không hợp lệ -> đăng xuất
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        removeStoredTokens();
         if (isMounted) {
           setToken(null);
           setUser(null);
@@ -57,23 +59,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (identifier: string, password: string): Promise<AuthUser> => {
     const newToken = await authService.login({ username: identifier, password });
+    removeStoredTokens();
     localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
     setToken(newToken);
 
     const apiUser = await authService.getMe(newToken);
     const authUser = mapApiUserToAuthUser(apiUser);
     setUser(authUser);
+    localStorage.setItem("user", JSON.stringify(authUser));
     return authUser;
   };
 
   const loginWithGoogle = async (idToken: string): Promise<AuthUser> => {
     const newToken = await authService.loginWithGoogle(idToken);
+    removeStoredTokens();
     localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
     setToken(newToken);
 
     const apiUser = await authService.getMe(newToken);
     const authUser = mapApiUserToAuthUser(apiUser);
     setUser(authUser);
+    localStorage.setItem("user", JSON.stringify(authUser));
     return authUser;
   };
 
@@ -89,10 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(mapApiUserToAuthUser(apiUser));
   };
 
-  const logout = () => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await flushAllProgress();
+    } finally {
+      removeStoredTokens();
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (
@@ -108,4 +118,13 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth phải được sử dụng bên trong AuthProvider");
   return ctx;
+}
+
+function removeStoredTokens() {
+  TOKEN_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  localStorage.removeItem("user");
+}
+
+function getStoredToken() {
+  return TOKEN_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find((value): value is string => Boolean(value)) ?? null;
 }

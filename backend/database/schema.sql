@@ -125,8 +125,9 @@ CREATE TABLE IF NOT EXISTS `lesson_transcripts` (
     `lesson_id` BIGINT NOT NULL,
     `transcript_text` LONGTEXT NOT NULL,
     `language` VARCHAR(20) DEFAULT 'vi',
-    `generated_by` VARCHAR(100) DEFAULT 'Whisper',
-    `status` ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    `generated_by` VARCHAR(100) NULL,
+    `status` ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+    `error_message` TEXT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `fk_transcripts_lessons` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`) ON DELETE CASCADE

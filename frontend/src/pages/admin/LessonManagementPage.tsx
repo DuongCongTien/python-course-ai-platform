@@ -1,329 +1,197 @@
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
+import {
+  createAdminLesson,
+  deleteAdminLesson,
+  generateLessonSummary,
+  generateLessonTranscript,
+  getAdminLessons,
+  updateAdminLesson,
+} from "../../services/adminLesson.service";
+import { getCoursesAdmin } from "../../services/course.service";
 
-interface Lesson {
+interface CourseOption { id: number; title: string }
+interface LessonItem {
   id: number;
-  order: number;
+  courseId: number;
+  courseTitle: string;
   title: string;
-  duration: string;
-  hasVideo: boolean;
+  description: string;
+  durationSeconds: number;
+  sortOrder: number;
+  isFree: boolean;
+  status: string;
+  video: { id: number; provider: string; processingStatus: string } | null;
   hasSlide: boolean;
-  hasQuiz: boolean;
-  status: "published" | "draft";
-  course: string;
+  transcriptStatus: string;
+  summaryStatus: string;
 }
 
-const courses = [
-  "Python cơ bản",
-  "Python cho AI nâng cao",
-  "Xử lý dữ liệu với Pandas",
-  "Machine Learning căn bản",
-];
+const emptyForm = { courseId: "", title: "", description: "", durationSeconds: 0, sortOrder: 0, isFree: false, status: "draft" };
+const pageSize = 10;
 
-const mockLessons: Lesson[] = [
-  {
-    id: 1,
-    order: 1,
-    title: "Bài 1: Giới thiệu Python",
-    duration: "08:15",
-    hasVideo: true,
-    hasSlide: false,
-    hasQuiz: true,
-    status: "published",
-    course: "Python cơ bản",
-  },
-  {
-    id: 2,
-    order: 2,
-    title: "Bài 2: Biến và Kiểu dữ liệu",
-    duration: "15:40",
-    hasVideo: true,
-    hasSlide: true,
-    hasQuiz: true,
-    status: "published",
-    course: "Python cơ bản",
-  },
-  {
-    id: 3,
-    order: 3,
-    title: "Bài 3: Cấu trúc điều kiện",
-    duration: "10:20",
-    hasVideo: false,
-    hasSlide: false,
-    hasQuiz: false,
-    status: "draft",
-    course: "Python cơ bản",
-  },
-  {
-    id: 4,
-    order: 4,
-    title: "Bài 4: Vòng lặp for và while",
-    duration: "18:05",
-    hasVideo: true,
-    hasSlide: true,
-    hasQuiz: true,
-    status: "published",
-    course: "Python cho AI nâng cao",
-  },
-  {
-    id: 5,
-    order: 5,
-    title: "Bài 5: Hàm và Module",
-    duration: "22:30",
-    hasVideo: false,
-    hasSlide: false,
-    hasQuiz: false,
-    status: "draft",
-    course: "Xử lý dữ liệu với Pandas",
-  },
-];
+export default function LessonManagementPage() {
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [lessons, setLessons] = useState<LessonItem[]>([]);
+  const [courseId, setCourseId] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, totalItems: 0, totalPages: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [editing, setEditing] = useState<LessonItem | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
-function LessonManagementPage() {
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  useEffect(() => { void loadCourses(); }, []);
+  useEffect(() => { void loadLessons(); }, [page, courseId, status]);
 
-  const filteredLessons = mockLessons.filter(
-    (lesson) => selectedCourse === "" || lesson.course === selectedCourse,
-  );
+  async function loadCourses() {
+    try {
+      const response = await getCoursesAdmin();
+      const data = unwrap(response);
+      setCourses((data.items ?? data ?? []).map((course: any) => ({ id: Number(course.id), title: course.title })));
+    } catch (err) {
+      setError(getErrorMessage(err, "Không thể tải danh sách khóa học."));
+    }
+  }
 
-  const handleAddNew = () => {
-    setSelectedLesson(null);
-    setIsPanelOpen(true);
-  };
+  async function loadLessons(nextPage = page) {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await getAdminLessons({ courseId, keyword, status, page: nextPage, pageSize });
+      const data = unwrap(response);
+      setLessons(data.items ?? []);
+      setPagination(data.pagination ?? pagination);
+    } catch (err) {
+      setError(getErrorMessage(err, "Không thể tải bài học."));
+      setLessons([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const handleEdit = (lesson: Lesson) => {
-    setSelectedLesson(lesson);
-    setIsPanelOpen(true);
-  };
+  function startEdit(lesson: LessonItem) {
+    setEditing(lesson);
+    setForm({
+      courseId: String(lesson.courseId),
+      title: lesson.title,
+      description: lesson.description,
+      durationSeconds: lesson.durationSeconds,
+      sortOrder: lesson.sortOrder,
+      isFree: lesson.isFree,
+      status: lesson.status,
+    });
+  }
 
-  const handleClosePanel = () => {
-    setIsPanelOpen(false);
-  };
+  function resetForm() {
+    setEditing(null);
+    setForm(emptyForm);
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    if (!form.courseId || !form.title.trim()) {
+      setError("Vui lòng chọn khóa học và nhập tên bài học.");
+      return;
+    }
+    try {
+      const payload = { ...form, courseId: Number(form.courseId), durationSeconds: Number(form.durationSeconds), sortOrder: Number(form.sortOrder) };
+      if (editing) await updateAdminLesson(String(editing.id), payload);
+      else await createAdminLesson(payload);
+      setMessage(editing ? "Đã cập nhật bài học." : "Đã tạo bài học.");
+      resetForm();
+      await loadLessons();
+    } catch (err) {
+      setError(getErrorMessage(err, "Không thể lưu bài học."));
+    }
+  }
+
+  async function handleArchive(lesson: LessonItem) {
+    setError("");
+    setMessage("");
+    try {
+      await deleteAdminLesson(String(lesson.id));
+      setMessage("Đã lưu trữ bài học.");
+      await loadLessons();
+    } catch (err) {
+      setError(getErrorMessage(err, "Không thể xóa bài học."));
+    }
+  }
+
+  async function runAction(action: () => Promise<unknown>, done: string) {
+    try {
+      await action();
+      setMessage(done);
+      await loadLessons();
+    } catch (err) {
+      setError(getErrorMessage(err, "Thao tác thất bại."));
+    }
+  }
 
   return (
     <AdminLayout>
-      <div className="relative flex flex-1 flex-col lg:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col transition-all duration-300">
-          <div className="space-y-5 p-6">
-            <div>
-              <h1 className="text-2xl font-bold text-on-surface">Quản lý bài học</h1>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Sắp xếp và cập nhật bài học theo từng khóa học.
-              </p>
-            </div>
+      <div className="min-h-screen p-6">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold">Quản lý bài học</h1>
+          <p className="text-sm text-on-surface-variant">Quản lý bài học, tạo Transcript và Tóm tắt AI từ dữ liệu backend.</p>
+        </div>
 
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-                <label className="whitespace-nowrap text-sm font-medium text-on-surface-variant">
-                  Chọn khóa học:
-                </label>
+        <div className="mb-5 grid gap-3 rounded-xl border bg-white p-4 lg:grid-cols-[1fr_220px_180px_auto]">
+          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Tìm kiếm bài học" className="rounded-lg border px-3 py-2 text-sm" />
+          <select value={courseId} onChange={(e) => { setCourseId(e.target.value); setPage(1); }} className="rounded-lg border px-3 py-2 text-sm">
+            <option value="all">Tất cả khóa học</option>
+            {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+          </select>
+          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border px-3 py-2 text-sm">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="draft">Bản nháp</option>
+            <option value="published">Đã xuất bản</option>
+            <option value="archived">Đã lưu trữ</option>
+            <option value="hidden">Đã ẩn</option>
+          </select>
+          <button onClick={() => { setPage(1); void loadLessons(1); }} className="rounded-lg bg-primary px-5 py-2 text-white">Tìm kiếm</button>
+        </div>
 
-                <div className="relative w-full sm:w-72">
-                  <select
-                    value={selectedCourse}
-                    onChange={(event) => {
-                      setSelectedCourse(event.target.value);
-                      setIsPanelOpen(false);
-                    }}
-                    className="w-full cursor-pointer appearance-none rounded-xl border border-outline-variant/50 bg-white py-2.5 pl-4 pr-10 text-sm font-medium outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="">Tất cả khóa học</option>
-                    {courses.map((course) => (
-                      <option key={course} value={course}>
-                        {course}
-                      </option>
-                    ))}
-                  </select>
+        {(error || message) && <div className={`mb-4 rounded-lg p-3 text-sm ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>{error || message}</div>}
 
-                  <span
-                    className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-outline"
-                    aria-hidden={true}
-                  >
-                    expand_more
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddNew}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[20px]" aria-hidden={true}>
-                  add_circle
-                </span>
-                Thêm bài học mới
-              </button>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-outline-variant/30 bg-white shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
+          <div className="overflow-hidden rounded-xl border bg-white">
+            {loading ? <StateText text="Đang tải dữ liệu..." /> : lessons.length === 0 ? <StateText text="Chưa có bài học nào." /> : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-outline-variant/30 bg-surface-container-low">
-                      {[
-                        "Thứ tự",
-                        "Tên bài học",
-                        "Thời lượng",
-                        "Video",
-                        "Slide",
-                        "Quiz",
-                        "Trạng thái",
-                        "Hành động",
-                      ].map((heading) => (
-                        <th
-                          key={heading}
-                          className={`px-5 py-4 text-[11px] font-bold uppercase tracking-wider text-outline ${
-                            heading === "Hành động" ? "text-right" : ""
-                          }`}
-                        >
-                          {heading}
-                        </th>
-                      ))}
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-surface-container-low text-xs uppercase text-on-surface-variant">
+                    <tr>
+                      <th className="px-4 py-3">Bài học</th>
+                      <th className="px-4 py-3">Khóa học</th>
+                      <th className="px-4 py-3">Thứ tự</th>
+                      <th className="px-4 py-3">Video</th>
+                      <th className="px-4 py-3">Transcript</th>
+                      <th className="px-4 py-3">Tóm tắt AI</th>
+                      <th className="px-4 py-3">Trạng thái</th>
+                      <th className="px-4 py-3 text-right">Thao tác</th>
                     </tr>
                   </thead>
-
-                  <tbody className="divide-y divide-outline-variant/20">
-                    {filteredLessons.map((lesson) => (
-                      <tr
-                        key={lesson.id}
-                        onClick={() => setSelectedLesson(lesson)}
-                        className={`group cursor-pointer transition-colors ${
-                          selectedLesson?.id === lesson.id
-                            ? "bg-primary/5"
-                            : "hover:bg-surface-bright"
-                        }`}
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="material-symbols-outlined cursor-move text-[18px] text-outline opacity-0 transition-opacity group-hover:opacity-100"
-                              aria-hidden={true}
-                            >
-                              drag_indicator
-                            </span>
-                            <span className="font-mono text-sm font-semibold text-on-surface-variant">
-                              {String(lesson.order).padStart(2, "0")}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4 text-sm font-semibold text-on-surface">
-                          {lesson.title}
-                        </td>
-
-                        <td className="px-5 py-4 font-mono text-sm text-on-surface-variant">
-                          {lesson.duration}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.hasVideo ? (
-                            <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                check_circle
-                              </span>
-                              Đã có
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-sm font-medium text-outline-variant">
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                error
-                              </span>
-                              Chưa có
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.hasSlide ? (
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
-                                Có PDF
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(event) => event.stopPropagation()}
-                                className="text-xs font-bold text-primary hover:underline"
-                              >
-                                Xem
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-sm font-medium text-outline-variant">
-                              Chưa có
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 text-sm font-medium text-on-surface-variant">
-                          {lesson.hasQuiz ? "Có" : <span className="opacity-50">Không</span>}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {lesson.status === "published" ? (
-                            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
-                              Đã xuất bản
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-surface-container-highest px-3 py-1 text-xs font-bold text-outline">
-                              Bản nháp
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary"
-                              aria-label={`Xem ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                visibility
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition-colors hover:bg-surface-container hover:text-primary"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleEdit(lesson);
-                              }}
-                              aria-label={`Chỉnh sửa ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                edit
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-error transition-colors hover:bg-error-container"
-                              aria-label={`Xóa ${lesson.title}`}
-                            >
-                              <span
-                                className="material-symbols-outlined text-[18px]"
-                                aria-hidden={true}
-                              >
-                                delete
-                              </span>
-                            </button>
+                  <tbody className="divide-y">
+                    {lessons.map((lesson) => (
+                      <tr key={lesson.id}>
+                        <td className="px-4 py-3"><p className="font-semibold">{lesson.title}</p><p className="text-xs text-on-surface-variant">{formatDuration(lesson.durationSeconds)}</p></td>
+                        <td className="px-4 py-3">{lesson.courseTitle}</td>
+                        <td className="px-4 py-3">{lesson.sortOrder}</td>
+                        <td className="px-4 py-3">{lesson.video ? `${labelProvider(lesson.video.provider)} / ${labelStatus(lesson.video.processingStatus)}` : "Chưa có"}</td>
+                        <td className="px-4 py-3"><Badge value={lesson.transcriptStatus} /></td>
+                        <td className="px-4 py-3"><Badge value={lesson.summaryStatus} /></td>
+                        <td className="px-4 py-3"><Badge value={lesson.status} /></td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => startEdit(lesson)} className="rounded border px-2 py-1">Chỉnh sửa</button>
+                            <button onClick={() => void handleArchive(lesson)} className="rounded border px-2 py-1 text-red-600">Xóa</button>
+                            <button onClick={() => void runAction(() => generateLessonTranscript(String(lesson.id)), "Đã bắt đầu tạo Transcript.")} className="rounded border px-2 py-1 text-primary">Tạo Transcript</button>
+                            <button disabled={lesson.transcriptStatus !== "completed"} onClick={() => void runAction(() => generateLessonSummary(String(lesson.id)), "Đã tạo Tóm tắt AI.")} className="rounded border px-2 py-1 text-primary disabled:opacity-40">Tạo Tóm tắt AI</button>
                           </div>
                         </td>
                       </tr>
@@ -331,233 +199,86 @@ function LessonManagementPage() {
                   </tbody>
                 </table>
               </div>
-
-              <div className="flex items-center justify-between border-t border-outline-variant/20 bg-surface-container-low/20 px-5 py-4">
-                <p className="text-sm text-on-surface-variant">
-                  Hiển thị <span className="font-bold">{filteredLessons.length}</span> bài học
-                </p>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled
-                    className="rounded-lg border border-outline-variant/30 p-2 transition-colors hover:bg-white disabled:opacity-40"
-                    aria-label="Trang trước"
-                  >
-                    <span className="material-symbols-outlined" aria-hidden={true}>
-                      chevron_left
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg border border-outline-variant/30 p-2 transition-colors hover:bg-white"
-                    aria-label="Trang sau"
-                  >
-                    <span className="material-symbols-outlined" aria-hidden={true}>
-                      chevron_right
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
+            <Pagination pagination={pagination} page={page} setPage={setPage} />
           </div>
+
+          <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-5">
+            <h2 className="mb-4 text-lg font-bold">{editing ? "Chỉnh sửa bài học" : "Tạo bài học"}</h2>
+            <div className="space-y-3">
+              <select value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="">Chọn khóa học</option>
+                {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+              </select>
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tên bài học" className="w-full rounded-lg border px-3 py-2 text-sm" />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Mô tả" rows={3} className="w-full rounded-lg border px-3 py-2 text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" value={form.durationSeconds} onChange={(e) => setForm({ ...form, durationSeconds: Number(e.target.value) })} placeholder="Thời lượng giây" className="rounded-lg border px-3 py-2 text-sm" />
+                <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} placeholder="Thứ tự" className="rounded-lg border px-3 py-2 text-sm" />
+              </div>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="draft">Bản nháp</option>
+                <option value="published">Đã xuất bản</option>
+                <option value="archived">Đã lưu trữ</option>
+              </select>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isFree} onChange={(e) => setForm({ ...form, isFree: e.target.checked })} /> Bài miễn phí</label>
+              <div className="flex gap-2">
+                <button className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-white">Lưu</button>
+                <button type="button" onClick={resetForm} className="rounded-lg border px-4 py-2 text-sm">Hủy</button>
+              </div>
+            </div>
+          </form>
         </div>
-
-        {isPanelOpen && (
-          <aside className="z-10 flex w-full shrink-0 flex-col border-t border-outline-variant/30 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-[400px] lg:border-l lg:border-t-0 lg:shadow-2xl">
-            <div className="flex items-center justify-between border-b border-outline-variant/30 bg-surface-bright p-5">
-              <div className="flex items-center gap-2 text-primary">
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                  aria-hidden={true}
-                >
-                  {selectedLesson ? "edit_note" : "add_box"}
-                </span>
-                <h2 className="text-lg font-bold tracking-tight">
-                  {selectedLesson ? "Chỉnh sửa bài học" : "Thêm bài học mới"}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleClosePanel}
-                className="rounded-md p-1 text-outline transition-colors hover:bg-error-container/50 hover:text-error"
-                aria-label="Đóng bảng chỉnh sửa bài học"
-              >
-                <span className="material-symbols-outlined" aria-hidden={true}>
-                  close
-                </span>
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-5 p-5 lg:overflow-y-auto">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Thuộc khóa học <span className="text-error">*</span>
-                </label>
-                <select
-                  value={selectedLesson?.course ?? (selectedCourse || courses[0])}
-                  onChange={() => {}}
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  {courses.map((course) => (
-                    <option key={course} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Tên bài học <span className="text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={selectedLesson?.title ?? ""}
-                  onChange={() => {}}
-                  placeholder="Nhập tên bài học..."
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Thứ tự
-                </label>
-                <input
-                  type="number"
-                  value={selectedLesson?.order ?? filteredLessons.length + 1}
-                  onChange={() => {}}
-                  className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Nội dung chính
-                </label>
-                <div className="overflow-hidden rounded-xl border border-outline-variant/50">
-                  <div className="flex gap-1 border-b border-outline-variant/30 bg-surface-container-low p-2">
-                    {[
-                      "format_bold",
-                      "format_italic",
-                      "format_list_bulleted",
-                      "link",
-                      "code",
-                    ].map((icon) => (
-                      <button
-                        type="button"
-                        key={icon}
-                        className="flex h-8 w-8 items-center justify-center rounded text-outline-variant hover:bg-white"
-                      >
-                        <span
-                          className="material-symbols-outlined text-[18px]"
-                          aria-hidden={true}
-                        >
-                          {icon}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="min-h-[120px] bg-white p-4 text-sm italic text-on-surface-variant opacity-60">
-                    Nhập nội dung chi tiết bài học tại đây...
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Video bài học
-                </label>
-                <div className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 p-5 transition-colors hover:bg-surface-container-low">
-                  <span
-                    className="material-symbols-outlined text-3xl text-outline transition-colors group-hover:text-primary"
-                    aria-hidden={true}
-                  >
-                    cloud_upload
-                  </span>
-                  <p className="text-xs font-bold uppercase tracking-wider text-outline transition-colors group-hover:text-primary">
-                    Tải video lên hoặc chọn từ kho
-                  </p>
-                  <p className="text-[10px] text-outline-variant">MP4 · Tối đa 500MB</p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="lesson-slide-edit"
-                  className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant"
-                >
-                  Slide bài học
-                </label>
-                <label
-                  htmlFor="lesson-slide-edit"
-                  className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 p-5 transition-colors hover:bg-surface-container-low"
-                >
-                  <span
-                    className="material-symbols-outlined text-3xl text-error"
-                    aria-hidden={true}
-                  >
-                    picture_as_pdf
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                    Upload hoặc thay slide PDF
-                  </span>
-                  <span className="text-[10px] text-outline-variant">Chỉ hỗ trợ PDF</span>
-                </label>
-                <input
-                  id="lesson-slide-edit"
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  className="sr-only"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                  Trạng thái
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedLesson?.status ?? "draft"}
-                    onChange={() => {}}
-                    className="w-full appearance-none rounded-xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="published">Đã xuất bản</option>
-                    <option value="draft">Bản nháp</option>
-                  </select>
-                  <span
-                    className="material-symbols-outlined pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[20px] text-outline"
-                    aria-hidden={true}
-                  >
-                    expand_more
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-outline-variant/30 bg-surface-bright p-5">
-              <button
-                type="button"
-                onClick={handleClosePanel}
-                className="rounded-xl border border-outline-variant py-3 text-sm font-bold text-on-surface-variant transition-colors hover:bg-surface"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95"
-              >
-                Lưu thay đổi
-              </button>
-            </div>
-          </aside>
-        )}
       </div>
     </AdminLayout>
   );
 }
 
-export default LessonManagementPage;
+function StateText({ text }: { text: string }) {
+  return <div className="p-8 text-center text-on-surface-variant">{text}</div>;
+}
+
+function Badge({ value }: { value: string }) {
+  return <span className="rounded-full bg-surface-container-low px-2 py-1 text-xs font-bold">{labelStatus(value)}</span>;
+}
+
+function Pagination({ pagination, page, setPage }: any) {
+  return <div className="flex justify-between border-t px-4 py-3 text-sm"><span>{pagination.totalItems} bài học</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded border px-3 py-1 disabled:opacity-40">Trước</button><button disabled={page >= pagination.totalPages} onClick={() => setPage(page + 1)} className="rounded border px-3 py-1 disabled:opacity-40">Tiếp</button></div></div>;
+}
+
+function unwrap(response: any) {
+  return response?.data ?? response;
+}
+
+function labelStatus(value: string) {
+  const labels: Record<string, string> = {
+    pending: "Đang chờ",
+    processing: "Đang xử lý",
+    completed: "Hoàn thành",
+    failed: "Thất bại",
+    draft: "Bản nháp",
+    published: "Đã xuất bản",
+    archived: "Đã lưu trữ",
+    hidden: "Đã ẩn",
+  };
+  return labels[value] ?? value;
+}
+
+function labelProvider(value: string) {
+  const labels: Record<string, string> = {
+    youtube: "YouTube",
+    local: "Nội bộ",
+    cloud: "Đám mây",
+    cloudflare: "Cloudflare",
+  };
+  return labels[value.toLowerCase()] ?? value;
+}
+
+function formatDuration(durationSeconds: number) {
+  return `${durationSeconds || 0} giây`;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
