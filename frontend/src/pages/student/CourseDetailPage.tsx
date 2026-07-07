@@ -260,7 +260,7 @@ function CourseDetailFooter() {
               Nền tảng đào tạo công nghệ hàng đầu, kết hợp giữa giáo dục truyền thống và trí tuệ nhân tạo để mang
               lại trải nghiệm học tập tối ưu.
             </p>
-            <p className="mt-4 text-sm text-slate-500">© 2024 Python AI Learning. Nâng tầm tri thức công nghệ Việt.</p>
+            <p className="mt-4 text-sm text-slate-500">© 2026 Python AI Learning. Nâng tầm tri thức công nghệ Việt.</p>
           </div>
 
           <FooterLinkGroup title="Công ty" links={["Về chúng tôi", "Tuyển dụng", "Liên hệ"]} />

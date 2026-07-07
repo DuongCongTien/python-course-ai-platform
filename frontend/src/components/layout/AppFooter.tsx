@@ -35,7 +35,7 @@ function AppFooter() {
           <FooterLinks title="Thông tin" links={policyLinks} />
         </div>
         <p className="mt-10 border-t border-slate-200 pt-6 text-sm text-slate-500">
-          © 2024 Python AI Learning. Nâng tầm tri thức công nghệ Việt.
+          © 2026 Python AI Learning. Nâng tầm tri thức công nghệ Việt.
         </p>
       </div>
     </footer>

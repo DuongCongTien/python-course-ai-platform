@@ -8,6 +8,7 @@ interface AIAssistantPanelProps {
   messages: ChatMessageType[];
   input: string;
   suggestedQuestions: string[];
+  isSending?: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onSelectSuggestedQuestion: (question: string) => void;
@@ -17,12 +18,14 @@ function AIAssistantPanel({
   messages,
   input,
   suggestedQuestions,
+  isSending = false,
   onInputChange,
   onSend,
   onSelectSuggestedQuestion,
 }: AIAssistantPanelProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSending) return;
     onSend();
   };
 
@@ -47,6 +50,18 @@ function AIAssistantPanel({
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
+
+        {isSending && (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+              <Bot size={18} />
+            </span>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+              AI đang trả lời
+              <span className="ml-1 animate-pulse">...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4 border-t border-slate-100 p-4">
@@ -57,13 +72,15 @@ function AIAssistantPanel({
             name="question"
             autoComplete="off"
             value={input}
+            disabled={isSending}
             onChange={(event) => onInputChange(event.target.value)}
             placeholder="Nhập câu hỏi của bạn..."
-            className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+            className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <button
             type="submit"
-            className="focus-ring flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white transition hover:-translate-y-0.5 hover:bg-indigo-700"
+            disabled={isSending || !input.trim()}
+            className="focus-ring flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white transition hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             aria-label="Gửi câu hỏi"
           >
             <Send size={19} />
