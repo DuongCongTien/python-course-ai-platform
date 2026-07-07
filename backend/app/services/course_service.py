@@ -1,4 +1,6 @@
 import math
+import re
+import unicodedata
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -40,6 +42,8 @@ COURSE_OBJECTIVES = {
 
 
 class CoursesService:
+    # ============ PHẦN CŨ: PUBLIC / HỌC VIÊN (giữ nguyên, không đổi) ============
+
     @staticmethod
     def get_all_published_courses(
         db: Session,
@@ -233,23 +237,17 @@ class CoursesService:
     @staticmethod
     def _enum_value(value):
         return getattr(value, "value", value)
-    # ==== DÁN TOÀN BỘ PHẦN DƯỚI ĐÂY VÀO CUỐI CLASS CoursesService ====
-# (thụt lề 4 space giống các @staticmethod khác trong class, đặt trước dòng cuối cùng của file)
-# Cần import thêm ở đầu file course_service.py:
-#   from app.models.courses_model import Course, ContentStatus, Lesson  <- (Course phải có trong dòng import sẵn)
-# Nếu file gốc chỉ có "from app.models.courses_model import ContentStatus, Course, Lesson" là đủ, không cần sửa gì thêm.
+
+    # ============ PHẦN MỚI: ADMIN QUẢN LÝ KHÓA HỌC ============
+    # Định danh (identifier) chấp nhận cả ID số hoặc slug, giống hệt cách
+    # get_course_by_identifier ở trên đã làm cho phía học viên — chỉ khác là
+    # KHÔNG giới hạn status = published (admin cần thấy cả draft/hidden).
 
     @staticmethod
-    def get_all_courses_admin(
-        db: Session,
-        keyword: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 20,
-    ):
-        page = max(page, 1)
-        page_size = min(max(page_size, 1), 100)
-
-        query = db.query(Course)
+    def get_all_courses_admin(db: Session, keyword: Optional[str] = None):
+        query = db.query(Course).options(
+            selectinload(Course.lessons), selectinload(Course.enrollments)
+        )
 
         if keyword:
             keyword_like = f"%{keyword.strip()}%"
@@ -257,38 +255,33 @@ class CoursesService:
                 (Course.title.ilike(keyword_like)) | (Course.slug.ilike(keyword_like))
             )
 
-        total_items = query.count()
-        courses = (
-            query.options(selectinload(Course.lessons))
-            .order_by(Course.created_at.desc(), Course.id.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
-
-        return {
-            "items": [CoursesService.serialize_course_admin_item(course) for course in courses],
-            "pagination": {
-                "page": page,
-                "pageSize": page_size,
-                "totalItems": total_items,
-                "totalPages": math.ceil(total_items / page_size) if total_items else 0,
-            },
-        }
+        courses = query.order_by(Course.created_at.desc(), Course.id.desc()).all()
+        return [CoursesService.serialize_course_admin_item(course) for course in courses]
 
     @staticmethod
     def serialize_course_admin_item(course: Course):
-        item = CoursesService.serialize_course_list_item(course)
-        # TODO: chưa có bảng enrollment liên kết sẵn ở đây -> studentsCount tạm để 0.
-        # Nếu muốn số liệu thật, query thêm: db.query(func.count(Enrollment.id)).filter(Enrollment.course_id == course.id)
-        item["studentsCount"] = 0
-        item["createdAt"] = course.created_at.isoformat() if course.created_at else None
-        item["updatedAt"] = course.updated_at.isoformat() if course.updated_at else None
-        return item
+        return {
+            "id": int(course.id),
+            "slug": course.slug,
+            "title": course.title,
+            "description": course.description or "",
+            "thumbnailUrl": course.thumbnail_url,
+            "level": CoursesService._enum_value(course.level),
+            "price": float(course.price or 0),
+            "status": CoursesService._enum_value(course.status),
+            "lessonsCount": len(course.lessons or []),
+            "studentsCount": len(course.enrollments or []),
+            "createdAt": course.created_at.isoformat() if course.created_at else None,
+        }
 
     @staticmethod
-    def get_course_by_id_admin(course_id: int, db: Session) -> Course:
-        course = db.query(Course).filter(Course.id == course_id).first()
+    def get_course_for_admin(identifier: str, db: Session) -> Course:
+        query = db.query(Course)
+        if identifier.isdigit():
+            course = query.filter(Course.id == int(identifier)).first()
+        else:
+            course = query.filter(Course.slug == identifier).first()
+
         if not course:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -302,23 +295,23 @@ class CoursesService:
         return course
 
     @staticmethod
-    def create_course_admin(payload, admin_id: int, db: Session) -> Course:
-        existing = db.query(Course).filter(Course.slug == payload.slug).first()
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Slug đã tồn tại, vui lòng chọn slug khác.",
-            )
+    def create_course(db: Session, payload, created_by: int) -> Course:
+        requested_slug = (getattr(payload, "slug", None) or "").strip()
+
+        if requested_slug and not db.query(Course).filter(Course.slug == requested_slug).first():
+            slug = requested_slug
+        else:
+            slug = CoursesService._generate_unique_slug(db, payload.title)
 
         course = Course(
             title=payload.title,
-            slug=payload.slug,
+            slug=slug,
             description=payload.description,
             thumbnail_url=payload.thumbnail_url,
             level=payload.level,
             price=payload.price,
             status=payload.status,
-            created_by=admin_id,
+            created_by=created_by,
         )
         db.add(course)
         db.commit()
@@ -326,33 +319,44 @@ class CoursesService:
         return course
 
     @staticmethod
-    def update_course_admin(course_id: int, payload, db: Session) -> Course:
-        course = CoursesService.get_course_by_id_admin(course_id, db)
-        update_data = payload.model_dump(exclude_unset=True)
+    def update_course(db: Session, identifier: str, payload) -> Course:
+        course = CoursesService.get_course_for_admin(identifier, db)
 
-        new_slug = update_data.get("slug")
-        if new_slug and new_slug != course.slug:
-            existing = (
-                db.query(Course)
-                .filter(Course.slug == new_slug, Course.id != course_id)
-                .first()
-            )
-            if existing:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Slug đã tồn tại, vui lòng chọn slug khác.",
-                )
-
-        for key, value in update_data.items():
-            setattr(course, key, value)
+        if payload.title is not None:
+            course.title = payload.title
+        if payload.description is not None:
+            course.description = payload.description
+        if payload.thumbnail_url is not None:
+            course.thumbnail_url = payload.thumbnail_url
+        if payload.level is not None:
+            course.level = payload.level
+        if payload.price is not None:
+            course.price = payload.price
+        if payload.status is not None:
+            course.status = payload.status
 
         db.commit()
         db.refresh(course)
         return course
 
     @staticmethod
-    def delete_course_admin(course_id: int, db: Session):
-        course = CoursesService.get_course_by_id_admin(course_id, db)
+    def delete_course(db: Session, identifier: str):
+        course = CoursesService.get_course_for_admin(identifier, db)
         db.delete(course)
         db.commit()
-        return {"id": course_id, "deleted": True}
+
+    @staticmethod
+    def _generate_unique_slug(db: Session, title: str) -> str:
+        base_slug = CoursesService._slugify(title)
+        slug = base_slug
+        counter = 1
+        while db.query(Course).filter(Course.slug == slug).first() is not None:
+            counter += 1
+            slug = f"{base_slug}-{counter}"
+        return slug
+
+    @staticmethod
+    def _slugify(value: str) -> str:
+        value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+        value = re.sub(r"[^\w\s-]", "", value).strip().lower()
+        return re.sub(r"[-\s]+", "-", value) or "khoa-hoc"

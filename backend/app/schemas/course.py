@@ -8,7 +8,7 @@ from app.models.courses_model import ContentStatus, CourseLevel
 
 class CourseCreateInput(BaseModel):
     title: str
-    slug: str
+    slug: Optional[str] = None  # nếu không truyền, backend tự sinh từ title
     description: Optional[str] = None
     thumbnail_url: Optional[str] = Field(default=None, alias="thumbnailUrl")
     level: CourseLevel = CourseLevel.beginner

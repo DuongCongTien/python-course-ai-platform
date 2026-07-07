@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import {
-  type AdminCoursePayload,
   createCourseAdmin,
   deleteCourseAdmin,
   getCoursesAdmin,
   mapAdminCourseListItem,
   updateCourseAdmin,
+  type AdminCoursePayload,
 } from "../../services/course.service";
 
 type CourseLevel = "Cơ bản" | "Trung cấp" | "Nâng cao";
 type CourseStatus = "published" | "draft" | "hidden";
-type ApiLevel = "beginner" | "intermediate" | "advanced";
 
-interface Course {
-  id: string;
+interface CourseRow {
+  id: string; // slug (định danh dùng để gọi update/delete)
   title: string;
   level: CourseLevel;
   lessons: number;
@@ -24,7 +23,7 @@ interface Course {
   thumbnail: string;
 }
 
-const levelToApi: Record<CourseLevel, ApiLevel> = {
+const LEVEL_VI_TO_API: Record<CourseLevel, AdminCoursePayload["level"]> = {
   "Cơ bản": "beginner",
   "Trung cấp": "intermediate",
   "Nâng cao": "advanced",
@@ -45,60 +44,75 @@ const statusConfig: Record<CourseStatus, { label: string; dot: string; badge: st
 interface CourseFormState {
   title: string;
   description: string;
+  thumbnailUrl: string;
   level: CourseLevel;
   status: CourseStatus;
-  thumbnailUrl: string;
+  price: string;
 }
 
 const emptyForm: CourseFormState = {
   title: "",
   description: "",
+  thumbnailUrl: "",
   level: "Cơ bản",
   status: "draft",
-  thumbnailUrl: "",
+  price: "0",
 };
 
-// ==================== Edit panel ====================
+function formatDate(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(date);
+}
+
+// ============ Edit panel ============
 interface EditPanelProps {
   open: boolean;
   onClose: () => void;
-  course?: Course | null;
+  course?: CourseRow | null;
+  onSubmit: (form: CourseFormState) => Promise<void>;
   isSaving: boolean;
-  onSave: (form: CourseFormState) => void;
 }
 
-function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelProps) {
+function CourseEditPanel({ open, onClose, course, onSubmit, isSaving }: EditPanelProps) {
   const [form, setForm] = useState<CourseFormState>(emptyForm);
 
-  // Nạp lại dữ liệu form mỗi khi mở panel với 1 course khác (hoặc mở panel "thêm mới")
+  // Đổ dữ liệu thật của khóa học vào form mỗi khi mở panel để sửa
   useEffect(() => {
-    if (open) {
-      setForm(
-        course
-          ? {
-              title: course.title,
-              description: "",
-              level: course.level,
-              status: course.status,
-              thumbnailUrl: course.thumbnail,
-            }
-          : emptyForm,
-      );
+    if (course) {
+      setForm({
+        title: course.title,
+        description: "", // Danh sách admin không trả description đầy đủ, để admin tự viết lại nếu cần đổi
+        thumbnailUrl: course.thumbnail,
+        level: course.level,
+        status: course.status,
+        price: "0",
+      });
+    } else {
+      setForm(emptyForm);
     }
-  }, [open, course]);
+  }, [course, open]);
 
-  const updateField = <K extends keyof CourseFormState>(field: K, value: CourseFormState[K]) => {
-    setForm((current) => ({ ...current, [field]: value }));
+  const updateField = <K extends keyof CourseFormState>(key: K, value: CourseFormState[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) return;
+    await onSubmit(form);
   };
 
   return (
     <>
+      {/* Overlay */}
       <div
         className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
+      {/* Panel */}
       <div
         className={`fixed top-0 right-0 h-full w-full max-w-lg bg-surface-container-lowest z-50 shadow-2xl flex flex-col transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
@@ -116,7 +130,8 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div key={course?.id ?? "new"} className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Tên khóa học */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-on-surface-variant">
               Tên khóa học <span className="text-error">*</span>
@@ -130,6 +145,7 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
             />
           </div>
 
+          {/* Mô tả */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-on-surface-variant">Mô tả ngắn</label>
             <textarea
@@ -141,6 +157,7 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
             />
           </div>
 
+          {/* Grid 2 cột: Trình độ & Trạng thái */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-on-surface-variant">Trình độ</label>
@@ -169,22 +186,43 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
             </div>
           </div>
 
-          {/* Số bài học/học viên/ngày tạo do backend tự tính (từ bảng lessons/enrollment thật),
-              không cho admin sửa tay ở đây để tránh sai lệch dữ liệu */}
+          {/* Giá & URL ảnh */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-on-surface-variant">Giá (VNĐ)</label>
+              <input
+                type="number"
+                min={0}
+                value={form.price}
+                onChange={(event) => updateField("price", event.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-on-surface-variant">Ảnh đại diện (URL)</label>
-            <input
-              type="text"
-              value={form.thumbnailUrl}
-              onChange={(event) => updateField("thumbnailUrl", event.target.value)}
-              placeholder="https://..."
-              className="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background outline-none transition-all text-sm"
-            />
-            <p className="text-xs text-outline mt-1">
-              Chưa hỗ trợ tải ảnh trực tiếp — dán link ảnh có sẵn (vd từ Google Drive, Imgur...) vào đây.
-            </p>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-on-surface-variant">URL ảnh đại diện</label>
+              <input
+                type="text"
+                value={form.thumbnailUrl}
+                onChange={(event) => updateField("thumbnailUrl", event.target.value)}
+                placeholder="https://..."
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
+              />
+            </div>
           </div>
+
+          {form.thumbnailUrl && (
+            <div className="rounded-xl overflow-hidden border border-outline-variant/40">
+              <img src={form.thumbnailUrl} alt="Xem trước ảnh đại diện" className="w-full h-32 object-cover" />
+            </div>
+          )}
+
+          {course && (
+            <p className="text-xs text-on-surface-variant">
+              Số bài học ({course.lessons}) và số học viên ({course.students}) được tính tự động từ dữ liệu thật,
+              không chỉnh sửa trực tiếp ở đây.
+            </p>
+          )}
         </div>
 
         <div className="p-6 border-t border-outline-variant/30 grid grid-cols-2 gap-4 mt-auto">
@@ -196,9 +234,9 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
             Hủy
           </button>
           <button
-            onClick={() => onSave(form)}
+            onClick={handleSave}
             disabled={isSaving || !form.title.trim()}
-            className="py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm disabled:opacity-50 disabled:cursor-wait"
+            className="py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
@@ -208,52 +246,54 @@ function CourseEditPanel({ open, onClose, course, isSaving, onSave }: EditPanelP
   );
 }
 
-// ==================== Trang chính ====================
 function CourseManagementPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<CourseRow | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
 
-  const loadCourses = async () => {
-    setIsLoading(true);
-    setLoadError(null);
+  const loadCourses = useCallback(async () => {
     try {
+      setIsLoading(true);
+      setErrorMessage("");
       const response = await getCoursesAdmin();
-      const items = Array.isArray(response.data) ? response.data : [];
-      setCourses(items.map(mapAdminCourseListItem));
+      const items = response.data ?? [];
+      setCourses(items.map(mapAdminCourseListItem) as CourseRow[]);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Không thể tải danh sách khóa học.");
+      console.error("Load admin courses failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Không thể tải danh sách khóa học.");
+      setCourses([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadCourses();
-  }, []);
+  }, [loadCourses]);
 
-  const openEdit = (course?: Course) => {
+  const openEdit = (course?: CourseRow) => {
     setSelectedCourse(course ?? null);
     setPanelOpen(true);
   };
 
-  const handleSave = async (form: CourseFormState) => {
+  const handleSubmitCourse = async (form: CourseFormState) => {
     setIsSaving(true);
     try {
       const payload: AdminCoursePayload = {
         title: form.title.trim(),
-        description: form.description.trim() || undefined,
-        level: levelToApi[form.level],
-        status: form.status,
+        description: form.description.trim(),
         thumbnail_url: form.thumbnailUrl.trim() || undefined,
+        level: LEVEL_VI_TO_API[form.level],
+        status: form.status,
+        price: Number(form.price) || 0,
       };
 
       if (selectedCourse) {
@@ -263,21 +303,24 @@ function CourseManagementPage() {
       }
 
       setPanelOpen(false);
-      await loadCourses(); // tải lại danh sách mới nhất sau khi lưu
+      await loadCourses();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Không thể lưu khóa học.");
+      console.error("Save course failed:", error);
+      alert(error instanceof Error ? error.message : "Không thể lưu khóa học. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDelete = async (course: Course) => {
-    if (!window.confirm(`Xóa khóa học "${course.title}"? Hành động này không thể hoàn tác.`)) return;
+  const handleDeleteCourse = async (course: CourseRow) => {
+    const confirmed = window.confirm(`Xóa khóa học "${course.title}"? Hành động này không thể hoàn tác.`);
+    if (!confirmed) return;
 
     try {
       await deleteCourseAdmin(course.id);
       await loadCourses();
     } catch (error) {
+      console.error("Delete course failed:", error);
       alert(error instanceof Error ? error.message : "Không thể xóa khóa học.");
     }
   };
@@ -301,6 +344,7 @@ function CourseManagementPage() {
           </p>
         </div>
 
+        {/* Filters & Add Button */}
         <div className="bg-white border border-outline-variant/30 p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
@@ -310,14 +354,14 @@ function CourseManagementPage() {
               type="text"
               placeholder="Tìm kiếm khóa học theo tên, ID..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background outline-none transition-all text-sm"
             />
           </div>
           <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full lg:w-auto">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(event) => setStatusFilter(event.target.value)}
               className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]"
             >
               <option value="">Tất cả trạng thái</option>
@@ -328,7 +372,7 @@ function CourseManagementPage() {
 
             <select
               value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
+              onChange={(event) => setLevelFilter(event.target.value)}
               className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-outline-variant bg-background text-on-surface-variant outline-none text-sm min-w-[130px]"
             >
               <option value="">Tất cả trình độ</option>
@@ -347,21 +391,24 @@ function CourseManagementPage() {
           </div>
         </div>
 
+        {/* Table */}
         <div className="bg-white rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50 border-b border-outline-variant/30">
-                  {["Ảnh", "Tên khóa học", "Trình độ", "Bài học", "Học viên", "Trạng thái", "Ngày tạo", "Thao tác"].map((h) => (
-                    <th
-                      key={h}
-                      className={`px-5 py-4 text-[11px] font-bold text-outline uppercase tracking-wider whitespace-nowrap ${
-                        ["Bài học", "Học viên"].includes(h) ? "text-center" : h === "Thao tác" ? "text-right" : ""
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {["Ảnh", "Tên khóa học", "Trình độ", "Bài học", "Học viên", "Trạng thái", "Ngày tạo", "Thao tác"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className={`px-5 py-4 text-[11px] font-bold text-outline uppercase tracking-wider whitespace-nowrap ${
+                          ["Bài học", "Học viên"].includes(h) ? "text-center" : h === "Thao tác" ? "text-right" : ""
+                        }`}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
@@ -371,10 +418,17 @@ function CourseManagementPage() {
                       Đang tải danh sách khóa học...
                     </td>
                   </tr>
-                ) : loadError ? (
+                ) : errorMessage ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-error">
-                      {loadError}
+                    <td colSpan={8} className="px-5 py-8 text-center text-error text-sm">
+                      {errorMessage}
+                      <button
+                        type="button"
+                        onClick={loadCourses}
+                        className="ml-3 font-bold text-primary underline underline-offset-2"
+                      >
+                        Thử lại
+                      </button>
                     </td>
                   </tr>
                 ) : filteredCourses.length > 0 ? (
@@ -398,16 +452,23 @@ function CourseManagementPage() {
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lv}`}>{course.level}</span>
                         </td>
                         <td className="px-5 py-4 text-center font-medium text-sm whitespace-nowrap">{course.lessons}</td>
-                        <td className="px-5 py-4 text-center font-medium text-sm whitespace-nowrap">{course.students.toLocaleString()}</td>
+                        <td className="px-5 py-4 text-center font-medium text-sm whitespace-nowrap">
+                          {course.students.toLocaleString()}
+                        </td>
                         <td className="px-5 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${st.badge}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                             {st.label}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-sm text-on-surface-variant whitespace-nowrap">{course.createdAt}</td>
+                        <td className="px-5 py-4 text-sm text-on-surface-variant whitespace-nowrap">
+                          {formatDate(course.createdAt)}
+                        </td>
                         <td className="px-5 py-4 whitespace-nowrap">
                           <div className="flex justify-end gap-1">
+                            <button className="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors" title="Xem">
+                              <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
                             <button
                               className="p-2 hover:bg-secondary-fixed rounded-lg text-secondary transition-colors"
                               title="Sửa"
@@ -418,7 +479,7 @@ function CourseManagementPage() {
                             <button
                               className="p-2 hover:bg-error-container rounded-lg text-error transition-colors"
                               title="Xóa"
-                              onClick={() => handleDelete(course)}
+                              onClick={() => handleDeleteCourse(course)}
                             >
                               <span className="material-symbols-outlined text-[20px]">delete</span>
                             </button>
@@ -442,15 +503,6 @@ function CourseManagementPage() {
             <p className="text-sm text-on-surface-variant">
               Hiển thị <span className="font-bold">{filteredCourses.length}</span> khóa học
             </p>
-            <div className="flex gap-2">
-              <button disabled className="p-2 border border-outline-variant rounded-lg hover:bg-white transition-colors disabled:opacity-40">
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm">1</button>
-              <button className="p-2 border border-outline-variant rounded-lg hover:bg-white transition-colors disabled:opacity-40" disabled>
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -459,8 +511,8 @@ function CourseManagementPage() {
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
         course={selectedCourse}
+        onSubmit={handleSubmitCourse}
         isSaving={isSaving}
-        onSave={handleSave}
       />
     </AdminLayout>
   );
