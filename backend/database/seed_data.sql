@@ -241,8 +241,1255 @@ INSERT INTO `lesson_videos` (`id`, `lesson_id`, `video_url`, `storage_provider`,
 (77, 77, 'https://www.youtube.com/watch?v=OZnssR3TqIg&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=18', 'YouTube', NULL, NULL, 653, 'completed'),
 (78, 78, 'https://www.youtube.com/watch?v=rlJh36N_IYU&list=PL33lvabfss1z8GYxjyMulCnhcYGk5ah8P&index=19', 'YouTube', NULL, NULL, 1643, 'completed');
 
-<<<<<<< HEAD
 -- chèn tổng quan nội dung video - lesson_summaries:
+INSERT INTO lesson_summaries
+(
+    lesson_id,
+    summary_text,
+    key_points,
+    generated_by
+)
+VALUES
+-- (
+--     1,
+--     'Bài 1: Cài đặt, chạy Python và xử lý lỗi không chạy được
+
+--     1. Giới thiệu môi trường Python.
+--     Tìm hiểu Python là gì, vì sao cần cài đúng môi trường và vai trò của trình thông dịch khi chạy chương trình.
+
+--     2. Cài đặt Python trên máy tính.
+--     Thực hiện cài đặt Python, kiểm tra phiên bản và chú ý tùy chọn thêm Python vào PATH để có thể chạy lệnh từ Terminal hoặc Command Prompt.
+
+--     3. Chạy chương trình Python đầu tiên.
+--     Tạo file .py đơn giản, viết lệnh in kết quả ra màn hình và chạy thử để kiểm tra môi trường đã hoạt động đúng.
+
+--     4. Nhận diện lỗi không chạy được.
+--     Phân biệt lỗi do chưa cài Python, sai đường dẫn, sai interpreter, chạy nhầm thư mục hoặc lỗi cú pháp trong file code.
+
+--     5. Tạo thói quen kiểm tra ban đầu.
+--     Trước khi học cú pháp sâu hơn, cần biết cách mở terminal, kiểm tra phiên bản, chạy file và đọc thông báo lỗi cơ bản.',
+--     '["Python", "Cài đặt Python", "python -version", "PATH", "Interpreter", "File .py", "Terminal/Command Prompt", "Lỗi cú pháp"]',
+--     'AI Assistant'
+-- ),
+-- (
+--     2,
+--     'Bài 2: Các kiểu dữ liệu và khai báo biến trong Python
+
+--     1. Giới thiệu biến trong Python.
+--     Biến được dùng để lưu giá trị trong chương trình và có thể thay đổi trong quá trình chạy.
+
+--     2. Tìm hiểu các kiểu dữ liệu cơ bản.
+--     Làm quen với số nguyên, số thực, chuỗi ký tự và kiểu boolean để biểu diễn các dạng dữ liệu thường gặp.
+
+--     3. Gán giá trị và in dữ liệu.
+--     Sử dụng phép gán để đưa dữ liệu vào biến, sau đó dùng print() để hiển thị kết quả ra màn hình.
+
+--     4. Kiểm tra kiểu dữ liệu.
+--     Dùng type() để xem biến đang thuộc kiểu dữ liệu nào, từ đó tránh nhầm lẫn khi tính toán hoặc xử lý chuỗi.
+
+--     5. Quy tắc đặt tên biến.
+--     Đặt tên biến rõ nghĩa, không bắt đầu bằng số, không chứa ký tự đặc biệt không hợp lệ và không trùng từ khóa của Python.',
+--     '["Biến", "Kiểu dữ liệu", "int", "float", "str", "bool", "type()", "print()", "Quy tắc đặt tên biến"]',
+--     'AI Assistant'
+-- ),
+-- (
+--     3,
+--     'Bài 3: Hàm nhập dữ liệu, import thư viện và chuyển đổi kiểu dữ liệu
+
+--     1. Nhập dữ liệu từ bàn phím.
+--     Sử dụng input() để nhận dữ liệu do người dùng nhập, giúp chương trình có tính tương tác thay vì chỉ chạy dữ liệu cố định.
+
+--     2. Đặc điểm dữ liệu nhập vào.
+--     Hiểu rằng dữ liệu nhận từ input() luôn ở dạng chuỗi, kể cả khi người dùng nhập số.
+
+--     3. Chuyển đổi kiểu dữ liệu.
+--     Dùng int(), float() và str() để chuyển dữ liệu sang kiểu phù hợp trước khi tính toán hoặc nối chuỗi.
+
+--     4. Import thư viện.
+--     Dùng import để gọi các thư viện có sẵn, từ đó mở rộng khả năng của chương trình mà không cần tự viết mọi thứ.
+
+--     5. Xử lý lỗi do sai kiểu.
+--     Nhận biết lỗi thường gặp khi lấy chuỗi đi tính toán hoặc ép kiểu dữ liệu không hợp lệ.',
+--     '["input()", "import", "int()", "float()", "str()", "Ép kiểu", "Dữ liệu nhập", "Thư viện"]',
+--     'AI Assistant'
+-- ),
+-- (
+--     4,
+--     'Bài 4: Kiểu dữ liệu số và toán tử trong lập trình Python
+
+--     1. Giới thiệu kiểu dữ liệu số.
+--     Tìm hiểu cách Python biểu diễn số nguyên và số thực trong các phép tính cơ bản.
+
+--     2. Sử dụng toán tử số học.
+--     Thực hành các phép cộng, trừ, nhân, chia và cách viết biểu thức tính toán trong Python.
+
+--     3. Phân biệt các phép chia.
+--     Nắm rõ sự khác nhau giữa chia thường, chia lấy nguyên và chia lấy dư để tránh sai kết quả.
+
+--     4. Tính lũy thừa và biểu thức phức hợp.
+--     Dùng toán tử ** và dấu ngoặc để kiểm soát thứ tự ưu tiên trong biểu thức.
+
+--     5. Kiểm tra kết quả tính toán.
+--     Quan sát kiểu dữ liệu đầu ra và kiểm tra trường hợp kết quả số thực hoặc số nguyên không như mong muốn.',
+--     '["int", "float", "Toán tử số học", "/", "//", "%", "**", "Thứ tự ưu tiên", "Biểu thức"]',
+--     'AI Assistant'
+-- ),
+-- (
+--     5,
+--     'Bài 5: Bài tập luyện tập xử lý, tính toán cơ bản trong Python
+
+--     1. Ôn lại biến và nhập dữ liệu.
+--     Vận dụng biến, input() và ép kiểu để nhận dữ liệu từ người dùng trước khi xử lý.
+
+--     2. Giải bài toán tính toán đơn giản.
+--     Thực hành các bài như tính tổng, hiệu, diện tích, chu vi, chuyển đổi đơn vị hoặc tính giá trị biểu thức.
+
+--     3. Tổ chức chương trình theo ba bước.
+--     Rèn cách chia bài thành input - process - output để không bị rối khi viết code.
+
+--     4. Hiển thị kết quả rõ ràng.
+--     Dùng print() và định dạng thông báo để người dùng hiểu kết quả đang biểu thị điều gì.
+
+--     5. Kiểm tra lại dữ liệu và công thức.
+--     Soát lại kiểu dữ liệu, công thức tính và trường hợp nhập sai để hạn chế lỗi logic.',
+--     '["Bài tập cơ bản", "input - process - output", "Biến", "Ép kiểu", "Toán tử", "print()", "Lỗi logic"]',
+--     'AI Assistant'
+-- ),
+-- (
+--     6,
+--     'Bài 6: Toán tử bitwise trong Python
+
+--     1. Giới thiệu xử lý dữ liệu ở mức bit.
+--     Tìm hiểu cách số được biểu diễn dưới dạng nhị phân và vì sao có thể thao tác trực tiếp trên từng bit.
+
+--     2. Sử dụng các toán tử bitwise.
+--     Làm quen với AND, OR, XOR, NOT, dịch trái và dịch phải trong Python.
+
+--     3. Phân biệt bitwise và logic.
+--     Không nhầm toán tử & và | với and, or vì chúng hoạt động ở hai mức khác nhau.
+
+--     4. Ứng dụng cơ bản của bitwise.
+--     Hiểu bitwise thường dùng trong xử lý trạng thái, tối ưu, bài toán nhị phân hoặc một số bài thuật toán.
+
+--     5. Cẩn trọng khi sử dụng.
+--     Chỉ nên dùng bitwise khi thật sự hiểu biểu diễn nhị phâ!; nếu không, code dễ khó đọc và khó kiểm soát.',
+--     '["Bitwise", "Nhị phân", "&", "|", "^", "~", "<<", ">>", "and/or"]',
+--     'AI Assistant'
+-- ),
+(
+    7,
+    'Bài 7: Kiểu dữ liệu chuỗi STRING trong Python
+
+    1. Giới thiệu chuỗi ký tự.
+    Tìm hiểu string là kiểu dữ liệu dùng để lưu văn bản, ký tự, câu hoặc dữ liệu nhập dạng chữ.
+
+    2. Khai báo và in chuỗi.
+    Thực hành tạo chuỗi bằng dấu nháy đơn hoặc nháy kép, sau đó in chuỗi ra màn hình.
+
+    3. Truy cập ký tự trong chuỗi.
+    Dùng chỉ số để lấy từng ký tự và hiểu rằng chỉ số bắt đầu từ 0.
+
+    4. Cắt chuỗi bằng slicing.
+    Dùng cú pháp slicing để lấy một phần chuỗi theo vị trí bắt đầu, kết thúc và bước nhảy.
+
+    5. Hiểu tính bất biến của chuỗi.
+    Chuỗi trong Python là immutable, nghĩa là không thể sửa trực tiếp một ký tự trong chuỗi đã tạo.',
+    '["String", "Chuỗi", "Index", "Slicing", "Immutable", "Nối chuỗi", "Ký tự", "Chỉ số 0"]',
+    'AI Assistant'
+),
+(
+    8,
+    'Bài 8: Thao tác và xử lý chuỗi cơ bản
+
+    1. Làm sạch dữ liệu chuỗi.
+    Dùng strip() để loại bỏ khoảng trắng thừa ở đầu và cuối chuỗi trước khi xử lý.
+
+    2. Chuyển đổi chữ hoa và chữ thường.
+    Dùng lower(), upper() hoặc các hàm liên quan để chuẩn hóa dữ liệu văn bản.
+
+    3. Tìm kiếm và thay thế nội dung.
+    Sử dụng các thao tác tìm chuỗi con và replace() để thay đổi nội dung trong chuỗi.
+
+    4. Tách chuỗi thành danh sách.
+    Dùng split() để chia chuỗi thành nhiều phần, thường dùng khi xử lý dữ liệu nhập hoặc dữ liệu từ file.
+
+    5. Định dạng kết quả đầu ra.
+    Biết cách ghép chuỗi hoặc định dạng chuỗi để hiển thị thông tin rõ ràng hơn.',
+    '["strip()", "lower()", "upper()", "replace()", "split()", "Chuẩn hóa dữ liệu", "Định dạng chuỗi"]',
+    'AI Assistant'
+),
+(
+    9,
+    'Bài 9: Cấu trúc rẽ nhánh IF trong Python
+
+    1. Giới thiệu cấu trúc điều kiện.
+    Tìm hiểu cách chương trình đưa ra quyết định dựa trên điều kiện đúng hoặc sai.
+
+    2. Sử dụng if, elif, else.
+    Viết các nhánh xử lý khác nhau cho từng trường hợp của bài toán.
+
+    3. Dùng toán tử so sánh.
+    Áp dụng các phép so sánh như >, <, ==, !=, >=, <= để tạo điều kiện.
+
+    4. Kết hợp điều kiện logic.
+    Dùng and, or, not khi bài toán cần xét nhiều điều kiện cùng lúc.
+
+    5. Chú ý thụt lề.
+    Python dùng thụt lề để xác định khối lệnh, nên sai indent có thể làm chương trình lỗi hoặc chạy sai logic.',
+    '["if", "elif", "else", "Điều kiện", "Toán tử so sánh", "and", "or", "not", "Indentation"]',
+    'AI Assistant'
+),
+(
+    10,
+    'Bài 10: Bài tập vận dụng cấu trúc IF - phần 1
+
+    1. Luyện kiểm tra điều kiện đơn giản.
+    Áp dụng if để kiểm tra số chẵn lẻ, số dương âm, điểm đạt hay không đạt.
+
+    2. Phân loại dữ liệu đầu vào.
+    Viết chương trình đưa dữ liệu vào các nhóm khác nhau dựa trên tiêu chí cho trước.
+
+    3. Xử lý trường hợp biên.
+    Chú ý các giá trị đặc biệt như 0, điểm đúng ngưỡng hoặc hai giá trị bằng nhau.
+
+    4. Viết điều kiện rõ ràng.
+    Không viết điều kiện quá rối! nên tách từng trường hợp để dễ kiểm tra.
+
+    5. Rèn tư duy kiểm thử.
+    Sau khi code, cần tự thử nhiều bộ dữ liệu để phát hiện lỗi logic.',
+    '["Bài tập if", "Số chẵn lẻ", "Số dương âm", "Phân loại", "Trường hợp biên", "Kiểm thử"]',
+    'AI Assistant'
+),
+(
+    11,
+    'Bài 11: Bài tập vận dụng cấu trúc IF - phần 2
+
+    1. Xử lý bài toán nhiều điều kiện.
+    Luyện các bài như xếp loại học lực, tính tiền theo mức, kiểm tra năm nhuận hoặc so sánh nhiều số.
+
+    2. Sử dụng elif hợp lý.
+    Dùng elif khi các trường hợp loại trừ nhau để chương trình không kiểm tra dư thừa.
+
+    3. Kết hợp and và or.
+    Áp dụng toán tử logic khi một kết quả phụ thuộc vào nhiều điều kiện cùng lúc.
+
+    4. Tránh lỗi nhánh điều kiện chồng chéo.
+    Sắp xếp điều kiện từ cụ thể đến tổng quát hoặc theo đúng thứ tự ngưỡng.
+
+    5. Đọc lại đề trước khi code.
+    Với bài nhiều điều kiện, hiểu sai yêu cầu thường nguy hiểm hơn sai cú pháp.',
+    '["elif", "and", "or", "Nhiều điều kiện", "Xếp loại", "Năm nhuận", "Ngưỡng điều kiện"]',
+    'AI Assistant'
+),
+(
+    12,
+    'Bài 12: Cấu trúc lặp FOR, WHILE và lệnh BREAK, CONTINUE
+
+    1. Giới thiệu vòng lặp.
+    Tìm hiểu cách lặp lại một khối lệnh nhiều lần thay vì viết code trùng lặp.
+
+    2. Sử dụng vòng lặp for.
+    Dùng for khi biết trước phạm vi lặp hoặc cần duyệt một dãy dữ liệu.
+
+    3. Sử dụng vòng lặp while.
+    Dùng while khi vòng lặp phụ thuộc vào điều kiện dừng chưa biết trước.
+
+    4. Dừng hoặc bỏ qua vòng lặp.
+    Sử dụng break để thoát vòng lặp sớm và continue để bỏ qua phần còn lại của lần lặp hiện tại.
+
+    5. Tránh vòng lặp vô hạn.
+    Luôn cập nhật biến điều kiện và xác định điểm dừng rõ ràng khi dùng while.',
+    '["for", "while", "break", "continue", "range()", "Vòng lặp", "Điều kiện dừng", "Vòng lặp vô hạn"]',
+    'AI Assistant'
+),
+(
+    13,
+    'Bài 13: Một số bài tập vận dụng cấu trúc lặp WHILE
+
+    1. Luyện lặp theo điều kiện.
+    Áp dụng while cho các bài mà số lần lặp phụ thuộc vào dữ liệu nhập hoặc trạng thái chương trình.
+
+    2. Nhập dữ liệu đến khi hợp lệ.
+    Viết chương trình yêu cầu người dùng nhập lại nếu dữ liệu chưa đúng điều kiện.
+
+    3. Tính tổng và đếm theo điều kiện.
+    Dùng while để cộng dồn, đếm số lần lặp hoặc xử lý dữ liệu cho đến khi đạt điều kiện dừng.
+
+    4. Xây dựng menu đơn giản.
+    Tạo menu lặp để người dùng chọn chức năng và thoát khi nhập lựa chọn kết thúc.
+
+    5. Kiểm soát biến điều kiện.
+    Cập nhật biến trong vòng lặp để tránh chương trình chạy mãi không dừng.',
+    '["while", "Điều kiện dừng", "Nhập lại dữ liệu", "Menu", "Cộng dồn", "Đếm", "Vòng lặp vô hạn"]',
+    'AI Assistant'
+),
+(
+    14,
+    'Bài 14: Bài tập vận dụng cấu trúc lặp FOR
+
+    1. Luyện duyệt dãy số bằng for.
+    Sử dụng for kết hợp range() để duyệt các dãy số theo yêu cầu.
+
+    2. Tính toán trên nhiều phần tử.
+    Thực hành tính tổng, đếm, tìm giá trị lớn nhất hoặc lọc phần tử thỏa điều kiện.
+
+    3. In mẫu hình đơn giản.
+    Dùng vòng lặp để in các mẫu lặp, giúp hiểu rõ biến chạy và số lần lặp.
+
+    4. Sử dụng range() đúng cách.
+    Hiểu start, stop, step và nhớ rằng stop không được bao gồm trong kết quả.
+
+    5. Xác định đúng phạm vi lặp.
+    Sai điểm đầu, điểm cuối hoặc bước nhảy có thể làm thiếu hoặc thừa dữ liệu.',
+    '["for", "range()", "start", "stop", "step", "Tính tổng", "Đếm", "Mẫu hình"]',
+    'AI Assistant'
+),
+(
+    15,
+    'Bài 15: Bài tập tổng hợp điều kiện và vòng lặp
+
+    1. Kết hợp if với vòng lặp.
+    Giải các bài toán cần vừa lặp qua dữ liệu vừa kiểm tra điều kiện trong từng lần lặp.
+
+    2. Luyện bài toán thuật toán cơ bản.
+    Thực hành kiểm tra số nguyên tố, tính giai thừa, xử lý dãy nhập vào hoặc thống kê dữ liệu đơn giản.
+
+    3. Viết thuật toán trước khi code.
+    Nên phác thảo các bước xử lý để tránh viết code theo cảm tính.
+
+    4. Kiểm tra trường hợp biên.
+    Thử các giá trị nhỏ, giá trị lớn, dữ liệu rỗng hoặc dữ liệu đúng ngưỡng.
+
+    5. Rèn cách sửa lỗi logic.
+    Quan sát biến thay đổi qua từng vòng lặp để tìm nguyên nhân khi kết quả sai.',
+    '["if", "for", "while", "Thuật toán cơ bản", "Số nguyên tố", "Giai thừa", "Trường hợp biên"]',
+    'AI Assistant'
+),
+(
+    16,
+    'Bài 16: Cấu trúc dữ liệu danh sách LIST trong Python
+
+    1. Giới thiệu list.
+    List là cấu trúc dữ liệu dùng để lưu nhiều giá trị theo thứ tự trong cùng một biến.
+
+    2. Truy cập và thay đổi phần tử.
+    Dùng chỉ số để lấy, sửa hoặc kiểm tra phần tử trong list.
+
+    3. Thêm và xóa dữ liệu.
+    Thực hành các thao tác append(), remove() hoặc các cách cập nhật danh sách.
+
+    4. Duyệt list bằng vòng lặp.
+    Kết hợp list với for để xử lý từng phần tử trong danh sách.
+
+    5. Sắp xếp và kiểm tra kích thước.
+    Dùng len(), sort() và các hàm cơ bản để quản lý dữ liệu trong list.',
+    '["List", "append()", "remove()", "sort()", "len()", "Index", "Duyệt danh sách", "Mutable"]',
+    'AI Assistant'
+),
+(
+    17,
+    'Bài 17: Bài tập luyện tập sử dụng LIST
+
+    1. Nhập dữ liệu vào list.
+    Thực hành tạo danh sách số, tên, điểm hoặc dữ liệu đơn giản từ người dùng.
+
+    2. Tính toán trên list.
+    Dùng vòng lặp để tính tổng, trung bình, đếm số phần tử hoặc tìm min/max.
+
+    3. Lọc và sắp xếp dữ liệu.
+    Chọn các phần tử thỏa điều kiện và sắp xếp danh sách theo yêu cầu.
+
+    4. Tách bài toán thành từng bước.
+    Phân chia rõ nhập dữ liệu, xử lý dữ liệu và hiển thị kết quả.
+
+    5. Rèn kỹ năng kiểm tra chỉ số.
+    Chú ý không truy cập vượt giới hạn list và xử lý list rỗng nếu có.',
+    '["List", "Tính tổng", "Trung bình", "min()", "max()", "Lọc dữ liệu", "Sắp xếp", "IndexError"]',
+    'AI Assistant'
+),
+(
+    18,
+    'Bài 18: Tuple, set và các cấu trúc dữ liệu liên quan
+
+    1. Giới thiệu tuple.
+    Tuple dùng để lưu dữ liệu có thứ tự nhưng ít thay đổi hoặc không cần chỉnh sửa sau khi tạo.
+
+    2. Giới thiệu set.
+    Set dùng để lưu tập hợp giá trị không trùng lặp và thường không quan tâm thứ tự.
+
+    3. So sánh với list.
+    Phân biệt cấu trúc có thể thay đổi và không thể thay đổi, có thứ tự và không có thứ tự.
+
+    4. Ứng dụng loại bỏ trùng lặp.
+    Dùng set khi cần lọc các giá trị lặp lại trong dữ liệu.
+
+    5. Chọn cấu trúc phù hợp.
+    Không phải bài nào cũng dùng list! cần chọn tuple, set hoặc list theo mục đích xử lý.',
+    '["Tuple", "Set", "List", "Immutable", "Mutable", "Loại trùng", "Có thứ tự", "Không có thứ tự"]',
+    'AI Assistant'
+),
+(
+    19,
+    'Bài 19: Cấu trúc dữ liệu DICTIONARY trong Python
+
+    1. Giới thiệu dictionary.
+    Dictionary lưu dữ liệu dưới dạng cặp khóa - giá trị, phù hợp với dữ liệu có nhãn.
+
+    2. Truy cập dữ liệu bằng key.
+    Dùng key để lấy giá trị thay vì dùng vị trí như list.
+
+    3. Thêm, sửa và xóa phần tử.
+    Thực hành cập nhật dictionary khi cần thay đổi thông tin của một đối tượng.
+
+    4. Duyệt dictionary.
+    Dùng vòng lặp để duyệt key, value hoặc cả hai tùy yêu cầu xử lý.
+
+    5. Ứng dụng trong dữ liệu thực tế.
+    Dictionary phù hợp để lưu thông tin học sinh, sản phẩm, tài khoản hoặc một bản ghi có nhiều thuộc tính.',
+    '["Dictionary", "dict", "Key", "Value", "items()", "keys()", "values()", "KeyError", "Bản ghi"]',
+    'AI Assistant'
+),
+(
+    20,
+    'Bài 20: Bài tập luyện tập sử dụng DICT
+
+    1. Lưu dữ liệu có nhiều thuộc tính.
+    Áp dụng dictionary để quản lý học sinh, điểm số, từ vựng hoặc sản phẩm.
+
+    2. Kết hợp dict với list.
+    Làm quen mô hình list chứa nhiều dict để lưu nhiều bản ghi cùng loại.
+
+    3. Tìm kiếm và cập nhật dữ liệu.
+    Thực hành lấy dữ liệu theo key, sửa thông tin và kiểm tra sự tồn tại của key.
+
+    4. Xử lý dữ liệu dạng bảng đơn giản.
+    Dùng dict để mô phỏng dữ liệu có cột và giá trị tương ứng.
+
+    5. Tránh lỗi sai tên key.
+    Cần thống nhất tên key vì chỉ cần sai một ký tự cũng có thể gây lỗi KeyError hoặc sai kết quả.',
+    '["dict", "List of dict", "Key", "Value", "Quản lý dữ liệu", "Tìm kiếm", "Cập nhật", "KeyError"]',
+    'AI Assistant'
+),
+(
+    21,
+    'Bài 21: Xây dựng hàm/thủ tục trong Python - phần 1
+
+    1. Giới thiệu hàm.
+    Hàm giúp gom một nhóm lệnh thành một khối có tên để gọi lại nhiều lần.
+
+    2. Khai báo hàm bằng def.
+    Dùng từ khóa def để tạo hàm và xác định phần thân hàm bằng thụt lề.
+
+    3. Sử dụng tham số.
+    Truyền dữ liệu vào hàm thông qua tham số để hàm xử lý linh hoạt hơn.
+
+    4. Trả kết quả bằng return.
+    Dùng return khi cần đưa kết quả xử lý ra ngoài hàm để tiếp tục sử dụng.
+
+    5. Tách chương trình thành các phần nhỏ.
+    Hiểu lợi ích của hàm trong việc giảm lặp code, dễ đọc và dễ kiểm thử.',
+    '["Hàm", "def", "Tham số", "return", "print()", "Tái sử dụng code", "Kiểm thử"]',
+    'AI Assistant'
+),
+(
+    22,
+    'Bài 22: Xây dựng hàm/thủ tục trong Python - phần 2
+
+    1. Mở rộng cách dùng tham số.
+    Tìm hiểu tham số mặc định và cách truyền dữ liệu vào hàm theo nhiều tình huống.
+
+    2. Phạm vi biến.
+    Phân biệt biến cục bộ trong hàm và biến toàn cục bên ngoài hàm.
+
+    3. Tổ chức chương trình nhiều hàm.
+    Chia một chương trình thành nhiều hàm nhỏ, mỗi hàm phụ trách một nhiệm vụ cụ thể.
+
+    4. Hạn chế lạm dụng global.
+    Biến toàn cục có thể làm chương trình khó kiểm soát nếu bị thay đổi từ nhiều nơi.
+
+    5. Viết hàm dễ đọc.
+    Tên hàm nên thể hiện hành động hoặc mục đích xử lý để người khác dễ hiểu code.',
+    '["Tham số mặc định", "Local variable", "Global variable", "global", "Tổ chức chương trình", "Tên hàm"]',
+    'AI Assistant'
+),
+(
+    23,
+    'Bài 23: Bài tập luyện tập về xây dựng hàm - phần 1
+
+    1. Chuyển bài toán nhỏ thành hàm.
+    Viết hàm cho các tác vụ như tính diện tích, kiểm tra số chẵn hoặc chuẩn hóa chuỗi.
+
+    2. Xác định đầu vào của hàm.
+    Trước khi code, cần biết hàm nhận những tham số nào.
+
+    3. Xác định đầu ra của hàm.
+    Quyết định hàm nên return kết quả hay chỉ in ra màn hình.
+
+    4. Tái sử dụng logic.
+    Gọi lại cùng một hàm với nhiều dữ liệu khác nhau để tránh viết lặp.
+
+    5. Kiểm tra hàm độc lập.
+    Thử từng hàm riêng trước khi ghép vào chương trình lớn.',
+    '["def", "Tham số", "return", "Tính diện tích", "Kiểm tra số", "Chuẩn hóa chuỗi", "Tái sử dụng"]',
+    'AI Assistant'
+),
+(
+    24,
+    'Bài 24: Bài tập luyện tập về xây dựng hàm - phần 2
+
+    1. Giải bài toán phức tạp hơn bằng hàm.
+    Kết hợp list, dict, điều kiện và vòng lặp trong các hàm riêng.
+
+    2. Chia nhỏ chức năng.
+    Một chương trình lớn nên được chia thành các hàm như nhập dữ liệu, xử lý và xuất kết quả.
+
+    3. Tránh viết lặp code.
+    Những đoạn xử lý xuất hiện nhiều lần nên được tách thành hàm.
+
+    4. Đặt tên hàm rõ nghĩa.
+    Tên hàm nên giúp người đọc biết hàm làm gì mà không cần đọc toàn bộ code.
+
+    5. Kiểm soát luồng dữ liệu.
+    Cần biết dữ liệu đi vào hàm, được biến đổi như thế nào và trả ra kết quả gì.',
+    '["Hàm", "Chia nhỏ bài toán", "List", "Dict", "Vòng lặp", "return", "Tên hàm", "Refactor"]',
+    'AI Assistant'
+),
+(
+    25,
+    'Bài 25: Bài tập luyện tập về xây dựng hàm - phần 3
+
+    1. Củng cố tư duy lập trình có cấu trúc.
+    Tiếp tục luyện viết chương trình bằng nhiều hàm thay vì một khối lệnh dài.
+
+    2. Kết hợp nhiều hàm trong một chương trình.
+    Một hàm có thể gọi hàm khác để tạo thành quy trình xử lý hoàn chỉnh.
+
+    3. Xử lý dữ liệu đầu vào.
+    Viết hàm kiểm tra hoặc chuẩn hóa dữ liệu trước khi đưa vào bước tính toán chính.
+
+    4. Tăng khả năng bảo trì code.
+    Khi chức năng thay đổi, chỉ cần sửa hàm liên quan thay vì sửa nhiều đoạn code lặp.
+
+    5. Rèn cách đọc lỗi trong hàm.
+    Khi lỗi xảy ra, cần xác định lỗi nằm ở hàm nào và dữ liệu truyền vào có đúng không.',
+    '["Hàm con", "Gọi hàm", "Kiểm tra dữ liệu", "Bảo trì code", "Debug", "Refactor"]',
+    'AI Assistant'
+),
+(
+    26,
+    'Bài 26: Bài tập tổng hợp nền tảng Python
+
+    1. Ôn lại kiến thức đã học.
+    Tổng hợp biến, kiểu dữ liệu, điều kiện, vòng lặp, list, dict và hàm trong một số bài thực hành.
+
+    2. Phân tích yêu cầu trước khi code.
+    Đọc đề, xác định dữ liệu vào, dữ liệu ra và các bước xử lý chính.
+
+    3. Ghép nhiều kỹ thuật lại với nhau.
+    Không học từng cú pháp riêng lẻ mà biết kết hợp chúng để giải bài toán hoàn chỉnh.
+
+    4. Kiểm tra kết quả nhiều trường hợp.
+    Thử dữ liệu bình thường, dữ liệu biên và dữ liệu dễ gây lỗi.
+
+    5. Rút kinh nghiệm sau mỗi bài.
+    Ghi lại lỗi thường gặp để tránh lặp lại trong các bài sau.',
+    '["Tổng hợp Python", "Biến", "Điều kiện", "Vòng lặp", "List", "Dict", "Hàm", "Debug"]',
+    'AI Assistant'
+),
+(
+    27,
+    'Bài 27: Làm việc với file trong Python
+
+    1. Giới thiệu đọc ghi file.
+    Tìm hiểu cách lưu dữ liệu ra file và đọc dữ liệu từ file để chương trình không mất dữ liệu sau khi tắt.
+
+    2. Mở file với open().
+    Sử dụng open() với các chế độ đọc, ghi hoặc ghi thêm tùy mục đích.
+
+    3. Đọc nội dung file.
+    Thực hành đọc toàn bộ nội dung hoặc đọc từng dòng để xử lý dữ liệu.
+
+    4. Ghi dữ liệu vào file.
+    Dùng write() hoặc các cách ghi khác để lưu kết quả xử lý ra file.
+
+    5. Đóng file và xử lý an toàn.
+    Ưu tiên dùng with open(...) để tự động đóng file và giảm lỗi quên giải phóng tài nguyên.',
+    '["File", "open()", "read()", "readline()", "write()", "with open", "Chế độ r/w/a", "Đọc ghi dữ liệu"]',
+    'AI Assistant'
+),
+(
+    28,
+    'Bài 28: Lập trình hướng đối tượng OOP trong Python - phần 1
+
+    1. Giới thiệu lập trình hướng đối tượng.
+    OOP giúp tổ chức chương trình quanh các đối tượng có dữ liệu và hành vi riêng.
+
+    2. Khai báo lớp.
+    Dùng class để định nghĩa khuôn mẫu cho các đối tượng cùng loại.
+
+    3. Tạo đối tượng.
+    Từ một lớp có thể tạo nhiều đối tượng với dữ liệu khác nhau.
+
+    4. Sử dụng thuộc tính.
+    Thuộc tính lưu thông tin của đối tượng, ví dụ tên, tuổi, điểm hoặc trạng thái.
+
+    5. Hiểu vai trò của self.
+    self đại diện cho chính đối tượng đang được thao tác trong phương thức.',
+    '["OOP", "class", "object", "self", "Thuộc tính", "Đối tượng", "Lớp"]',
+    'AI Assistant'
+),
+(
+    29,
+    'Bài 29: Lập trình hướng đối tượng OOP trong Python - phần 2
+
+    1. Mở rộng khái niệm phương thức.
+    Phương thức là hàm nằm trong lớp, dùng để xử lý dữ liệu của đối tượng.
+
+    2. Hàm khởi tạo __init__.
+    Dùng __init__ để gán giá trị ban đầu cho thuộc tính khi tạo đối tượng.
+
+    3. Tổ chức dữ liệu trong đối tượng.
+    Đưa dữ liệu và hành vi liên quan vào cùng một lớp để code dễ quản lý.
+
+    4. Tái sử dụng lớp.
+    Một lớp có thể dùng lại nhiều lần trong chương trình hoặc trong các bài toán tương tự.
+
+    5. Tránh nhầm lớp và đối tượng.
+    Lớp là khuôn mẫu, còn đối tượng là một thực thể cụ thể được tạo từ lớp.',
+    '["OOP", "Phương thức", "__init__", "Class", "Object", "self", "Tái sử dụng"]',
+    'AI Assistant'
+),
+(
+    30,
+    'Bài 30: Lập trình hướng đối tượng OOP trong Python - phần 3
+
+    1. Củng cố cách thiết kế lớp.
+    Xác định lớp cần có thuộc tính nào và phương thức nào dựa trên yêu cầu bài toán.
+
+    2. Làm việc với nhiều đối tượng.
+    Tạo nhiều đối tượng cùng lớp và quản lý chúng trong list hoặc cấu trúc dữ liệu khác.
+
+    3. Cập nhật trạng thái đối tượng.
+    Dùng phương thức để thay đổi thuộc tính của đối tượng một cách có kiểm soát.
+
+    4. Tư duy mô hình hóa thực tế.
+    Biến các thực thể như sách, học sinh, sản phẩm thành lớp trong chương trình.
+
+    5. Chuẩn bị cho dự án quản lý.
+    Các kiến thức OOP là nền tảng để xây dựng chương trình quản lý dữ liệu ở các bài sau.',
+    '["Thiết kế lớp", "Nhiều đối tượng", "List object", "Thuộc tính", "Phương thức", "Mô hình hóa"]',
+    'AI Assistant'
+),
+(
+    31,
+    'Bài 31: Kế thừa trong lập trình hướng đối tượng Python
+
+    1. Giới thiệu kế thừa.
+    Kế thừa cho phép lớp con sử dụng lại thuộc tính và phương thức của lớp cha.
+
+    2. Xây dựng lớp cha và lớp con.
+    Thiết kế phần chung trong lớp cha và phần riêng trong lớp con để tránh lặp code.
+
+    3. Gọi lại xử lý của lớp cha.
+    Dùng super() khi cần mở rộng hoặc tái sử dụng logic khởi tạo từ lớp cha.
+
+    4. Ghi đè phương thức.
+    Lớp con có thể định nghĩa lại phương thức nếu hành vi khác với lớp cha.
+
+    5. Ứng dụng kế thừa hợp lý.
+    Chỉ nên dùng kế thừa khi thật sự có quan hệ “là một”, tránh ép mô hình gây khó hiểu.',
+    '["Kế thừa", "Lớp cha", "Lớp con", "super()", "Override", "Tái sử dụng code", "OOP"]',
+    'AI Assistant'
+),
+(
+    32,
+    'Bài 32: Bài tập OOP và quản lý dữ liệu bằng Python
+
+    1. Áp dụng OOP vào bài thực hành.
+    Dùng lớp và đối tượng để quản lý dữ liệu thay vì chỉ dùng biến rời rạc.
+
+    2. Xây dựng đối tượng dữ liệu.
+    Tạo các lớp như học sinh, sách, sản phẩm hoặc tài khoản tùy bài toán.
+
+    3. Quản lý danh sách đối tượng.
+    Lưu nhiều object trong list để thêm, sửa, xóa hoặc tìm kiếm.
+
+    4. Viết phương thức xử lý.
+    Đưa logic liên quan vào trong lớp để chương trình gọn và đúng hướng OOP hơn.
+
+    5. Kết hợp với kiến thức cũ.
+    OOP vẫn cần dùng list, dict, vòng lặp, điều kiện và hàm để hoàn thiện chương trình.',
+    '["OOP", "Object", "List object", "Quản lý dữ liệu", "Thêm sửa xóa", "Tìm kiếm", "Phương thức"]',
+    'AI Assistant'
+),
+(
+    33,
+    'Bài 33: Xây dựng chương trình quản lý sách bằng Python - phần 1
+
+    1. Giới thiệu bài toán quản lý sách.
+    Xác định dữ liệu cần quản lý như mã sách, tên sách, tác giả, giá hoặc số lượng.
+
+    2. Thiết kế cấu trúc dữ liệu.
+    Chọn cách lưu sách bằng class, dict hoặc list tùy hướng triển khai.
+
+    3. Xây dựng chức năng thêm sách.
+    Tạo chức năng nhập thông tin sách và lưu vào danh sách quản lý.
+
+    4. Hiển thị danh sách sách.
+    In danh sách dữ liệu ra màn hình theo định dạng dễ đọc.
+
+    5. Chuẩn bị mở rộng chương trình.
+    Tổ chức code để có thể thêm chức năng tìm kiếm, sửa, xóa hoặc lưu file ở phần sau.',
+    '["Quản lý sách", "Class", "List", "Thêm dữ liệu", "Hiển thị dữ liệu", "CRUD", "OOP"]',
+    'AI Assistant'
+),
+(
+    34,
+    'Bài 34: Xây dựng chương trình quản lý sách bằng Python - phần 2
+
+    1. Mở rộng chương trình quản lý sách.
+    Bổ sung các chức năng nâng cao hơn so với phần tạo và hiển thị ban đầu.
+
+    2. Tìm kiếm dữ liệu sách.
+    Xây dựng chức năng tìm sách theo mã, tên hoặc tiêu chí phù hợp.
+
+    3. Sửa và xóa thông tin.
+    Cho phép cập nhật dữ liệu sách hoặc loại bỏ sách khỏi danh sách quản lý.
+
+    4. Tổ chức chức năng bằng hàm/phương thức.
+    Tách từng chức năng thành phần riêng để tránh viết lặp và dễ bảo trì.
+
+    5. Hướng tới chương trình hoàn chỉnh.
+    Có thể kết hợp thêm lưu file hoặc menu để người dùng thao tác thuận tiện hơn.',
+    '["Quản lý sách", "Tìm kiếm", "Sửa", "Xóa", "CRUD", "Hàm", "Phương thức", "Lưu file"]',
+    'AI Assistant'
+),
+(
+    35,
+    'Bài 35: Chữa bài tiền xu - đề thi học sinh giỏi THCS
+
+    1. Đọc và phân tích đề bài.
+    Xác định yêu cầu của bài toán tiền xu, dữ liệu đầu vào, dữ liệu đầu ra và điều kiện ràng buộc.
+
+    2. Tìm quy luật xử lý.
+    Suy nghĩ cách chọn hoặc đếm tiền xu sao cho đáp ứng yêu cầu đề bài.
+
+    3. Xây dựng thuật toán.
+    Viết các bước xử lý trước khi chuyển thành code Python.
+
+    4. Kiểm tra ví dụ mẫu.
+    So sánh kết quả chương trình với ví dụ hoặc cách tính thủ công.
+
+    5. Rút kinh nghiệm làm bài thi.
+    Trong bài thuật toán, hiểu đúng đề và ràng buộc quan trọng hơn việc code thật nhanh.',
+    '["Bài tiền xu", "Thuật toán", "Input", "Output", "Ràng buộc", "Tối ưu", "Kiểm thử"]',
+    'AI Assistant'
+),
+(
+    36,
+    'Bài 36: Giải đề thi học sinh giỏi Tin học bằng Python
+
+    1. Tiếp cận đề thi Tin học.
+    Tập đọc đề theo hướng xác định dữ liệu vào, dữ liệu ra, ví dụ mẫu và giới hạn dữ liệu.
+
+    2. Phân tích thuật toán.
+    Tìm cách giải phù hợp trước khi viết code, tránh chỉ thử ngẫu nhiên.
+
+    3. Triển khai bằng Python.
+    Chuyển thuật toán thành chương trình có biến, điều kiện, vòng lặp và cấu trúc dữ liệu cần thiết.
+
+    4. Kiểm tra độ đúng.
+    Chạy thử với nhiều bộ dữ liệu, đặc biệt là trường hợp biên và dữ liệu lớn.
+
+    5. Tư duy tối ưu.
+    Không chỉ cần đúng với ví dụ mẫu mà còn phải chạy được với ràng buộc của đề.',
+    '["Đề thi Tin học", "Thuật toán", "Input", "Output", "Trường hợp biên", "Độ phức tạp", "Python"]',
+    'AI Assistant'
+),
+(
+    37,
+    'Bài 37: Thuật toán quay lui Backtracking
+
+    1. Giới thiệu backtracking.
+    Backtracking là kỹ thuật thử một lựa chọn, đi tiếp nếu hợp lệ và quay lại khi lựa chọn đó không còn phù hợp.
+
+    2. Xác định trạng thái và lựa chọn.
+    Mỗi bước cần biết trạng thái hiện tại và các lựa chọn có thể thử tiếp.
+
+    3. Thiết lập điều kiện dừng.
+    Khi đạt được lời giải hoặc không còn lựa chọn hợp lệ, thuật toán cần dừng đúng chỗ.
+
+    4. Hoàn tác sau khi thử.
+    Sau mỗi lựa chọn, cần quay lại trạng thái trước đó để thử lựa chọn khác.
+
+    5. Ứng dụng của quay lui.
+    Thường dùng cho bài toán tổ hợp, hoán vị, liệt kê lời giải hoặc bài toán có ràng buộc.',
+    '["Backtracking", "Quay lui", "Đệ quy", "Điều kiện dừng", "Hoàn tác", "Tổ hợp", "Hoán vị"]',
+    'AI Assistant'
+),
+(
+    38,
+    'Bài 38: Bài toán luyện tư duy thuật toán nâng cao
+
+    1. Rèn tư duy phân tích vấn đề.
+    Tập nhìn bài toán theo dữ liệu, điều kiện, quy luật và mục tiêu cần tìm.
+
+    2. Kết hợp nhiều kiến thức nền.
+    Sử dụng vòng lặp, điều kiện, list, dict hoặc hàm để xử lý bài toán phức tạp hơn.
+
+    3. Xem xét trường hợp biên.
+    Chú ý dữ liệu nhỏ nhất, lớn nhất, dữ liệu rỗng hoặc dữ liệu đặc biệt.
+
+    4. Đánh giá hiệu quả thuật toán.
+    Không chỉ quan tâm code chạy được mà còn cần xem cách làm có đủ nhanh hay không.
+
+    5. Luyện cách debug thuật toán.
+    Theo dõi từng bước biến đổi của dữ liệu để tìm lỗi sai trong logic.',
+    '["Tư duy thuật toán", "Điều kiện", "Vòng lặp", "Cấu trúc dữ liệu", "Trường hợp biên", "Tối ưu", "Debug"]',
+    'AI Assistant'
+),
+(
+    39,
+    'Bài 39: Vẽ biểu đồ cột thể hiện thu nhập hàng tháng bằng Python
+
+    1. Giới thiệu trực quan hóa dữ liệu.
+    Biểu đồ giúp dữ liệu số trở nên dễ hiểu hơn so với chỉ nhìn bảng hoặc danh sách.
+
+    2. Chuẩn bị dữ liệu biểu đồ.
+    Xác định dữ liệu trục ngang, trục dọc, đơn vị đo và tiêu đề cần hiển thị.
+
+    3. Vẽ biểu đồ cột.
+    Sử dụng thư viện Python phù hợp để tạo biểu đồ cột thể hiện thu nhập theo tháng.
+
+    4. Tùy chỉnh thông tin biểu đồ.
+    Thêm tiêu đề, nhãn trục và chú thích để người xem hiểu đúng ý nghĩa dữ liệu.
+
+    5. Đọc và đánh giá kết quả.
+    Quan sát xu hướng tăng giảm qua từng tháng và kiểm tra biểu đồ có phản ánh đúng dữ liệu không.',
+    '["Biểu đồ cột", "Trực quan hóa dữ liệu", "matplotlib", "Trục x", "Trục y", "Tiêu đề", "Nhãn trục"]',
+    'AI Assistant'
+),
+(
+    40,
+    'Bài 40: Giới thiệu thư viện Pandas trong Python
+
+    1. Giới thiệu Pandas.
+    Pandas là thư viện mạnh để xử lý dữ liệu dạng bảng trong Python.
+
+    2. Làm quen với Series và DataFrame.
+    Hiểu DataFrame giống một bảng có hàng và cột, còn Series giống một cột dữ liệu.
+
+    3. Đọc và xem dữ liệu.
+    Thực hành đọc dữ liệu và dùng các lệnh xem nhanh như xem dòng đầu hoặc thông tin tổng quan.
+
+    4. Chọn cột và lọc dữ liệu.
+    Làm quen thao tác lấy một phần dữ liệu theo cột hoặc điều kiện.
+
+    5. Ứng dụng trong Excel/CSV.
+    Pandas rất hữu ích khi cần phân tích dữ liệu từ file bảng như Excel hoặc CSV.',
+    '["Pandas", "Series", "DataFrame", "Excel", "CSV", "Lọc dữ liệu", "head()", "Cột dữ liệu"]',
+    'AI Assistant'
+),
+(
+    41,
+    'Bài 41: Làm việc với dữ liệu dạng bảng bằng Pandas
+
+    1. Xử lý dữ liệu dạng bảng.
+    Tiếp tục thao tác với DataFrame để lọc, tính toán và thống kê dữ liệu.
+
+    2. Kiểm tra tên cột và kiểu dữ liệu.
+    Trước khi phân tích, cần biết dữ liệu gồm những cột nào và mỗi cột thuộc kiểu gì.
+
+    3. Tính toán và tạo cột mới.
+    Dùng Pandas để tính giá trị mới từ dữ liệu có sẵn và thêm vào bảng.
+
+    4. Xử lý dữ liệu thiếu hoặc sai.
+    Nhận biết giá trị thiếu, dữ liệu nhập không đúng kiểu hoặc tên cột bị sai.
+
+    5. Xuất dữ liệu sau xử lý.
+    Có thể lưu kết quả ra file để tiếp tục dùng hoặc chia sẻ.',
+    '["Pandas", "DataFrame", "Lọc dữ liệu", "Thống kê", "Kiểu dữ liệu", "Giá trị thiếu", "Xuất file"]',
+    'AI Assistant'
+),
+(
+    42,
+    'Bài 42: Xây dựng chương trình phát nhạc từ Internet bằng Python
+
+    1. Giới thiệu mini-project phát nhạc.
+    Bài học cho thấy Python có thể kết hợp thư viện ngoài để tạo ứng dụng thực tế.
+
+    2. Xử lý nguồn nhạc từ Internet.
+    Làm quen với việc dùng đường dẫn hoặc nguồn dữ liệu online làm đầu vào cho chương trình.
+
+    3. Kết hợp thư viện hỗ trợ.
+    Sử dụng thư viện phù hợp để phát âm thanh hoặc điều khiển tác vụ liên quan.
+
+    4. Xử lý lỗi khi chạy ứng dụng.
+    Cần chú ý lỗi kết nối, đường dẫn không hợp lệ hoặc thư viện chưa được cài đặt.
+
+    5. Hiểu cách ghép nhiều phần.
+    Một ứng dụng nhỏ thường gồm nhập dữ liệu, gọi thư viện, xử lý lỗi và phản hồi với người dùng.',
+    '["Mini-project", "Phát nhạc", "Internet", "Thư viện ngoài", "Đường dẫn", "Xử lý lỗi", "Ứng dụng Python"]',
+    'AI Assistant'
+),
+(
+    43,
+    'Bài 43: Giới thiệu khóa học lập trình Game với Python
+
+    1. Chuyển hướng sang lập trình game.
+    Bài học giới thiệu mục tiêu học game bằng Python sau khi đã có nền tảng cú pháp.
+
+    2. Tìm hiểu thành phần của game.
+    Một game thường có đối tượng, trạng thái, luật chơi, vòng lặp cập nhật và xử lý sự kiện.
+
+    3. Giới thiệu thư viện Turtle và Pygame.
+    Turtle phù hợp để học trực quan ban đầu, còn Pygame mạnh hơn cho game phức tạp.
+
+    4. Tư duy thiết kế game.
+    Trước khi code cần xác định nhân vật, mục tiêu, điều kiện thắng thua và cách người chơi điều khiển.
+
+    5. Chuẩn bị cho các dự án nhỏ.
+    Các bài sau sẽ dùng kiến thức cũ kết hợp với đồ họa, sự kiện và chuyển động.',
+    '["Game Python", "Turtle", "Pygame", "Vòng lặp game", "Sự kiện", "Trạng thái", "Luật chơi"]',
+    'AI Assistant'
+),
+(
+    44,
+    'Bài 44: Giới thiệu thư viện Turtle - phần 1
+
+    1. Giới thiệu Turtle.
+    Turtle là thư viện giúp vẽ hình và học lập trình trực quan thông qua chuyển động của con trỏ.
+
+    2. Tạo màn hình vẽ.
+    Thiết lập cửa sổ để hiển thị kết quả vẽ bằng Turtle.
+
+    3. Điều khiển con trỏ.
+    Dùng các lệnh di chuyển, quay trái, quay phải để tạo đường vẽ.
+
+    4. Thay đổi màu sắc và nét vẽ.
+    Làm quen với cách đặt màu, kích thước nét và các thuộc tính hiển thị.
+
+    5. Hiểu tọa độ và góc.
+    Turtle giúp người học hình dung mối quan hệ giữa tọa độ, hướng di chuyển và hình được vẽ.',
+    '["Turtle", "Screen", "forward()", "backward()", "left()", "right()", "Màu sắc", "Tọa độ"]',
+    'AI Assistant'
+),
+(
+    45,
+    'Bài 45: Giới thiệu thư viện Turtle - phần 2
+
+    1. Mở rộng thao tác với Turtle.
+    Tiếp tục học các lệnh nâng cao hơn để điều khiển đối tượng vẽ linh hoạt.
+
+    2. Điều chỉnh tốc độ và vị trí.
+    Thay đổi tốc độ, đưa turtle đến vị trí mới và kiểm soát hướng di chuyển.
+
+    3. Vẽ hình bằng vòng lặp.
+    Kết hợp Turtle với for để vẽ các hình lặp lại hoặc mẫu hình đều.
+
+    4. Tạo nhiều đối tượng Turtle.
+    Sử dụng nhiều turtle khác nhau để chuẩn bị cho các game có nhiều nhân vật.
+
+    5. Xử lý sự kiện cơ bản.
+    Bước đầu làm quen với việc phản hồi thao tác người dùng như nhấn phím hoặc click.',
+    '["Turtle", "speed()", "goto()", "penup()", "pendown()", "Vòng lặp", "Nhiều đối tượng", "Sự kiện"]',
+    'AI Assistant'
+),
+(
+    46,
+    'Bài 46: Giới thiệu game cuộc đua rùa bằng Turtle
+
+    1. Giới thiệu ý tưởng game.
+    Game cuộc đua rùa gồm nhiều rùa xuất phát cùng lúc và cạnh tranh để về đích trước.
+
+    2. Xác định đối tượng trong game.
+    Các đối tượng chính gồm nhiều turtle, vạch xuất phát, vạch đích và trạng thái cuộc đua.
+
+    3. Thiết kế luật chơi.
+    Cần xác định cách rùa di chuyển, điều kiện thắng và cách hiển thị kết quả.
+
+    4. Chia nhỏ chức năng trước khi code.
+    Tách các phần như tạo rùa, đặt vị trí, cho rùa chạy và kiểm tra người thắng.
+
+    5. Chuẩn bị dùng random.
+    Yếu tố ngẫu nhiên làm cuộc đua thay đổi mỗi lần chạy, giúp game sinh động hơn.',
+    '["Game rùa", "Turtle", "Random", "Luật chơi", "Vạch đích", "Điều kiện thắng", "Đối tượng game"]',
+    'AI Assistant'
+),
+(
+    47,
+    'Bài 47: Lập trình game cuộc đua rùa bằng Turtle
+
+    1. Tạo các rùa tham gia đua.
+    Khởi tạo nhiều đối tượng turtle và gán màu hoặc vị trí khác nhau.
+
+    2. Thiết lập vị trí xuất phát.
+    Đặt các rùa trên cùng một vạch xuất phát để bắt đầu cuộc đua công bằng.
+
+    3. Tạo chuyển động ngẫu nhiên.
+    Dùng random để mỗi rùa di chuyển một khoảng khác nhau qua từng lượt.
+
+    4. Kiểm tra rùa về đích.
+    Dừng game khi có rùa chạm hoặc vượt vạch đích.
+
+    5. Hiển thị kết quả cuộc đua.
+    Xác định rùa thắng cuộc và thông báo kết quả cho người chơi.',
+    '["Turtle race", "random", "Object", "Vòng lặp game", "Điều kiện dừng", "Vạch đích", "Kết quả"]',
+    'AI Assistant'
+),
+(
+    48,
+    'Bài 48: Giới thiệu game Pong bằng Turtle
+
+    1. Giới thiệu game Pong.
+    Pong là game phản xạ đơn giản gồm bóng, hai thanh đỡ và điểm số.
+
+    2. Phân tích thành phần game.
+    Các thành phần chính gồm màn hình, bóng, paddle trái, paddle phải và bảng điểm.
+
+    3. Xác định luật va chạm.
+    Bóng cần phản xạ khi chạm tường hoặc chạm paddle, và ghi điểm khi vượt qua người chơi.
+
+    4. Thiết kế điều khiển người chơi.
+    Người chơi dùng bàn phím để di chuyển paddle lên xuống.
+
+    5. Chuẩn bị cấu trúc chương trình.
+    Game Pong cần vòng lặp cập nhật liên tục để bóng chuyển động và màn hình thay đổi.',
+    '["Pong", "Turtle", "Ball", "Paddle", "Va chạm", "Điểm số", "Bàn phím", "Game loop"]',
+    'AI Assistant'
+),
+(
+    49,
+    'Bài 49: Lập trình game Pong bằng Python - phần 1
+
+    1. Tạo màn hình game.
+    Thiết lập cửa sổ Turtle, kích thước màn hình và màu nền phù hợp cho Pong.
+
+    2. Tạo bóng và paddle.
+    Khởi tạo các đối tượng chính của game và đặt vị trí ban đầu.
+
+    3. Điều khiển bằng bàn phím.
+    Gán phím để di chuyển paddle lên xuống theo thao tác người chơi.
+
+    4. Xây dựng vòng lặp game.
+    Cập nhật vị trí bóng liên tục để tạo cảm giác chuyển động.
+
+    5. Tách các phần xử lý.
+    Nên chia code thành phần tạo đối tượng, điều khiển và cập nhật màn hình để dễ sửa.',
+    '["Pong", "Turtle", "Ball", "Paddle", "Keyboard", "Game loop", "screen.update()"]',
+    'AI Assistant'
+),
+(
+    50,
+    'Bài 50: Hoàn thiện game Pong - phần 2
+
+    1. Xử lý va chạm với tường.
+    Đổi hướng bóng khi bóng chạm biên trên hoặc biên dưới của màn hình.
+
+    2. Xử lý va chạm với paddle.
+    Kiểm tra tọa độ bóng và paddle để bóng bật lại khi chạm thanh đỡ.
+
+    3. Tính điểm cho người chơi.
+    Cập nhật điểm khi bóng vượt qua một bên màn hình.
+
+    4. Reset bóng sau khi ghi điểm.
+    Đưa bóng về vị trí ban đầu và đổi hướng phù hợp sau mỗi lần ghi điểm.
+
+    5. Hoàn thiện trải nghiệm chơi.
+    Điều chỉnh tốc độ, điều kiện va chạm và hiển thị điểm để game mượt hơn.',
+    '["Pong", "Va chạm", "Paddle", "Score", "Reset ball", "Tọa độ", "Điều kiện"]',
+    'AI Assistant'
+),
+(
+    51,
+    'Bài 51: Giới thiệu game rắn săn mồi bằng Turtle
+
+    1. Giới thiệu game Snake.
+    Snake là game điều khiển rắn ăn thức ăn, tăng độ dài và tránh va chạm.
+
+    2. Phân tích thành phần game.
+    Các thành phần gồm đầu rắn, thân rắn, thức ăn, điểm số và màn hình.
+
+    3. Xác định luật chơi.
+    Rắn thua khi chạm tường hoặc chạm chính thân mình.
+
+    4. Tư duy cập nhật vị trí theo chuỗi.
+    Thân rắn cần di chuyển theo vị trí của segment phía trước.
+
+    5. Chuẩn bị cấu trúc dữ liệu.
+    List rất phù hợp để lưu các đoạn thân rắn và cập nhật theo thứ tự.',
+    '["Snake", "Turtle", "Thức ăn", "Segment", "List", "Va chạm", "Điểm số", "Luật chơi"]',
+    'AI Assistant'
+),
+(
+    52,
+    'Bài 52: Lập trình game rắn săn mồi - phần 1
+
+    1. Tạo màn hình và con rắn.
+    Thiết lập cửa sổ game và tạo phần đầu hoặc các đoạn ban đầu của rắn.
+
+    2. Điều khiển hướng di chuyển.
+    Dùng bàn phím để đổi hướng rắn lên, xuống, trái hoặc phải.
+
+    3. Xây dựng vòng lặp cập nhật.
+    Cập nhật vị trí rắn liên tục để tạo chuyển động mượt.
+
+    4. Quản lý biến trạng thái hướng.
+    Lưu hướng đi hiện tại để điều khiển chuyển động đúng logic.
+
+    5. Tránh quay ngược trực tiếp.
+    Không cho rắn đổi hướng ngược 180 độ ngay lập tức vì dễ tự va vào thân.',
+    '["Snake", "Turtle", "Keyboard", "Direction", "Game loop", "Segment", "Trạng thái hướng"]',
+    'AI Assistant'
+),
+(
+    53,
+    'Bài 53: Lập trình game rắn săn mồi - phần 2
+
+    1. Thêm thức ăn vào game.
+    Tạo đối tượng thức ăn và đặt ở vị trí ngẫu nhiên để rắn tìm đến.
+
+    2. Tăng độ dài rắn.
+    Khi rắn ăn thức ăn, thêm segment mới vào thân rắn.
+
+    3. Cập nhật điểm số.
+    Tăng điểm sau mỗi lần ăn và hiển thị điểm cho người chơi.
+
+    4. Xử lý va chạm tường.
+    Kết thúc hoặc reset game khi rắn vượt ra ngoài vùng chơi.
+
+    5. Xử lý va chạm thân.
+    Kiểm tra đầu rắn có chạm vào các segment thân hay không để xác định thua cuộc.',
+    '["Snake", "Food", "Segment", "Score", "Collision", "Random position", "Game over"]',
+    'AI Assistant'
+),
+(
+    54,
+    'Bài 54: Giới thiệu, cài đặt và xây dựng giao diện mặc định bằng Pygame
+
+    1. Giới thiệu Pygame.
+    Pygame là thư viện mạnh hơn Turtle, phù hợp để xây dựng game 2D với cửa sổ, hình ảnh và sự kiện.
+
+    2. Cài đặt Pygame.
+    Cài thư viện cần thiết và kiểm tra việc import Pygame trong chương trình.
+
+    3. Tạo cửa sổ game.
+    Khởi tạo màn hình, kích thước cửa sổ và tiêu đề ứng dụng.
+
+    4. Xây dựng vòng lặp chính.
+    Tạo vòng lặp để game luôn chạy, lắng nghe sự kiện và cập nhật hiển thị.
+
+    5. Xử lý sự kiện thoát.
+    Bắt sự kiện đóng cửa sổ để chương trình kết thúc đúng cách.',
+    '["Pygame", "pygame.init()", "display.set_mode()", "Game loop", "Event", "QUIT", "pygame.quit()"]',
+    'AI Assistant'
+),
+(
+    55,
+    'Bài 55: Vẽ các hình cơ bản lên giao diện Pygame
+
+    1. Giới thiệu vẽ hình trong Pygame.
+    Tìm hiểu cách vẽ các thành phần đồ họa trực tiếp lên cửa sổ game.
+
+    2. Vẽ hình chữ nhật và hình tròn.
+    Dùng các hàm vẽ để tạo rectangle, circle hoặc các đối tượng cơ bản.
+
+    3. Vẽ đường thẳng và thành phần phụ.
+    Sử dụng line hoặc các hình khác để tạo giao diện đơn giản.
+
+    4. Làm quen hệ tọa độ Pygame.
+    Tọa độ thường bắt đầu từ góc trên bên trái, khác với cách hình dung tọa độ toán học thông thường.
+
+    5. Cập nhật màn hình sau khi vẽ.
+    Sau khi vẽ cần update hoặc flip màn hình để thay đổi được hiển thị.',
+    '["Pygame", "draw.rect", "draw.circle", "draw.line", "Tọa độ", "Màu sắc", "display.update()"]',
+    'AI Assistant'
+),
+(
+    56,
+    'Bài 56: Làm đồng hồ thể thao bấm giờ/đếm ngược bằng Pygame
+
+    1. Giới thiệu ứng dụng đồng hồ.
+    Bài học xây dựng chương trình bấm giờ hoặc đếm ngược bằng Pygame.
+
+    2. Quản lý thời gian.
+    Sử dụng clock, thời điểm bắt đầu hoặc biến đếm để cập nhật thời gian theo thời gian thực.
+
+    3. Hiển thị chữ trên màn hình.
+    Tạo font và render text để hiện số giây, phút hoặc thông báo.
+
+    4. Xử lý sự kiện điều khiển.
+    Có thể dùng phím hoặc thao tác để bắt đầu, dừng, reset hoặc thoát chương trình.
+
+    5. Cập nhật giao diện liên tục.
+    Màn hình cần được vẽ lại sau mỗi vòng lặp để thời gian thay đổi chính xác.',
+    '["Pygame", "Đồng hồ bấm giờ", "Đếm ngược", "Clock", "Font", "render text", "Event"]',
+    'AI Assistant'
+),
+(
+    57,
+    'Bài 57: Lập trình game “Phiên đấu giá thầm lặng” bằng Python
+
+    1. Giới thiệu game đấu giá thầm lặng.
+    Nhiều người chơi lần lượt nhập tên và giá thầu, chương trình tìm người trả giá cao nhất.
+
+    2. Lưu dữ liệu người chơi.
+    Dùng dictionary để lưu tên người chơi và mức giá tương ứng.
+
+    3. Lặp qua nhiều lượt nhập.
+    Dùng vòng lặp để tiếp tục nhận giá thầu cho đến khi không còn người tham gia.
+
+    4. Tìm giá trị cao nhất.
+    Duyệt dictionary để xác định người thắng cuộc và mức giá cao nhất.
+
+    5. Mô phỏng tính thầm lặng.
+    Có thể xóa hoặc che dữ liệu giữa các lượt để người sau không thấy giá người trước.',
+    '["Silent Auction", "Dictionary", "Tên người chơi", "Giá thầu", "Vòng lặp", "Max value", "Người thắng"]',
+    'AI Assistant'
+),
+(
+    58,
+    'Bài 58: Lập trình game “Cao hơn và Thấp hơn” bằng Python
+
+    1. Giới thiệu game so sánh.
+    Người chơi chọn đối tượng nào có giá trị cao hơn hoặc thấp hơn dựa trên dữ liệu cho sẵn.
+
+    2. Chuẩn bị dữ liệu game.
+    Dữ liệu thường được lưu bằng list hoặc dictionary, mỗi phần tử có tên và thuộc tính dùng để so sánh.
+
+    3. Chọn dữ liệu ngẫu nhiên.
+    Dùng random để lấy hai đối tượng khác nhau cho mỗi lượt chơi.
+
+    4. So sánh và kiểm tra đáp án.
+    Chương trình so sánh thuộc tính mục tiêu để xác định người chơi trả lời đúng hay sai.
+
+    5. Cập nhật điểm và vòng chơi.
+    Nếu trả lời đúng thì tăng điểm và tiếp tục! nếu sai thì kết thúc hoặc hiển thị kết quả cuối.',
+    '["Higher Lower", "Random", "List", "Dictionary", "So sánh", "Score", "Vòng lặp game"]',
+    'AI Assistant'
+),
+(
+    59,
+    'Bài 59: Làm game Flappy Bird bằng Pygame - phần 1
+
+    1. Giới thiệu dự án Flappy Bird.
+    Bắt đầu xây dựng game Flappy Bird bằng Pygame với nhân vật chim, trọng lực và vật cản.
+
+    2. Tạo cửa sổ và nhân vật.
+    Thiết lập màn hình game, tạo đối tượng chim và vị trí ban đầu.
+
+    3. Mô phỏng trọng lực và thao tác nhảy.
+    Áp dụng vận tốc rơi xuống và cho chim bay lên khi người chơi nhấn phím.
+
+    4. Tạo vật cản ban đầu.
+    Xây dựng ống hoặc chướng ngại vật di chuyển để người chơi phải né.
+
+    5. Chuẩn bị xử lý va chạm.
+    Dự án yêu cầu kiểm tra va chạm giữa chim, ống và giới hạn màn hình nên cần chia nhỏ từng phần để hoàn thiện.',
+    '["Flappy Bird", "Pygame", "Gravity", "Jump", "Pipe", "Collision", "Game loop", "Nhân vật chim"]',
+    'AI Assistant'
+);
+
 
 INSERT INTO lesson_summaries
 (
@@ -691,20 +1938,6 @@ Chỉ cho phép người dùng đã đăng nhập gửi bình luận mới.',
     'AI Assistant'
 );
 ----------------------------------------------------------
-=======
--- Chèn tóm tắt bài học từ bảng lesson_summaries
-INSERT INTO `lesson_summaries` (`lesson_id`, `summary_text`, `key_points`, `generated_by`) VALUES
-(60,
- 'Bài học giới thiệu tổng quan về Django, vai trò của Django trong lập trình website bằng Python, cách tổ chức project và định hướng các nội dung sẽ học trong khóa.',
- JSON_ARRAY(
-   'Django là framework web mạnh mẽ của Python.',
-   'Django hỗ trợ xây dựng website nhanh với cấu trúc rõ ràng.',
-   'Bài học giúp người học nắm được mục tiêu và lộ trình học Django.'
- ),
- 'manual');
-
--- --------------------------------------------------------
->>>>>>> 1cdf698ba6b487a3e4695a345d1cac187af98e99
 -- NHÓM 4: AI ASSISTANT VÀ LỊCH SỬ CHAT
 -- --------------------------------------------------------
 

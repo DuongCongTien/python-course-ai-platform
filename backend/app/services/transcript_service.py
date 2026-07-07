@@ -1,12 +1,9 @@
-import json
-import mimetypes
 import os
-import uuid
-import urllib.request
 from pathlib import Path
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from google import genai  
 
 from app.core.database import SessionLocal
 from app.models.ai_pipeline_model import LessonTranscript
@@ -15,6 +12,9 @@ from app.services.audio_service import AudioService, TEMP_STORAGE_DIR
 
 
 class SpeechToTextProvider:
+    """
+    (Interface) đại diện cho một bộ cung cấp dịch vụ Chuyển đổi giọng nói thành văn bản.
+    """
     name = "base"
 
     def transcribe(self, audio_path: str, language: str = "vi") -> str:
@@ -22,6 +22,10 @@ class SpeechToTextProvider:
 
 
 class LocalWhisperProvider(SpeechToTextProvider):
+    """
+    Bộ cung cấp dịch vụ chuyển đổi giọng nói thành văn bản sử dụng thư viện `faster-whisper`
+    chạy trực tiếp trên hạ tầng máy chủ cục bộ (Local CPU/GPU).
+    """
     name = "local_whisper"
     _models = {}
 
@@ -29,15 +33,18 @@ class LocalWhisperProvider(SpeechToTextProvider):
         try:
             from faster_whisper import WhisperModel
         except ImportError as exc:
-            raise RuntimeError("Chua cai faster-whisper. Cai package hoac doi TRANSCRIPT_PROVIDER=openai.") from exc
+            raise RuntimeError("Chua cai faster-whisper. Cai package hoac doi TRANSCRIPT_PROVIDER=gemini.") from exc
 
         model_name = os.getenv("WHISPER_MODEL", "small")
         device = os.getenv("WHISPER_DEVICE", "cpu")
         compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
         model_key = (model_name, device, compute_type)
+        
         if model_key not in LocalWhisperProvider._models:
             LocalWhisperProvider._models[model_key] = WhisperModel(model_name, device=device, compute_type=compute_type)
         model = LocalWhisperProvider._models[model_key]
+        
+        # dịch
         segments, _ = model.transcribe(audio_path, language=language)
         text = " ".join(segment.text.strip() for segment in segments if segment.text and segment.text.strip())
         if not text:
@@ -45,76 +52,57 @@ class LocalWhisperProvider(SpeechToTextProvider):
         return text
 
 
-class OpenAIWhisperProvider(SpeechToTextProvider):
-    name = "openai"
+class GeminiTranscriptProvider(SpeechToTextProvider):
+    """
+    Bộ cung cấp dịch vụ chuyển đổi giọng nói thành văn bản thông qua Google Gemini API.
+    """
+    name = "gemini"
 
     def transcribe(self, audio_path: str, language: str = "vi") -> str:
-        api_key = os.getenv("OPENAI_API_KEY")
+        """
+        Tải file âm thanh lên Google Cloud và yêu cầu Gemini chuyển thành văn bản.
+        """
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise RuntimeError("Thieu OPENAI_API_KEY cho TRANSCRIPT_PROVIDER=openai.")
+            raise RuntimeError("Thieu GEMINI_API_KEY trong bien moi truong.")
 
-        model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-4o-transcribe")
-        body, content_type = self._build_multipart_body(
-            {
-                "model": model,
-                "language": language,
-                "response_format": "json",
-            },
-            "file",
-            Path(audio_path),
-        )
-        request = urllib.request.Request(
-            "https://api.openai.com/v1/audio/transcriptions",
-            data=body,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": content_type,
-            },
-            method="POST",
-        )
+        client = genai.Client(api_key=api_key)
+        model_name = os.getenv("GEMINI_TRANSCRIBE_MODEL", "gemini-3.5-flash")
+        uploaded_file = None
+        
+        try:
+            uploaded_file = client.files.upload(file=audio_path)
+            
+            prompt = "Transcribe this audio exactly as spoken. Do not translate. Do not add any comments."
+            if language == "vi":
+                prompt = "Hãy chuyển đổi âm thanh này thành văn bản tiếng Việt một cách chính xác nhất. Tuyệt đối chỉ trả về nội dung gốc được nói trong file, không thêm bất kỳ bình luận, định dạng hay lời chào nào khác."
 
-        with urllib.request.urlopen(request, timeout=300) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-
-        text = payload.get("text")
-        if not isinstance(text, str) or not text.strip():
-            raise RuntimeError("OpenAI speech-to-text khong tra ve noi dung transcript.")
-        return text.strip()
-
-    @staticmethod
-    def _build_multipart_body(fields: dict[str, str], file_field: str, file_path: Path) -> tuple[bytes, str]:
-        boundary = f"----pyai{uuid.uuid4().hex}"
-        chunks: list[bytes] = []
-
-        for name, value in fields.items():
-            chunks.extend(
-                [
-                    f"--{boundary}\r\n".encode(),
-                    f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
-                    f"{value}\r\n".encode(),
-                ]
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[uploaded_file, prompt]
             )
 
-        mime_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
-        chunks.extend(
-            [
-                f"--{boundary}\r\n".encode(),
-                f'Content-Disposition: form-data; name="{file_field}"; filename="{file_path.name}"\r\n'.encode(),
-                f"Content-Type: {mime_type}\r\n\r\n".encode(),
-                file_path.read_bytes(),
-                b"\r\n",
-                f"--{boundary}--\r\n".encode(),
-            ]
-        )
-        return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
+            text = response.text
+            if not text or not text.strip():
+                raise RuntimeError("Gemini khong tra ve noi dung transcript.")
+            
+            return text.strip()
+        finally:
+            # QUAN TRỌNG: Xóa file trên Google Cloud sau khi dịch xong 
+            # để tránh bị tính phí lưu trữ hoặc rò rỉ dữ liệu bài học
+            if uploaded_file:
+                try:
+                    client.files.delete(name=uploaded_file.name)
+                except Exception:
+                    pass
 
 
 class TranscriptService:
     @staticmethod
     def get_provider() -> SpeechToTextProvider:
         provider = os.getenv("TRANSCRIPT_PROVIDER", "local_whisper").lower()
-        if provider == "openai":
-            return OpenAIWhisperProvider()
+        if provider == "gemini":
+            return GeminiTranscriptProvider()
         if provider == "local_whisper":
             return LocalWhisperProvider()
         raise ValueError(f"TRANSCRIPT_PROVIDER khong duoc ho tro: {provider}")
