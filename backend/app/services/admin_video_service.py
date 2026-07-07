@@ -40,14 +40,14 @@ class AdminVideoService:
     def get_video(db: Session, video_id: int):
         video = db.query(LessonVideo).options(joinedload(LessonVideo.lesson).joinedload(Lesson.course)).filter(LessonVideo.id == video_id).first()
         if not video:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay video.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy video.")
         return video
 
     @staticmethod
     def create_video(db: Session, payload):
         lesson = db.query(Lesson).filter(Lesson.id == payload.lessonId).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
         video = LessonVideo(
             lesson_id=payload.lessonId,
             storage_provider=payload.provider,

@@ -37,14 +37,14 @@ class AdminLessonService:
     def get_lesson(db: Session, lesson_id: int):
         lesson = db.query(Lesson).options(joinedload(Lesson.course), joinedload(Lesson.videos)).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
         return lesson
 
     @staticmethod
     def create_lesson(db: Session, payload):
         course = db.query(Course).filter(Course.id == payload.courseId).first()
         if not course:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay khoa hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy khóa học.")
         section_id = payload.sectionId or AdminLessonService.ensure_default_section(db, int(course.id))
         if payload.status == "archived":
             AdminLessonService.ensure_lesson_status_archived(db)
@@ -104,7 +104,7 @@ class AdminLessonService:
         )
         if section:
             return int(section.id)
-        section = CourseSection(course_id=course_id, title="Noi dung khoa hoc", sort_order=0)
+        section = CourseSection(course_id=course_id, title="Nội dung khóa học", sort_order=0)
         db.add(section)
         db.flush()
         return int(section.id)
