@@ -8,10 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.courses import router as courses_router
 from app.api.v1.lessons import router as lessons_router
+from app.api.v1.admin_lessons import router as admin_lessons_router
 from app.api.v1.users import router as users_router
 from app.api.v1.progress import router as progress_router
 from app.api.v1.activities import router as activities_router
-
+from app.api.v1.admin_courses import router as admin_courses_router
 
 app = FastAPI(title="Python Course AI Platform")
 
@@ -38,9 +39,11 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(courses_router, prefix="/api/v1/courses", tags=["Courses"])
 app.include_router(lessons_router, prefix="/api/v1/lessons", tags=["Lessons"])
+app.include_router(admin_lessons_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(progress_router, prefix="/api/v1/my", tags=["Progress"])
 app.include_router(activities_router, prefix="/api/v1/profile", tags=["Activities"])
+app.include_router(admin_courses_router, prefix="/api/v1/admin/courses", tags=["Admin - Courses"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=3000, reload=True)

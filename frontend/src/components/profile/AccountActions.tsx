@@ -6,9 +6,9 @@ function AccountActions() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-      logout();
+      await logout();
       navigate("/login", { replace: true });
     }
   };

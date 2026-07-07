@@ -32,8 +32,19 @@ export interface LessonDetail {
   videoProvider: string | null;
   slideFile: Lesson["slideFile"] | null;
   transcript: string | null;
-  summary: string | null;
+  transcriptStatus: "pending" | "processing" | "completed" | "failed";
+  transcriptErrorMessage?: string | null;
+  summary: LessonSummary | null;
   transcriptSegments: TranscriptSegment[];
+}
+
+export interface LessonSummary {
+  id?: string;
+  lessonId?: string;
+  summaryText: string;
+  keyPoints: string[];
+  generatedBy?: string | null;
+  createdAt?: string | null;
 }
 
 export interface ChatMessage {

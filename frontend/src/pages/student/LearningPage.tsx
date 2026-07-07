@@ -10,11 +10,13 @@ import {
   type ChatMessage,
   type Lesson,
   type LessonDetail,
+  type LessonSummary,
   type LessonTab,
   type TranscriptSegment,
 } from "../../components/learning/learningTypes";
 import { getCourseLessons } from "../../services/course.service";
 import { getLessonById, getLessonResources } from "../../services/lesson.service";
+import { askAI } from "../../services/chat.service";
 import {
   completeLesson,
   getCourseProgress,
@@ -25,22 +27,49 @@ import {
   unwrapProgressData,
 } from "../../services/progress.service";
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: "message-1",
-    role: "ai",
-    content: "Chào bạn! Tôi là AI Assistant. Bạn có câu hỏi nào về bài học này không?",
-  },
-];
-
 const suggestedQuestions = ["Tóm tắt bài học này", "Giải thích phần khó hiểu nhất", "Cho ví dụ dễ hiểu hơn"];
+
+// Lưu lịch sử chat AI riêng theo từng bài học (localStorage), vì backend chưa có API lưu lịch sử.
+const CHAT_HISTORY_PREFIX = "pyai_lesson_chat:";
+
+function getDefaultChatMessages(): ChatMessage[] {
+  return [
+    {
+      id: "message-welcome",
+      role: "ai",
+      content: "Chào bạn! Tôi là AI Assistant. Bạn có câu hỏi nào về bài học này không?",
+    },
+  ];
+}
+
+function loadChatHistory(lessonId: string): ChatMessage[] {
+  try {
+    const stored = window.localStorage.getItem(`${CHAT_HISTORY_PREFIX}${lessonId}`);
+    if (!stored) return getDefaultChatMessages();
+
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : getDefaultChatMessages();
+  } catch (error) {
+    console.warn("Không thể đọc lịch sử chat đã lưu:", error);
+    return getDefaultChatMessages();
+  }
+}
+
+function saveChatHistory(lessonId: string, messages: ChatMessage[]) {
+  try {
+    window.localStorage.setItem(`${CHAT_HISTORY_PREFIX}${lessonId}`, JSON.stringify(messages));
+  } catch (error) {
+    console.warn("Không thể lưu lịch sử chat:", error);
+  }
+}
 
 function LearningPage() {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<LessonTab>("overview");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialMessages);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [isAiReplying, setIsAiReplying] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [lessonProgress, setLessonProgress] = useState<LessonProgressData | null>(null);
@@ -48,6 +77,8 @@ function LearningPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const isCompletingRef = useRef(false);
+  const completedLessonRef = useRef<string | null>(null);
+  const requestIdRef = useRef(0);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadCourseProgress = useCallback(async () => {
@@ -66,11 +97,16 @@ function LearningPage() {
 
   const loadLearningData = useCallback(async () => {
     if (!courseId || !lessonId) {
+      requestIdRef.current += 1;
       setLesson(null);
       setLessons([]);
+      setLessonProgress(null);
       setErrorMessage("Không tìm thấy khóa học hoặc bài học.");
       return;
     }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
 
     try {
       setIsLoading(true);
@@ -103,6 +139,8 @@ function LearningPage() {
         progressPromise,
         courseProgressPromise,
       ]);
+      if (requestId !== requestIdRef.current) return;
+
       const mappedLesson = mapLessonDetail(unwrapApiData(lessonResponse), resourcesData);
 
       setLesson(mappedLesson);
@@ -110,18 +148,41 @@ function LearningPage() {
       setCourseProgress(courseProgressData);
       setLessons(applyCourseProgress(extractLessons(lessonsResponse), courseProgressData));
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Load learning data failed:", error);
       setLesson(null);
       setLessons([]);
       setErrorMessage(error instanceof Error ? error.message : "Không thể tải dữ liệu bài học.");
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [courseId, lessonId]);
 
   useEffect(() => {
     loadLearningData();
   }, [loadLearningData]);
+
+  useEffect(() => {
+    completedLessonRef.current = null;
+    isCompletingRef.current = false;
+    setIsCompleting(false);
+  }, [lessonId]);
+
+  // Mỗi khi chuyển sang bài học khác, nạp lại lịch sử chat riêng của bài học đó
+  useEffect(() => {
+    if (!lessonId) return;
+    setChatMessages(loadChatHistory(lessonId));
+    setChatInput("");
+    setIsAiReplying(false);
+  }, [lessonId]);
+
+  // Lưu lại lịch sử chat mỗi khi có thay đổi
+  useEffect(() => {
+    if (!lessonId || chatMessages.length === 0) return;
+    saveChatHistory(lessonId, chatMessages);
+  }, [chatMessages, lessonId]);
 
   const handleSelectLesson = (nextLessonId: string) => {
     if (!courseId) return;
@@ -155,7 +216,15 @@ function LearningPage() {
 
   const handleCompleteLesson = useCallback(
     async (completedDurationSeconds?: number) => {
-      if (!courseId || !lessonId || isCompletingRef.current || lessonProgress?.isCompleted) return;
+      if (
+        !courseId ||
+        !lessonId ||
+        isCompletingRef.current ||
+        completedLessonRef.current === lessonId ||
+        lessonProgress?.isCompleted
+      ) {
+        return;
+      }
 
       const finalDuration = Math.floor(
         completedDurationSeconds ?? lesson?.durationSeconds ?? lessonProgress?.durationSeconds ?? 0,
@@ -163,6 +232,7 @@ function LearningPage() {
 
       try {
         isCompletingRef.current = true;
+        completedLessonRef.current = lessonId;
         setIsCompleting(true);
         const response = await completeLesson(lessonId, {
           courseId,
@@ -196,6 +266,7 @@ function LearningPage() {
         }
         await reloadCourseProgress();
       } catch (error) {
+        completedLessonRef.current = null;
         console.error("Không thể đánh dấu hoàn thành bài học:", error);
       } finally {
         isCompletingRef.current = false;
@@ -212,24 +283,46 @@ function LearningPage() {
     ],
   );
 
-  const handleSendMessage = () => {
-    const trimmedInput = chatInput.trim();
-    if (!trimmedInput) return;
+  const handleVideoEnded = useCallback(
+    async (completedDurationSeconds: number) => {
+      if (lessonProgress?.isCompleted) return;
+      await handleCompleteLesson(completedDurationSeconds);
+    },
+    [handleCompleteLesson, lessonProgress?.isCompleted],
+  );
 
-    setChatMessages((current) => [
-      ...current,
-      {
-        id: `message-${Date.now()}-user`,
-        role: "user",
-        content: trimmedInput,
-      },
-      {
-        id: `message-${Date.now()}-ai`,
-        role: "ai",
-        content: "AI đang dựa trên nội dung bài học để trả lời câu hỏi này.",
-      },
-    ]);
+  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
+    const trimmedInput = chatInput.trim();
+    if (!trimmedInput || isAiReplying) return;
+
+    const userMessage: ChatMessage = {
+      id: `message-${Date.now()}-user`,
+      role: "user",
+      content: trimmedInput,
+    };
+
+    setChatMessages((current) => [...current, userMessage]);
     setChatInput("");
+    setIsAiReplying(true);
+
+    try {
+      // Dùng transcript/tóm tắt bài học làm ngữ cảnh để AI trả lời đúng nội dung đang học
+      const lessonContext = lesson?.transcript || lesson?.summary || lesson?.description || null;
+
+      const answer = await askAI({
+        question: trimmedInput,
+        lessonId: lesson?.id,
+        context: lessonContext,
+      });
+
+      setChatMessages((current) => [
+        ...current,
+        { id: `message-${Date.now()}-ai`, role: "ai", content: answer },
+      ]);
+    } finally {
+      setIsAiReplying(false);
+    }
   };
 
   const handleSelectSuggestedQuestion = (question: string) => {
@@ -290,7 +383,7 @@ function LearningPage() {
             durationSeconds={lesson.durationSeconds}
             lessonProgress={lessonProgress}
             onProgressChange={handleVideoProgressChange}
-            onEnded={handleCompleteLesson}
+            onEnded={handleVideoEnded}
           />
           <LessonSlideCard slideFile={lesson.slideFile} />
           <LessonInfoSection
@@ -305,6 +398,8 @@ function LearningPage() {
             onTabChange={setActiveTab}
             lessonId={lesson.id}
             transcript={lesson.transcript}
+            transcriptStatus={lesson.transcriptStatus}
+            transcriptErrorMessage={lesson.transcriptErrorMessage}
             summary={lesson.summary}
             transcriptSegments={lesson.transcriptSegments}
           />
@@ -314,6 +409,7 @@ function LearningPage() {
           messages={chatMessages}
           input={chatInput}
           suggestedQuestions={suggestedQuestions}
+          isSending={isAiReplying}
           onInputChange={setChatInput}
           onSend={handleSendMessage}
           onSelectSuggestedQuestion={handleSelectSuggestedQuestion}
@@ -376,6 +472,7 @@ function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDe
   const data = asRecord(lessonData);
   const resources = asRecord(resourcesData);
   const video = asRecord(getValue(resources.video, data.video, null));
+  const transcriptResource = asRecord(getValue(resources.transcript, data.transcript, null));
 
   return {
     id: String(getValue(data.id, "")),
@@ -412,29 +509,60 @@ function mapLessonDetail(lessonData: unknown, resourcesData?: unknown): LessonDe
     ),
     slideFile: mapSlideFile(getValue(resources.slideFile, resources.slide_file, data.slideFile, data.slide_file)),
     transcript: getStringOrNull(
-      getNested(resources, "transcript", "text"),
-      getNested(resources, "transcript", "transcriptText"),
-      getNested(resources, "transcript", "transcript_text"),
-      getNested(data, "transcript", "text"),
-      getNested(data, "transcript", "transcriptText"),
-      getNested(data, "transcript", "transcript_text"),
+      transcriptResource.text,
+      transcriptResource.transcriptText,
+      transcriptResource.transcript_text,
       resources.transcriptText,
       resources.transcript_text,
       data.transcriptText,
       data.transcript_text,
     ),
-    summary: getStringOrNull(
-      getNested(resources, "summary", "summaryText"),
-      getNested(resources, "summary", "summary_text"),
-      getNested(data, "summary", "summaryText"),
-      getNested(data, "summary", "summary_text"),
-      resources.summaryText,
-      resources.summary_text,
-      data.summaryText,
-      data.summary_text,
+    transcriptStatus: mapTranscriptStatus(
+      getStringOrNull(
+        transcriptResource.status,
+        resources.transcriptStatus,
+        resources.transcript_status,
+        data.transcriptStatus,
+        data.transcript_status,
+      ),
     ),
+    transcriptErrorMessage: getStringOrNull(
+      transcriptResource.errorMessage,
+      transcriptResource.error_message,
+      resources.transcriptErrorMessage,
+      resources.transcript_error_message,
+      data.transcriptErrorMessage,
+      data.transcript_error_message,
+    ),
+    summary: mapLessonSummary(resources, data),
     transcriptSegments: extractTranscriptSegments(resources, data),
   };
+}
+
+function mapLessonSummary(...sources: unknown[]): LessonSummary | null {
+  for (const source of sources) {
+    const record = asRecord(source);
+    const summary = asRecord(record.summary);
+    const summaryText = getStringOrNull(
+      summary.summaryText,
+      summary.summary_text,
+      record.summaryText,
+      record.summary_text,
+    );
+
+    if (summaryText) {
+      return {
+        id: getStringOrNull(summary.id) ?? undefined,
+        lessonId: getStringOrNull(summary.lessonId, summary.lesson_id) ?? undefined,
+        summaryText,
+        keyPoints: extractStringList(summary.keyPoints, summary.key_points),
+        generatedBy: getStringOrNull(summary.generatedBy, summary.generated_by),
+        createdAt: getStringOrNull(summary.createdAt, summary.created_at),
+      };
+    }
+  }
+
+  return null;
 }
 
 function mapSlideFile(slideFile: unknown): Lesson["slideFile"] | null {
@@ -542,6 +670,27 @@ function extractTranscriptSegments(...sources: unknown[]): TranscriptSegment[] {
   return [];
 }
 
+function extractStringList(...values: unknown[]): string[] {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    }
+
+    if (typeof value === "string" && value.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+        }
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  return [];
+}
+
 function unwrapApiData(payload: unknown): unknown {
   const record = asRecord(payload);
   if ("data" in record) return record.data;
@@ -552,6 +701,11 @@ function unwrapApiData(payload: unknown): unknown {
 function mapLessonStatus(status: string | null): Lesson["status"] {
   if (status === "completed" || status === "locked") return status;
   return "available";
+}
+
+function mapTranscriptStatus(status: string | null): LessonDetail["transcriptStatus"] {
+  if (status === "processing" || status === "completed" || status === "failed") return status;
+  return "pending";
 }
 
 function formatLessonDuration(durationSeconds: number) {

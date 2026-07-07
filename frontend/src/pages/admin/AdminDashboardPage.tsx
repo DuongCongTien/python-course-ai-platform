@@ -107,16 +107,6 @@ function AdminDashboardPage() {
               Chào mừng quay trở lại — đây là tóm tắt hoạt động hôm nay.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/admin/courses")}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]" aria-hidden={true}>
-              add
-            </span>
-            Tạo khóa học mới
-          </button>
         </div>
 
         {/* Stat cards */}
