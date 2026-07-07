@@ -72,7 +72,7 @@ class LocalWhisperProvider(SpeechToTextProvider):
         segments, _ = model.transcribe(audio_path, language=language)
         text = " ".join(segment.text.strip() for segment in segments if segment.text and segment.text.strip())
         if not text:
-            raise RuntimeError("Whisper khong tra ve noi dung transcript.")
+            raise RuntimeError("Whisper không trả về nội dung transcript.")
         return text
 
 
@@ -152,7 +152,7 @@ class TranscriptService:
             return GeminiTranscriptProvider()
         if provider == "local_whisper":
             return LocalWhisperProvider()
-        raise ValueError(f"TRANSCRIPT_PROVIDER khong duoc ho tro: {provider}")
+        raise ValueError(f"TRANSCRIPT_PROVIDER không được hỗ trợ: {provider}")
 
     @staticmethod
     def get_transcript(db: Session, lesson_id: int) -> LessonTranscript | None:
@@ -190,7 +190,7 @@ class TranscriptService:
         """
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
         return TranscriptService.serialize_transcript(transcript, lesson_id)
@@ -211,7 +211,7 @@ class TranscriptService:
         """
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
         if transcript and transcript.status == "completed" and not force:
@@ -295,7 +295,7 @@ class TranscriptService:
         try:
             lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
             if not lesson:
-                raise RuntimeError("Khong tim thay bai hoc.")
+                raise RuntimeError("Không tìm thấy bài học.")
 
             video = (
                 db.query(LessonVideo)
@@ -304,7 +304,7 @@ class TranscriptService:
                 .first()
             )
             if not video:
-                raise RuntimeError("Bai hoc chua co video.")
+                raise RuntimeError("Bài học chưa có video.")
 
             video_path, source_temp_files = AudioService.prepare_video_source(video.video_url, lesson_id, video.storage_provider)
             temp_files.extend(source_temp_files)

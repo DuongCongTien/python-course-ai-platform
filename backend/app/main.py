@@ -30,22 +30,18 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.ngrok-free\.dev",
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-        "Accept",
-        "ngrok-skip-browser-warning",
-    ],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(courses_router, prefix="/api/v1/courses", tags=["Courses"])
 app.include_router(lessons_router, prefix="/api/v1/lessons", tags=["Lessons"])
-app.include_router(admin_lessons_router, prefix="/api/v1/admin/lessons", tags=["Admin - Lessons"])
+app.include_router(admin_lessons_router, prefix="/api/v1/admin/lessons", tags=["Admin Lessons"])
 app.include_router(admin_students_router, prefix="/api/v1/admin/students", tags=["Admin - Students"])
-app.include_router(admin_videos_router, prefix="/api/v1/admin/videos", tags=["Admin - Videos"])
+app.include_router(admin_videos_router, prefix="/api/v1/admin/videos", tags=["Admin Videos"])
 app.include_router(admin_uploads_router, prefix="/api/v1/admin/upload", tags=["Admin - Upload"])
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(progress_router, prefix="/api/v1/my", tags=["Progress"])

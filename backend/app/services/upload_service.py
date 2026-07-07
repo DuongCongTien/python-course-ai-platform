@@ -21,7 +21,7 @@ class UploadService:
         lesson = UploadService.require_lesson(db, lesson_id)
         suffix = Path(file.filename or "").suffix.lower()
         if suffix not in {".mp4", ".webm", ".ogg", ".mov"}:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Dinh dang video khong duoc ho tro.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng video không được hỗ trợ.")
 
         VIDEO_DIR.mkdir(parents=True, exist_ok=True)
         filename = UploadService.safe_filename(f"lesson-{lesson.id}-{uuid.uuid4().hex[:8]}{suffix}")
@@ -46,7 +46,7 @@ class UploadService:
     def save_youtube_url(db: Session, lesson_id: int, video_url: str, duration_seconds: int | None = None):
         UploadService.require_lesson(db, lesson_id)
         if not is_youtube_url(video_url):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="YouTube URL khong hop le.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="YouTube URL không hợp lệ.")
         video = LessonVideo(
             lesson_id=lesson_id,
             storage_provider="youtube",
@@ -64,7 +64,7 @@ class UploadService:
         lesson = UploadService.require_lesson(db, lesson_id)
         suffix = Path(file.filename or "").suffix.lower()
         if suffix != ".pdf" and file.content_type != "application/pdf":
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chi ho tro slide PDF.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chỉ hỗ trợ slide PDF.")
 
         UploadService.ensure_lesson_files_table(db)
         SLIDE_DIR.mkdir(parents=True, exist_ok=True)
@@ -90,7 +90,7 @@ class UploadService:
     def require_lesson(db: Session, lesson_id: int):
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
         return lesson
 
     @staticmethod

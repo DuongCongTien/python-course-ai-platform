@@ -18,7 +18,7 @@ def get_current_user(
     if not credentials or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Vui long dang nhap.",
+            detail="Vui lòng đăng nhập.",
         )
 
     secret_key = os.getenv("JWT_SECRET_KEY")
@@ -28,13 +28,13 @@ def get_current_user(
         payload = jwt.decode(credentials.credentials, secret_key, algorithms=[algorithm])
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token khong hop le.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ.")
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token khong hop le.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ.")
 
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nguoi dung khong ton tai.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Người dùng không tồn tại.")
 
     return user
 
@@ -44,6 +44,6 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ban khong co quyen truy cap.",
+            detail="Bạn không có quyền truy cập chức năng quản trị.",
         )
     return current_user
