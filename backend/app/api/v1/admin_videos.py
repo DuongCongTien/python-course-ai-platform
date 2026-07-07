@@ -54,18 +54,18 @@ def get_video(video_id: int, db: Session = Depends(get_db), _: User = Depends(re
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_video(payload: VideoCreateInput, db: Session = Depends(get_db), _: User = Depends(require_admin)):
     video = AdminVideoService.create_video(db, payload)
-    return success_response(AdminVideoService.serialize_video(db, video), "Tao video thanh cong.")
+    return success_response(AdminVideoService.serialize_video(db, video), "Tạo video thành công.")
 
 
 @router.patch("/{video_id}", status_code=status.HTTP_200_OK)
 def update_video(video_id: int, payload: VideoUpdateInput, db: Session = Depends(get_db), _: User = Depends(require_admin)):
     video = AdminVideoService.update_video(db, video_id, payload)
-    return success_response(AdminVideoService.serialize_video(db, video), "Cap nhat video thanh cong.")
+    return success_response(AdminVideoService.serialize_video(db, video), "Cập nhật video thành công.")
 
 
 @router.delete("/{video_id}", status_code=status.HTTP_200_OK)
 def delete_video(video_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    return success_response(AdminVideoService.delete_video(db, video_id), "Xoa video thanh cong.")
+    return success_response(AdminVideoService.delete_video(db, video_id), "Xóa video thành công.")
 
 
 @router.post("/{video_id}/generate-transcript", status_code=status.HTTP_200_OK)
@@ -74,4 +74,4 @@ def generate_video_transcript(video_id: int, background_tasks: BackgroundTasks, 
     TranscriptService.mark_processing(db, int(video.lesson_id), force=False)
     db.commit()
     background_tasks.add_task(TranscriptService.generate_transcript_task, int(video.lesson_id))
-    return success_response({"lessonId": int(video.lesson_id), "videoId": video_id, "status": "processing"}, "Da bat dau tao transcript.")
+    return success_response({"lessonId": int(video.lesson_id), "videoId": video_id, "status": "processing"}, "Đã bắt đầu tạo transcript.")

@@ -29,7 +29,7 @@ class LocalWhisperProvider(SpeechToTextProvider):
         try:
             from faster_whisper import WhisperModel
         except ImportError as exc:
-            raise RuntimeError("Chua cai faster-whisper. Cai package hoac doi TRANSCRIPT_PROVIDER=openai.") from exc
+            raise RuntimeError("Chưa cài faster-whisper. Hãy cài package hoặc đổi TRANSCRIPT_PROVIDER=openai.") from exc
 
         model_name = os.getenv("WHISPER_MODEL", "small")
         device = os.getenv("WHISPER_DEVICE", "cpu")
@@ -41,7 +41,7 @@ class LocalWhisperProvider(SpeechToTextProvider):
         segments, _ = model.transcribe(audio_path, language=language)
         text = " ".join(segment.text.strip() for segment in segments if segment.text and segment.text.strip())
         if not text:
-            raise RuntimeError("Whisper khong tra ve noi dung transcript.")
+            raise RuntimeError("Whisper không trả về nội dung transcript.")
         return text
 
 
@@ -51,7 +51,7 @@ class OpenAIWhisperProvider(SpeechToTextProvider):
     def transcribe(self, audio_path: str, language: str = "vi") -> str:
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise RuntimeError("Thieu OPENAI_API_KEY cho TRANSCRIPT_PROVIDER=openai.")
+            raise RuntimeError("Thiếu OPENAI_API_KEY cho TRANSCRIPT_PROVIDER=openai.")
 
         model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-4o-transcribe")
         body, content_type = self._build_multipart_body(
@@ -78,7 +78,7 @@ class OpenAIWhisperProvider(SpeechToTextProvider):
 
         text = payload.get("text")
         if not isinstance(text, str) or not text.strip():
-            raise RuntimeError("OpenAI speech-to-text khong tra ve noi dung transcript.")
+            raise RuntimeError("OpenAI speech-to-text không trả về nội dung transcript.")
         return text.strip()
 
     @staticmethod
@@ -117,7 +117,7 @@ class TranscriptService:
             return OpenAIWhisperProvider()
         if provider == "local_whisper":
             return LocalWhisperProvider()
-        raise ValueError(f"TRANSCRIPT_PROVIDER khong duoc ho tro: {provider}")
+        raise ValueError(f"TRANSCRIPT_PROVIDER không được hỗ trợ: {provider}")
 
     @staticmethod
     def get_transcript(db: Session, lesson_id: int) -> LessonTranscript | None:
@@ -132,7 +132,7 @@ class TranscriptService:
     def get_transcript_response(db: Session, lesson_id: int) -> dict:
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
         return TranscriptService.serialize_transcript(transcript, lesson_id)
@@ -141,7 +141,7 @@ class TranscriptService:
     def mark_processing(db: Session, lesson_id: int, language: str = "vi", force: bool = False) -> LessonTranscript:
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay bai hoc.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
 
         transcript = TranscriptService.get_transcript(db, lesson_id)
         if transcript and transcript.status == "completed" and not force:
@@ -192,7 +192,7 @@ class TranscriptService:
         try:
             lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
             if not lesson:
-                raise RuntimeError("Khong tim thay bai hoc.")
+                raise RuntimeError("Không tìm thấy bài học.")
 
             video = (
                 db.query(LessonVideo)
@@ -201,7 +201,7 @@ class TranscriptService:
                 .first()
             )
             if not video:
-                raise RuntimeError("Bai hoc chua co video.")
+                raise RuntimeError("Bài học chưa có video.")
 
             video_path, source_temp_files = AudioService.prepare_video_source(video.video_url, lesson_id, video.storage_provider)
             temp_files.extend(source_temp_files)

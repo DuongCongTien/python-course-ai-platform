@@ -3,8 +3,8 @@ import { authService } from "../services/authService";
 import { mapApiUserToAuthUser, type AuthUser, type RegisterPayload } from "../services/auth.types";
 import { flushAllProgress } from "../stores/progressSyncStore";
 
-const TOKEN_STORAGE_KEY = "pyai_token";
-const TOKEN_STORAGE_KEYS = [TOKEN_STORAGE_KEY, "accessToken", "token", "authToken", "python_ai_learning_token"];
+const TOKEN_STORAGE_KEY = "accessToken";
+const TOKEN_STORAGE_KEYS = [TOKEN_STORAGE_KEY, "pyai_token", "token", "authToken", "python_ai_learning_token"];
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const apiUser = await authService.getMe(newToken);
     const authUser = mapApiUserToAuthUser(apiUser);
     setUser(authUser);
+    localStorage.setItem("user", JSON.stringify(authUser));
     return authUser;
   };
 
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const apiUser = await authService.getMe(newToken);
     const authUser = mapApiUserToAuthUser(apiUser);
     setUser(authUser);
+    localStorage.setItem("user", JSON.stringify(authUser));
     return authUser;
   };
 
@@ -120,6 +122,7 @@ export function useAuth() {
 
 function removeStoredTokens() {
   TOKEN_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  localStorage.removeItem("user");
 }
 
 function getStoredToken() {

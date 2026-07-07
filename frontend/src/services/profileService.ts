@@ -1,4 +1,4 @@
-import httpClient from "./httpClient";
+import { apiFetch } from "../config/api";
 
 export interface UpdateProfilePayload {
   full_name: string;
@@ -12,16 +12,17 @@ export interface UpdatePasswordPayload {
 }
 
 export const profileService = {
-  
   async updateProfile(userId: number, payload: UpdateProfilePayload): Promise<unknown> {
-    const { data } = await httpClient.patch(`/users/${userId}`, payload);
-    return data;
+    return apiFetch(`/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
   },
 
   async updatePassword(userId: number, payload: UpdatePasswordPayload): Promise<unknown> {
-    const { data } = await httpClient.patch(`/users/${userId}/password`, payload);
-    return data;
+    return apiFetch(`/users/${userId}/password`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
   },
 };
-
-
