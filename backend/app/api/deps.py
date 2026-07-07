@@ -37,3 +37,13 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nguoi dung khong ton tai.")
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    role = current_user.role.value if hasattr(current_user.role, "value") else current_user.role
+    if role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ban khong co quyen truy cap.",
+        )
+    return current_user

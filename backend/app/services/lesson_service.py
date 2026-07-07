@@ -1,11 +1,12 @@
 import json
 
 from fastapi import HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session, selectinload
 from urllib.parse import parse_qs, urlparse
 
 from app.models.ai_pipeline_model import LessonSummary, LessonTranscript
-from app.models.courses_model import ContentStatus, Lesson, LessonVideo
+from app.models.courses_model import ContentStatus, Lesson, LessonFile, LessonVideo
 from app.services.transcript_service import TranscriptService
 
 
@@ -52,6 +53,7 @@ class LessonService:
     @staticmethod
     def get_lesson_resources(db: Session, lesson_id: int):
         lesson = LessonService.get_lesson_by_id(db, lesson_id)
+        LessonService.ensure_lesson_files_table(db)
 
         video = (
             db.query(LessonVideo)
@@ -71,11 +73,17 @@ class LessonService:
             .order_by(LessonSummary.created_at.desc(), LessonSummary.id.desc())
             .first()
         )
+        slide_file = (
+            db.query(LessonFile)
+            .filter(LessonFile.lesson_id == lesson.id, LessonFile.file_type == "slide_pdf")
+            .order_by(LessonFile.uploaded_at.desc(), LessonFile.id.desc())
+            .first()
+        )
 
         return {
             "lessonId": int(lesson.id),
             "video": LessonService.serialize_video(video) if video else None,
-            "slideFile": None,
+            "slideFile": LessonService.serialize_slide_file(slide_file) if slide_file else None,
             "transcript": TranscriptService.serialize_transcript(transcript, int(lesson.id)),
             "summary": LessonService.serialize_summary(summary) if summary else None,
         }
@@ -135,6 +143,19 @@ class LessonService:
         }
 
     @staticmethod
+    def serialize_slide_file(slide_file: LessonFile):
+        return {
+            "id": int(slide_file.id),
+            "lessonId": int(slide_file.lesson_id),
+            "fileType": slide_file.file_type,
+            "fileName": slide_file.file_name,
+            "fileUrl": slide_file.file_url,
+            "mimeType": slide_file.mime_type,
+            "fileSize": slide_file.file_size,
+            "uploadedAt": slide_file.uploaded_at.isoformat() if slide_file.uploaded_at else None,
+        }
+
+    @staticmethod
     def normalize_key_points(value):
         if not value:
             return []
@@ -152,3 +173,26 @@ class LessonService:
                 return [str(item) for item in parsed if item]
 
         return []
+
+    @staticmethod
+    def ensure_lesson_files_table(db: Session):
+        db.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS lesson_files (
+                  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                  lesson_id BIGINT NOT NULL,
+                  file_type VARCHAR(50) NOT NULL,
+                  file_name VARCHAR(255) NOT NULL,
+                  file_url VARCHAR(500) NOT NULL,
+                  mime_type VARCHAR(100) NULL,
+                  file_size BIGINT NULL,
+                  uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  CONSTRAINT fk_lesson_files_lessons
+                    FOREIGN KEY (lesson_id) REFERENCES lessons(id)
+                    ON DELETE CASCADE
+                )
+                """
+            )
+        )
+        db.commit()

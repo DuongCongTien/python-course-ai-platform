@@ -291,7 +291,6 @@ function LearningPage() {
     [handleCompleteLesson, lessonProgress?.isCompleted],
   );
 
-  const handleSendMessage = () => {
   const handleSendMessage = async () => {
     const trimmedInput = chatInput.trim();
     if (!trimmedInput || isAiReplying) return;
@@ -308,8 +307,7 @@ function LearningPage() {
 
     try {
       // Dùng transcript/tóm tắt bài học làm ngữ cảnh để AI trả lời đúng nội dung đang học
-      const lessonContext = lesson?.transcript || lesson?.summary || lesson?.description || null;
-
+      const lessonContext = lesson?.transcript || lesson?.summary?.summaryText || lesson?.description || null;
       const answer = await askAI({
         question: trimmedInput,
         lessonId: lesson?.id,
