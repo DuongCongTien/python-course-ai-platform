@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.models.courses_model import Lesson, LessonFile, LessonVideo
@@ -17,8 +17,51 @@ SLIDE_DIR = UPLOAD_ROOT / "slides"
 
 class UploadService:
     @staticmethod
-    def save_video_file(db: Session, lesson_id: int, file: UploadFile, duration_seconds: int | None = None):
-        lesson = UploadService.require_lesson(db, lesson_id)
+    def resolve_lesson_for_upload(
+        db: Session,
+        lesson_id: int | None = None,
+        course_id: int | None = None,
+        lesson_title: str | None = None,
+    ):
+        if lesson_id:
+            lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+            if not lesson:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
+            return lesson
+
+        if not course_id or not lesson_title or not lesson_title.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vui lòng chọn khóa học và nhập tên bài học.",
+            )
+
+        lesson = (
+            db.query(Lesson)
+            .filter(
+                Lesson.course_id == course_id,
+                func.lower(func.trim(Lesson.title)) == lesson_title.strip().lower(),
+            )
+            .first()
+        )
+
+        if not lesson:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy bài học trong khóa học đã chọn. Vui lòng kiểm tra lại tên bài học hoặc tạo bài học trước.",
+            )
+
+        return lesson
+
+    @staticmethod
+    def save_video_file(
+        db: Session,
+        file: UploadFile,
+        duration_seconds: int | None = None,
+        lesson_id: int | None = None,
+        course_id: int | None = None,
+        lesson_title: str | None = None,
+    ):
+        lesson = UploadService.resolve_lesson_for_upload(db, lesson_id, course_id, lesson_title)
         suffix = Path(file.filename or "").suffix.lower()
         if suffix not in {".mp4", ".webm", ".ogg", ".mov"}:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng video không được hỗ trợ.")
@@ -29,7 +72,7 @@ class UploadService:
         UploadService.write_upload(path, file)
 
         video = LessonVideo(
-            lesson_id=lesson_id,
+            lesson_id=int(lesson.id),
             storage_provider="local",
             video_url=f"/uploads/videos/{filename}",
             file_name=filename,
@@ -43,12 +86,19 @@ class UploadService:
         return video
 
     @staticmethod
-    def save_youtube_url(db: Session, lesson_id: int, video_url: str, duration_seconds: int | None = None):
-        UploadService.require_lesson(db, lesson_id)
+    def save_youtube_url(
+        db: Session,
+        video_url: str,
+        duration_seconds: int | None = None,
+        lesson_id: int | None = None,
+        course_id: int | None = None,
+        lesson_title: str | None = None,
+    ):
+        lesson = UploadService.resolve_lesson_for_upload(db, lesson_id, course_id, lesson_title)
         if not is_youtube_url(video_url):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="YouTube URL không hợp lệ.")
         video = LessonVideo(
-            lesson_id=lesson_id,
+            lesson_id=int(lesson.id),
             storage_provider="youtube",
             video_url=video_url,
             duration_seconds=duration_seconds or 0,
@@ -60,8 +110,14 @@ class UploadService:
         return video
 
     @staticmethod
-    def save_slide_file(db: Session, lesson_id: int, file: UploadFile):
-        lesson = UploadService.require_lesson(db, lesson_id)
+    def save_slide_file(
+        db: Session,
+        file: UploadFile,
+        lesson_id: int | None = None,
+        course_id: int | None = None,
+        lesson_title: str | None = None,
+    ):
+        lesson = UploadService.resolve_lesson_for_upload(db, lesson_id, course_id, lesson_title)
         suffix = Path(file.filename or "").suffix.lower()
         if suffix != ".pdf" and file.content_type != "application/pdf":
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chỉ hỗ trợ slide PDF.")
@@ -74,7 +130,7 @@ class UploadService:
         UploadService.write_upload(path, file)
 
         slide = LessonFile(
-            lesson_id=lesson_id,
+            lesson_id=int(lesson.id),
             file_type="slide_pdf",
             file_name=original_name,
             file_url=f"/uploads/slides/{filename}",
@@ -88,10 +144,7 @@ class UploadService:
 
     @staticmethod
     def require_lesson(db: Session, lesson_id: int):
-        lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
-        if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài học.")
-        return lesson
+        return UploadService.resolve_lesson_for_upload(db, lesson_id=lesson_id)
 
     @staticmethod
     def write_upload(path: Path, file: UploadFile):
