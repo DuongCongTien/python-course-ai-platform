@@ -1,6 +1,5 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { getAdminLessons } from "../../services/adminLesson.service";
 import {
   uploadLessonSlide,
   uploadLessonVideoFile,
@@ -8,13 +7,17 @@ import {
 } from "../../services/adminUpload.service";
 import { getCoursesAdmin } from "../../services/course.service";
 
-type UploadMode = "video" | "youtube" | "slide";
+type UploadMode = "youtube" | "video" | "slide";
+
+interface CourseOption {
+  id: number | string;
+  title: string;
+}
 
 export default function VideoUploadPage() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [lessons, setLessons] = useState<any[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [courseId, setCourseId] = useState("");
-  const [lessonId, setLessonId] = useState("");
+  const [lessonTitle, setLessonTitle] = useState("");
   const [mode, setMode] = useState<UploadMode>("youtube");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [slideFile, setSlideFile] = useState<File | null>(null);
@@ -25,8 +28,9 @@ export default function VideoUploadPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => { void loadCourses(); }, []);
-  useEffect(() => { void loadLessons(); }, [courseId]);
+  useEffect(() => {
+    void loadCourses();
+  }, []);
 
   async function loadCourses() {
     setInitialLoading(true);
@@ -35,24 +39,16 @@ export default function VideoUploadPage() {
       const data = unwrap(response);
       setCourses(data.items ?? data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Khong the tai khoa hoc.");
+      setError(getErrorMessage(err, "Không thể tải danh sách khóa học."));
     } finally {
       setInitialLoading(false);
     }
   }
 
-  async function loadLessons() {
-    setLessons([]);
-    setLessonId("");
-    if (!courseId) return;
-    const response = await getAdminLessons({ courseId, page: 1, pageSize: 100 });
-    setLessons(unwrap(response).items ?? []);
-  }
-
   function onVideoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
     if (file && !isAllowed(file.name, [".mp4", ".webm", ".ogg", ".mov"])) {
-      setError("Video chi ho tro .mp4, .webm, .ogg, .mov.");
+      setError("Video chỉ hỗ trợ .mp4, .webm, .ogg, .mov.");
       event.target.value = "";
       setVideoFile(null);
       return;
@@ -64,7 +60,7 @@ export default function VideoUploadPage() {
   function onSlideChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
     if (file && !isAllowed(file.name, [".pdf"])) {
-      setError("Slide chi ho tro PDF.");
+      setError("Slide chỉ hỗ trợ PDF.");
       event.target.value = "";
       setSlideFile(null);
       return;
@@ -77,40 +73,74 @@ export default function VideoUploadPage() {
     event.preventDefault();
     setError("");
     setMessage("");
-    if (!lessonId) {
-      setError("Vui long chon bai hoc.");
+
+    const trimmedLessonTitle = lessonTitle.trim();
+
+    if (!courseId) {
+      setError("Vui lòng chọn khóa học.");
       return;
     }
+
+    if (!trimmedLessonTitle) {
+      setError("Vui lòng nhập tên bài học.");
+      return;
+    }
+
+    if (mode === "youtube" && !videoUrl.trim()) {
+      setError("Vui lòng nhập đường dẫn YouTube.");
+      return;
+    }
+
+    if (mode === "video" && !videoFile) {
+      setError("Vui lòng chọn file video.");
+      return;
+    }
+
+    if (mode === "slide" && !slideFile) {
+      setError("Vui lòng chọn file slide PDF.");
+      return;
+    }
+
     try {
       setLoading(true);
+
       if (mode === "youtube") {
         if (!isYoutubeUrl(videoUrl)) {
-          setError("YouTube URL khong hop le.");
+          setError("Đường dẫn YouTube không hợp lệ.");
           return;
         }
-        await uploadLessonYoutube({ lessonId, videoUrl, durationSeconds });
+        await uploadLessonYoutube({
+          courseId,
+          lessonTitle: trimmedLessonTitle,
+          videoUrl: videoUrl.trim(),
+          durationSeconds,
+        });
       }
-      if (mode === "video") {
-        if (!videoFile) {
-          setError("Vui long chon video file.");
-          return;
-        }
-        await uploadLessonVideoFile({ lessonId, file: videoFile, durationSeconds });
+
+      if (mode === "video" && videoFile) {
+        await uploadLessonVideoFile({
+          courseId,
+          lessonTitle: trimmedLessonTitle,
+          file: videoFile,
+          durationSeconds,
+        });
       }
-      if (mode === "slide") {
-        if (!slideFile) {
-          setError("Vui long chon slide PDF.");
-          return;
-        }
-        await uploadLessonSlide({ lessonId, file: slideFile });
+
+      if (mode === "slide" && slideFile) {
+        await uploadLessonSlide({
+          courseId,
+          lessonTitle: trimmedLessonTitle,
+          file: slideFile,
+        });
       }
-      setMessage("Upload thanh cong.");
+
+      setMessage("Tải lên thành công.");
       setVideoFile(null);
       setSlideFile(null);
       setVideoUrl("");
       setDurationSeconds(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload that bai.");
+      setError(getErrorMessage(err, "Không thể tải lên tài nguyên. Vui lòng thử lại."));
     } finally {
       setLoading(false);
     }
@@ -120,44 +150,64 @@ export default function VideoUploadPage() {
     <AdminLayout>
       <div className="min-h-screen p-6">
         <div className="mb-5">
-          <h1 className="text-2xl font-bold">Upload tai nguyen bai hoc</h1>
-          <p className="text-sm text-on-surface-variant">Upload video file, YouTube URL hoac slide PDF vao backend storage.</p>
+          <h1 className="text-2xl font-bold">Tải lên tài nguyên bài học</h1>
+          <p className="text-sm text-on-surface-variant">
+            Tải lên video, đường dẫn YouTube hoặc slide PDF vào hệ thống lưu trữ backend.
+          </p>
         </div>
 
         {initialLoading ? (
-          <div className="rounded-xl bg-white p-8 text-center text-on-surface-variant">Dang tai du lieu...</div>
+          <div className="rounded-xl bg-white p-8 text-center text-on-surface-variant">Đang tải dữ liệu...</div>
         ) : (
           <form onSubmit={handleSubmit} className="max-w-3xl space-y-5 rounded-xl border bg-white p-6">
-            {(error || message) && <div className={`rounded-lg p-3 text-sm ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>{error || message}</div>}
+            {(error || message) && (
+              <div className={`rounded-lg p-3 text-sm ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+                {error || message}
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-semibold">Khoa hoc</label>
-                <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm">
-                  <option value="">Chon khoa hoc</option>
-                  {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Khóa học</label>
+                <select
+                  value={courseId}
+                  onChange={(event) => setCourseId(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option value="">Chọn khóa học</option>
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.title}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-semibold">Bai hoc</label>
-                <select value={lessonId} onChange={(e) => setLessonId(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm">
-                  <option value="">Chon bai hoc</option>
-                  {lessons.map((lesson) => <option key={lesson.id} value={lesson.id}>{lesson.title}</option>)}
-                </select>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Bài học</label>
+                <input
+                  type="text"
+                  value={lessonTitle}
+                  onChange={(event) => setLessonTitle(event.target.value)}
+                  placeholder="Nhập tên bài học, ví dụ: Bài 1: Giới thiệu Django"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold">Loai upload</label>
+              <label className="mb-2 block text-sm font-semibold">Loại tải lên</label>
               <div className="grid gap-2 sm:grid-cols-3">
                 {(["youtube", "video", "slide"] as UploadMode[]).map((item) => (
                   <button
                     key={item}
                     type="button"
                     onClick={() => setMode(item)}
-                    className={`rounded-lg border px-4 py-2 text-sm font-semibold ${mode === item ? "border-primary bg-primary text-white" : "bg-white"}`}
+                    className={`rounded-lg border px-4 py-2 text-sm font-semibold ${
+                      mode === item ? "border-primary bg-primary text-white" : "bg-white"
+                    }`}
                   >
-                    {item === "youtube" ? "YouTube URL" : item === "video" ? "Video file" : "Slide PDF"}
+                    {item === "youtube" ? "Đường dẫn YouTube" : item === "video" ? "File video" : "Slide PDF"}
                   </button>
                 ))}
               </div>
@@ -165,15 +215,25 @@ export default function VideoUploadPage() {
 
             {mode === "youtube" && (
               <div>
-                <label className="mb-1 block text-sm font-semibold">YouTube URL</label>
-                <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <label className="mb-1 block text-sm font-semibold">Đường dẫn YouTube</label>
+                <input
+                  value={videoUrl}
+                  onChange={(event) => setVideoUrl(event.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
               </div>
             )}
 
             {mode === "video" && (
               <div>
-                <label className="mb-1 block text-sm font-semibold">Video file</label>
-                <input type="file" accept=".mp4,.webm,.ogg,.mov,video/*" onChange={onVideoChange} className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <label className="mb-1 block text-sm font-semibold">File video</label>
+                <input
+                  type="file"
+                  accept=".mp4,.webm,.ogg,.mov,video/*"
+                  onChange={onVideoChange}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
                 {videoFile && <p className="mt-2 text-sm text-on-surface-variant">{videoFile.name}</p>}
               </div>
             )}
@@ -181,20 +241,31 @@ export default function VideoUploadPage() {
             {mode === "slide" && (
               <div>
                 <label className="mb-1 block text-sm font-semibold">Slide PDF</label>
-                <input type="file" accept=".pdf,application/pdf" onChange={onSlideChange} className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={onSlideChange}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
                 {slideFile && <p className="mt-2 text-sm text-on-surface-variant">{slideFile.name}</p>}
               </div>
             )}
 
             {mode !== "slide" && (
               <div>
-                <label className="mb-1 block text-sm font-semibold">Thoi luong video (giay)</label>
-                <input type="number" value={durationSeconds} onChange={(e) => setDurationSeconds(Number(e.target.value))} className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <label className="mb-1 block text-sm font-semibold">Thời lượng video (giây)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={durationSeconds}
+                  onChange={(event) => setDurationSeconds(Number(event.target.value))}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
               </div>
             )}
 
             <button disabled={loading} className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
-              {loading ? "Dang upload..." : "Upload"}
+              {loading ? "Đang tải lên..." : "Tải lên"}
             </button>
           </form>
         )}
@@ -214,4 +285,9 @@ function isAllowed(name: string, extensions: string[]) {
 
 function isYoutubeUrl(value: string) {
   return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(value.trim());
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }

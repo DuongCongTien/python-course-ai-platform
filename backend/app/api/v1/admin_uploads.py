@@ -12,7 +12,9 @@ router = APIRouter()
 
 
 class YoutubeUploadInput(BaseModel):
-    lessonId: int
+    lessonId: int | None = None
+    courseId: int | None = None
+    lessonTitle: str | None = None
     videoUrl: str
     durationSeconds: int | None = None
 
@@ -35,30 +37,54 @@ def serialize_video(video):
 
 @router.post("/video", status_code=status.HTTP_201_CREATED)
 def upload_video_file(
-    lessonId: int = Form(...),
+    lessonId: int | None = Form(default=None),
+    courseId: int | None = Form(default=None),
+    lessonTitle: str | None = Form(default=None),
     file: UploadFile = File(...),
     durationSeconds: int | None = Form(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    video = UploadService.save_video_file(db, lessonId, file, durationSeconds)
-    return success_response(serialize_video(video), "Upload video thanh cong.")
+    video = UploadService.save_video_file(
+        db,
+        file=file,
+        duration_seconds=durationSeconds,
+        lesson_id=lessonId,
+        course_id=courseId,
+        lesson_title=lessonTitle,
+    )
+    return success_response(serialize_video(video), "Tải video lên thành công.")
 
 
 @router.post("/youtube", status_code=status.HTTP_201_CREATED)
 def upload_youtube(payload: YoutubeUploadInput, db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    video = UploadService.save_youtube_url(db, payload.lessonId, payload.videoUrl, payload.durationSeconds)
-    return success_response(serialize_video(video), "Upload YouTube URL thanh cong.")
+    video = UploadService.save_youtube_url(
+        db,
+        video_url=payload.videoUrl,
+        duration_seconds=payload.durationSeconds,
+        lesson_id=payload.lessonId,
+        course_id=payload.courseId,
+        lesson_title=payload.lessonTitle,
+    )
+    return success_response(serialize_video(video), "Tải đường dẫn YouTube lên thành công.")
 
 
 @router.post("/slide", status_code=status.HTTP_201_CREATED)
 def upload_slide(
-    lessonId: int = Form(...),
+    lessonId: int | None = Form(default=None),
+    courseId: int | None = Form(default=None),
+    lessonTitle: str | None = Form(default=None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    slide = UploadService.save_slide_file(db, lessonId, file)
+    slide = UploadService.save_slide_file(
+        db,
+        file=file,
+        lesson_id=lessonId,
+        course_id=courseId,
+        lesson_title=lessonTitle,
+    )
     return success_response(
         {
             "id": int(slide.id),
@@ -67,5 +93,5 @@ def upload_slide(
             "fileName": slide.file_name,
             "fileUrl": slide.file_url,
         },
-        "Upload slide thanh cong.",
+        "Tải slide lên thành công.",
     )
