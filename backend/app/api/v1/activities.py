@@ -3,19 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.utils.response import success_response
 from app.models.users_model import User
 from app.services.activity_service import ActivityService
 
 router = APIRouter()
-
-
-def success_response(data, message: str = "OK"):
-    return {
-        "success": True,
-        "message": message,
-        "data": data,
-    }
-
 
 @router.get("/activities", status_code=status.HTTP_200_OK)
 def get_profile_activities(

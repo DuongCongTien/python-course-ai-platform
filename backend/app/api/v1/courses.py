@@ -7,17 +7,10 @@ from app.core.database import get_db
 from app.models.users_model import User
 from app.services.course_service import CoursesService
 from app.services.progress_service import ProgressService
+from app.utils.response import success_response
+
 
 router = APIRouter()
-
-
-def success_response(data, message: str = "OK"):
-    return {
-        "success": True,
-        "message": message,
-        "data": data,
-    }
-
 
 def _get_published_courses_response(
     keyword: str | None = Query(default=None),
@@ -62,23 +55,12 @@ def get_all_published_courses(
     page_size: int = Query(default=12, alias="pageSize", ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-<<<<<<< Updated upstream
     return _get_published_courses_response(
         keyword=keyword,
         level=level,
         page=page,
         page_size=page_size,
         db=db,
-=======
-    return success_response(
-        CoursesService.get_all_published_courses(
-            db=db,
-            keyword=keyword,
-            level=level,
-            page=page,
-            page_size=pageSize,
-        )
->>>>>>> Stashed changes
     )
 
 
