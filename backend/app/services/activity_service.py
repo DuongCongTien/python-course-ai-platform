@@ -84,6 +84,17 @@ class ActivityService:
 
     @staticmethod
     def _get_stats(db: Session, user_id: int):
+        """
+        Tổng hợp thống kê hoạt động học tập của người dùng.
+        
+        Args:
+            db (Session): Phiên kết nối CSDL hiện tại.
+            user_id (int): ID của người dùng cần lấy thống kê.
+            
+        Returns:
+            dict: Thống kê bao gồm số lượng bài học đã hoàn thành, 
+                  số lần làm bài kiểm tra và số câu hỏi đã đặt cho AI.
+        """
         lessons = (
             db.query(func.count(LessonProgress.id))
             .filter(LessonProgress.user_id == user_id, LessonProgress.is_completed.is_(True))
@@ -106,6 +117,16 @@ class ActivityService:
 
     @staticmethod
     def _serialize_activity(activity: LearningActivity):
+        """
+        Chuyển đổi đối tượng hoạt động học tập thành dạng từ điển (dictionary) có định dạng,
+        bao gồm nhãn hành động (actionLabel) và URL dẫn đến trang chi tiết.
+        
+        Args:
+            activity (LearningActivity): Đối tượng hoạt động học tập từ database.
+            
+        Returns:
+            dict: Dữ liệu hoạt động đã được serialize đầy đủ.
+        """
         payload = ProgressService._serialize_activity(activity)
         payload["actionLabel"] = ActivityService._action_label(payload["type"])
         payload["actionUrl"] = activity.action_url or ActivityService._action_url(payload)
@@ -113,6 +134,15 @@ class ActivityService:
 
     @staticmethod
     def _action_label(activity_type: str):
+        """
+        Lấy nhãn (label) hiển thị cho nút hành động dựa trên loại hoạt động.
+        
+        Args:
+            activity_type (str): Loại hoạt động (VD: 'lesson_completed', 'ai_question').
+            
+        Returns:
+            str: Nhãn văn bản hiển thị trên UI.
+        """
         return {
             "lesson_completed": "Xem bài học",
             "lesson_watched": "Xem bài học",
@@ -125,6 +155,15 @@ class ActivityService:
 
     @staticmethod
     def _action_url(payload: dict):
+        """
+        Xác định đường dẫn URL (route) để điều hướng người dùng dựa trên loại hoạt động.
+        
+        Args:
+            payload (dict): Dữ liệu chi tiết của hoạt động.
+            
+        Returns:
+            str | None: Đường dẫn URL tương ứng hoặc None nếu không xác định được.
+        """
         if payload["type"] in {"lesson_completed", "lesson_watched", "course_continued"}:
             if payload.get("courseSlug") and payload.get("lessonId"):
                 return f"/learning/{payload['courseSlug']}/{payload['lessonId']}"
@@ -138,6 +177,15 @@ class ActivityService:
 
     @staticmethod
     def _time_range_bounds(time_range: str):
+        """
+        Tính toán phạm vi thời gian (ngày bắt đầu và kết thúc) dựa trên tham số khoảng thời gian.
+        
+        Args:
+            time_range (str): Khoảng thời gian yêu cầu (VD: 'today', 'week', 'month').
+            
+        Returns:
+            tuple[datetime | None, datetime | None]: Cặp ngày bắt đầu và kết thúc.
+        """
         now = datetime.utcnow()
         today = datetime.combine(now.date(), time.min)
         if time_range == "today":

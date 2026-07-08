@@ -3,18 +3,12 @@ from fastapi import APIRouter, status, Query, Depends, HTTPException
 from app.services.user_service import UserService
 from app.schemas.user import UserUpdateInput, UserUpdatePassword
 from app.models.users_model import User
+from app.utils.response import success_response
 
 
 from app.core.database import get_db
 
 router = APIRouter()
-
-def success_response(data, message: str = "OK"):
-    return {
-        "success": True,
-        "message": message,
-        "data": data,
-    }
 
 @router.get("/me")
 def get_current_user_profile(current_user: User = Depends(UserService.get_current_user)):

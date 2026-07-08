@@ -17,6 +17,7 @@ from app.api.v1.admin_courses import router as admin_courses_router
 from app.api.v1.admin_students import router as admin_students_router
 from app.api.v1.admin_videos import router as admin_videos_router
 from app.api.v1.admin_uploads import router as admin_uploads_router
+from app.api.v1.chatbot import router as chatbot_router
 
 app = FastAPI(title="Python Course AI Platform")
 
@@ -37,16 +38,21 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+
 app.include_router(courses_router, prefix="/api/v1/courses", tags=["Courses"])
 app.include_router(lessons_router, prefix="/api/v1/lessons", tags=["Lessons"])
-app.include_router(admin_lessons_router, prefix="/api/v1/admin/lessons", tags=["Admin Lessons"])
+
+app.include_router(admin_lessons_router, prefix="/api/v1/admin/lessons", tags=["Admin - Lessons"])
 app.include_router(admin_students_router, prefix="/api/v1/admin/students", tags=["Admin - Students"])
-app.include_router(admin_videos_router, prefix="/api/v1/admin/videos", tags=["Admin Videos"])
+app.include_router(admin_videos_router, prefix="/api/v1/admin/videos", tags=["Admin - Videos"])
 app.include_router(admin_uploads_router, prefix="/api/v1/admin/upload", tags=["Admin - Upload"])
+app.include_router(admin_courses_router, prefix="/api/v1/admin/courses", tags=["Admin - Courses"])
+
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(progress_router, prefix="/api/v1/my", tags=["Progress"])
 app.include_router(activities_router, prefix="/api/v1/profile", tags=["Activities"])
-app.include_router(admin_courses_router, prefix="/api/v1/admin/courses", tags=["Admin - Courses"])
+
+app.include_router(chatbot_router, prefix="/api/v1/chatbot/", tags=["AI - Chatbot"])
 
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage", "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
