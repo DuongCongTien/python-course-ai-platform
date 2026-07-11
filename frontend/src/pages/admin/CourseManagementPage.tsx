@@ -189,17 +189,6 @@ function CourseEditPanel({ open, onClose, course, onSubmit, isSaving }: EditPane
           {/* Giá & URL ảnh */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-on-surface-variant">Giá (VNĐ)</label>
-              <input
-                type="number"
-                min={0}
-                value={form.price}
-                onChange={(event) => updateField("price", event.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-background outline-none focus:ring-primary/50 text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
               <label className="text-sm font-semibold text-on-surface-variant">URL ảnh đại diện</label>
               <input
                 type="text"

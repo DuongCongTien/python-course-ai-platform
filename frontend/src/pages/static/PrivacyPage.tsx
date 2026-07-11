@@ -316,7 +316,7 @@ function PrivacyPage() {
           <FadeInCard>
             <section className="glass-nav ambient-shadow rounded-2xl border border-[#c7c4d8]/70 bg-white/90 p-6">
               <p className="text-sm font-medium uppercase tracking-wider text-[#464555]">Cập nhật lần cuối:</p>
-              <p className="mt-2 text-2xl font-bold text-[#3525cd]">15/10/2024</p>
+              <p className="mt-2 text-2xl font-bold text-[#3525cd]">15/07/2026</p>
             </section>
           </FadeInCard>
         </aside>
